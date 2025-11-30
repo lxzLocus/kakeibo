@@ -1,0 +1,47 @@
+services:
+  kakeibo-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: kakeibo-frontend
+    tty: true
+    ports:
+      - "3000:3000" 
+    volumes:
+      - /app/node_modules
+      - type: bind
+        source: ./frontend
+        target: /app
+
+  kakeibo-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kakeibo-backend
+    tty: true
+    ports:
+      - "8080:8080" 
+    volumes:
+      - type: bind
+        source: ./backend
+        target: /app
+    environment:
+      - JAVA_OPTS=-Xmx512m -Xms256m
+
+  kakeibo-database:
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    container_name: kakeibo-database
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: kakeibo
+    volumes:
+      - ./database/init/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+# volumes:
+#   mysql-data:
