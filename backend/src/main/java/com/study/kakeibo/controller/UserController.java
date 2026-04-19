@@ -3,7 +3,7 @@ package com.study.kakeibo.controller;
 import com.study.kakeibo.dto.Request.*;
 import com.study.kakeibo.dto.Response.*;
 import com.study.kakeibo.entity.User;
-import com.study.kakeibo.service.UserService;
+import com.study.kakeibo.service.impl.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     @Autowired
-    private UserService userService;
+    private UserServiceImpl userService;
 
     // 登録
     @PostMapping("/register")
