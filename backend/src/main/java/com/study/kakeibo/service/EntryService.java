@@ -6,14 +6,17 @@ import java.time.LocalDate;
 import java.util.List;
 
 
+import java.math.BigDecimal;
+
 public interface EntryService {
 
     // エントリーの追加
     Entry addEntry(
         Long userId,
         LocalDate date,
-        Double amount,
-        String category,
+        BigDecimal amount,
+        Long categoryId,
+        Long storeId,
         EntryType type,
         String memo
     );
@@ -33,8 +36,9 @@ public interface EntryService {
     Entry updateEntry(
         Long entryId,
         LocalDate date,
-        Double amount,
-        String category,
+        BigDecimal amount,
+        Long categoryId,
+        Long storeId,
         EntryType type,
         String memo
     );
