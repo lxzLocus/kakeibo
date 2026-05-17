@@ -5,11 +5,11 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+@Data
 @Entity
-@Table(name = "stores")
-@Getter
-@Setter
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "user_id", "name" }))
 @NoArgsConstructor
 @AllArgsConstructor
 public class Store {
@@ -17,12 +17,20 @@ public class Store {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @Column(nullable = false)
     private String name;
 
+    @Column
     private String type;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 }

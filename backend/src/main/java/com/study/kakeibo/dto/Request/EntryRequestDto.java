@@ -6,8 +6,6 @@ import lombok.Data;
 
 import java.time.LocalDate;
 
-
-
 @Data
 public class EntryRequestDto {
     // userIdはヘッダーから取得するため不要

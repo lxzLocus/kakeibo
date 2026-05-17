@@ -4,10 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+@Data
 @Entity
-@Table(name = "users")
-@Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
@@ -21,10 +19,10 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(name="password_hash", nullable = false)
+    @Column(nullable = false)
     private String password;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
