@@ -34,6 +34,7 @@ public interface EntryService {
 
     // エントリーの更新
     Entry updateEntry(
+        Long userId,
         Long entryId,
         LocalDate date,
         BigDecimal amount,
@@ -44,5 +45,5 @@ public interface EntryService {
     );
 
     // エントリーの削除
-    void deleteEntry(Long entryId);
+    void deleteEntry(Long userId, Long entryId);
 }

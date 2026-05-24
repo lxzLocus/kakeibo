@@ -55,12 +55,18 @@ public class EntryServiceImpl implements EntryService {
         // カテゴリの存在確認
         Category category = categoryRepository.findById(categoryId)
             .orElseThrow(() -> new IllegalArgumentException("Category not found with id: " + categoryId));
+        if (!category.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("Category does not belong to the user.");
+        }
 
         // ストアの存在確認（nullable）
         Store store = null;
         if (storeId != null) {
             store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("Store not found with id: " + storeId));
+            if (!store.getUser().getId().equals(userId)) {
+                throw new IllegalArgumentException("Store does not belong to the user.");
+            }
         }
 
         Entry newEntry = new Entry();
@@ -88,16 +94,13 @@ public class EntryServiceImpl implements EntryService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
 
-        List<Entry> entries = entryRepository.findByUserAndEntryDateBetween(user, startDate, endDate);
-        if(entries.isEmpty()) {
-            throw new IllegalArgumentException("No entries found for the specified user and date range.");
-        }
-        return entries;
+        return entryRepository.findByUserAndEntryDateBetween(user, startDate, endDate);
     }
 
 
     // エントリーの更新
     public Entry updateEntry(
+        Long userId,
         Long entryId,
         LocalDate date,
         BigDecimal amount,
@@ -109,13 +112,23 @@ public class EntryServiceImpl implements EntryService {
         Entry existingEntry = entryRepository.findById(entryId)
             .orElseThrow(() -> new IllegalArgumentException("Entry not found with id: " + entryId));
 
+        if (!existingEntry.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("You do not have permission to update this entry.");
+        }
+
         Category category = categoryRepository.findById(categoryId)
             .orElseThrow(() -> new IllegalArgumentException("Category not found with id: " + categoryId));
+        if (!category.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("Category does not belong to the user.");
+        }
 
         Store store = null;
         if (storeId != null) {
             store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("Store not found with id: " + storeId));
+            if (!store.getUser().getId().equals(userId)) {
+                throw new IllegalArgumentException("Store does not belong to the user.");
+            }
         }
 
         existingEntry.setEntryDate(date);
@@ -129,9 +142,12 @@ public class EntryServiceImpl implements EntryService {
     }
 
     // エントリーの削除
-    public void deleteEntry(Long entryId) {
-        if (!entryRepository.existsById(entryId)) {
-            throw new IllegalArgumentException("Entry not found with id: " + entryId);
+    public void deleteEntry(Long userId, Long entryId) {
+        Entry existingEntry = entryRepository.findById(entryId)
+            .orElseThrow(() -> new IllegalArgumentException("Entry not found with id: " + entryId));
+
+        if (!existingEntry.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("You do not have permission to delete this entry.");
         }
         entryRepository.deleteById(entryId);
     }

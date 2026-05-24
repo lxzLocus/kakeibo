@@ -15,10 +15,10 @@ public interface CategoryService {
     Category getCategoryById(Long categoryId);
 
     // カテゴリの更新
-    Category updateCategory(Long categoryId, String name);
+    Category updateCategory(Long userId, Long categoryId, String name);
 
     // カテゴリの削除
-    void deleteCategory(Long categoryId);
+    void deleteCategory(Long userId, Long categoryId);
 
     // カテゴリ名で存在確認（ユーザースコープ）
     boolean existsUserCategory(Long userId, String name);

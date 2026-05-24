@@ -15,10 +15,10 @@ public interface StoreService {
     Store getStoreById(Long storeId);
 
     // 店舗の更新
-    Store updateStore(Long storeId, String name, String type);
+    Store updateStore(Long userId, Long storeId, String name, String type);
 
     // 店舗の削除
-    void deleteStore(Long storeId);
+    void deleteStore(Long userId, Long storeId);
 
     // 店舗名で存在確認（ユーザースコープ）
     boolean existsUserStore(Long userId, String name);

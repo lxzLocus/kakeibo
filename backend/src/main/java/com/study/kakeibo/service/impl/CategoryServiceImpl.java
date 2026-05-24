@@ -52,18 +52,29 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     // カテゴリの更新
-    public Category updateCategory(Long categoryId, String name) {
+    public Category updateCategory(Long userId, Long categoryId, String name) {
+        if (!userRepository.existsById(userId)) {
+            throw new IllegalArgumentException("permission error");
+        }
+
         Category existingCategory = categoryRepository.findById(categoryId)
-            .orElseThrow(() -> new IllegalArgumentException("Category not found with id: " + categoryId));
+            .orElseThrow(() -> new IllegalArgumentException("permission error"));
+
+        if (!existingCategory.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("permission error");
+        }
 
         existingCategory.setName(name);
         return categoryRepository.save(existingCategory);
     }
 
     // カテゴリの削除
-    public void deleteCategory(Long categoryId) {
-        if (!categoryRepository.existsById(categoryId)) {
-            throw new IllegalArgumentException("Category not found with id: " + categoryId);
+    public void deleteCategory(Long userId, Long categoryId) {
+        Category existingCategory = categoryRepository.findById(categoryId)
+            .orElseThrow(() -> new IllegalArgumentException("Category not found with id: " + categoryId));
+
+        if (!existingCategory.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("You do not have permission to delete this category.");
         }
         categoryRepository.deleteById(categoryId);
     }

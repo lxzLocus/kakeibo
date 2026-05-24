@@ -53,9 +53,17 @@ public class StoreServiceImpl implements StoreService {
     }
 
     // 店舗の更新
-    public Store updateStore(Long storeId, String name, String type) {
+    public Store updateStore(Long userId, Long storeId, String name, String type) {
+        if (!userRepository.existsById(userId)) {
+            throw new IllegalArgumentException("permission error");
+        }
+
         Store existingStore = storeRepository.findById(storeId)
-            .orElseThrow(() -> new IllegalArgumentException("Store not found with id: " + storeId));
+            .orElseThrow(() -> new IllegalArgumentException("permission error"));
+
+        if (!existingStore.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("permission error");
+        }
 
         existingStore.setName(name);
         existingStore.setType(type);
@@ -63,9 +71,12 @@ public class StoreServiceImpl implements StoreService {
     }
 
     // 店舗の削除
-    public void deleteStore(Long storeId) {
-        if (!storeRepository.existsById(storeId)) {
-            throw new IllegalArgumentException("Store not found with id: " + storeId);
+    public void deleteStore(Long userId, Long storeId) {
+        Store existingStore = storeRepository.findById(storeId)
+            .orElseThrow(() -> new IllegalArgumentException("Store not found with id: " + storeId));
+
+        if (!existingStore.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("You do not have permission to delete this store.");
         }
         storeRepository.deleteById(storeId);
     }
