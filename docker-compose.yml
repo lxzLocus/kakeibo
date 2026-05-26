@@ -12,7 +12,8 @@ services:
       - type: bind
         source: ./frontend
         target: /app
-
+    environment:
+      - BACKEND_URL=http://kakeibo-backend:8080
   kakeibo-backend:
     build:
       context: ./backend
@@ -27,6 +28,7 @@ services:
         target: /app
     environment:
       - JAVA_OPTS=-Xmx512m -Xms256m
+
 
   kakeibo-database:
     build:
