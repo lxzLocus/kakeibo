@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { entryApi, categoryApi, storeApi, ApiError } from '@/lib/api';
+import { entryApi, categoryApi, storeApi, importApi, ApiError } from '@/lib/api';
 import { getUser } from '@/lib/auth';
-import { EntryResponse, CategoryResponse, StoreResponse } from '@/types';
+import { EntryResponse, CategoryResponse, StoreResponse, ImportResult } from '@/types';
 
-/**
- * 金額を日本円フォーマットで表示
- */
+// ==========================================
+// ユーティリティ
+// ==========================================
+
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('ja-JP', {
     style: 'currency',
@@ -17,9 +18,6 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-/**
- * 日付をフォーマット (5月23日(金))
- */
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr + 'T00:00:00');
   const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
@@ -29,9 +27,6 @@ function formatDate(dateStr: string): string {
   return `${m}/${d}(${w})`;
 }
 
-/**
- * 月の開始日・終了日を取得
- */
 function getMonthRange(year: number, month: number) {
   const since = `${year}-${String(month).padStart(2, '0')}-01`;
   const lastDay = new Date(year, month, 0).getDate();
@@ -39,9 +34,6 @@ function getMonthRange(year: number, month: number) {
   return { since, until };
 }
 
-/**
- * カテゴリ別集計
- */
 function aggregateByCategory(entries: EntryResponse[]) {
   const map = new Map<string, number>();
   entries
@@ -60,6 +52,152 @@ function aggregateByCategory(entries: EntryResponse[]) {
     colorIndex: i % 8,
   }));
 }
+
+// ==========================================
+// インポートパネル コンポーネント
+// ==========================================
+
+function ImportPanel({ onImported }: { onImported: () => void }) {
+  const [format, setFormat] = useState<'csv' | 'markdown'>('csv');
+  const [content, setContent] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<ImportResult | null>(null);
+
+  const CSV_PLACEHOLDER = `日付,店舗,カテゴリ,金額,メモ
+2026-05-01,ライフ,食費,1500,お昼ご飯
+2026-05-02,セブンイレブン,日用品,320,洗剤`;
+
+  const MD_PLACEHOLDER = `---
+date: 2026-05-01
+store: オオゼキ
+type: grocery
+total: 719
+---
+- 牛乳 220
+- 豚こま 376
+- トマト 123`;
+
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    setContent(text);
+    // フォーマット自動判定
+    if (text.trimStart().startsWith('---')) {
+      setFormat('markdown');
+    } else {
+      setFormat('csv');
+    }
+  }
+
+  async function handleImport() {
+    if (!content.trim()) return;
+    setLoading(true);
+    setResult(null);
+    try {
+      const res = await importApi.import(format, content);
+      setResult(res);
+      if (res.successCount > 0) {
+        onImported();
+      }
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setResult({
+          totalRows: 0, successCount: 0, errorCount: 1,
+          errors: [err.message], createdEntryIds: [],
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="import-panel">
+      <h3>📥 データ取込</h3>
+
+      {/* フォーマット選択 */}
+      <div className="import-format-selector">
+        <button
+          className={`import-format-btn ${format === 'csv' ? 'active' : ''}`}
+          onClick={() => setFormat('csv')}
+        >
+          CSV
+        </button>
+        <button
+          className={`import-format-btn ${format === 'markdown' ? 'active' : ''}`}
+          onClick={() => setFormat('markdown')}
+        >
+          Markdown
+        </button>
+      </div>
+
+      {/* ファイル選択 */}
+      <div className="import-file-drop">
+        <label>
+          📎 ファイルを選択、またはドラッグ&ドロップ
+          <input type="file" accept=".csv,.md,.txt" onChange={handleFileSelect} />
+        </label>
+      </div>
+
+      {/* テキスト入力 */}
+      <textarea
+        className="import-textarea"
+        placeholder={format === 'csv' ? CSV_PLACEHOLDER : MD_PLACEHOLDER}
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+      />
+
+      {/* アクション */}
+      <div className="import-actions">
+        <button
+          className="import-btn secondary"
+          onClick={() => { setContent(''); setResult(null); }}
+        >
+          クリア
+        </button>
+        <button
+          className="import-btn primary"
+          onClick={handleImport}
+          disabled={!content.trim() || loading}
+        >
+          {loading ? 'インポート中...' : 'インポート実行'}
+        </button>
+      </div>
+
+      {/* 結果表示 */}
+      {result && (
+        <div className="import-result">
+          <div className="import-result-header">
+            <div className="import-result-stat">
+              成功
+              <strong className="success">{result.successCount} 件</strong>
+            </div>
+            <div className="import-result-stat">
+              エラー
+              <strong className={result.errorCount > 0 ? 'error' : 'success'}>{result.errorCount} 件</strong>
+            </div>
+            <div className="import-result-stat">
+              処理行数
+              <strong>{result.totalRows}</strong>
+            </div>
+          </div>
+          {result.errors.length > 0 && (
+            <ul className="import-result-errors">
+              {result.errors.map((err, i) => (
+                <li key={i}>{err}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ==========================================
+// メインダッシュボードページ
+// ==========================================
 
 export default function DashboardPage() {
   const [entries, setEntries] = useState<EntryResponse[]>([]);
@@ -100,6 +238,19 @@ export default function DashboardPage() {
   const [modalSubmitError, setModalSubmitError] = useState('');
   const [modalLoading, setModalLoading] = useState(false);
 
+  // モバイルタブ
+  const [mobileTab, setMobileTab] = useState<'entries' | 'import'>('entries');
+
+  // クイック入力 (PC)
+  const [quickDate, setQuickDate] = useState(() => {
+    const t = new Date();
+    return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+  });
+  const [quickAmount, setQuickAmount] = useState('');
+  const [quickCategoryId, setQuickCategoryId] = useState('');
+  const [quickMemo, setQuickMemo] = useState('');
+  const [quickLoading, setQuickLoading] = useState(false);
+
   const fetchEntries = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -134,17 +285,12 @@ export default function DashboardPage() {
     fetchCategoriesAndStores();
   }, [fetchEntries, fetchCategoriesAndStores]);
 
-  // 新規追加モーダルを開く
+  // --- モーダル操作 ---
   function openAddModal() {
     setEditingEntry(null);
     setModalType('EXPENSE');
-    
     const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    setModalDate(`${yyyy}-${mm}-${dd}`);
-    
+    setModalDate(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`);
     setModalAmount('');
     setModalCategoryId('');
     setModalStoreId('');
@@ -153,11 +299,9 @@ export default function DashboardPage() {
     setModalSubmitError('');
     setIsAddingCategory(false);
     setIsAddingStore(false);
-    
     setIsModalOpen(true);
   }
 
-  // 編集モーダルを開く
   function openEditModal(entry: EntryResponse) {
     setEditingEntry(entry);
     setModalType(entry.type);
@@ -170,7 +314,6 @@ export default function DashboardPage() {
     setModalSubmitError('');
     setIsAddingCategory(false);
     setIsAddingStore(false);
-    
     setIsModalOpen(true);
   }
 
@@ -189,11 +332,8 @@ export default function DashboardPage() {
       setNewCategoryName('');
       setIsAddingCategory(false);
     } catch (err) {
-      if (err instanceof ApiError) {
-        alert(err.message);
-      } else {
-        alert('カテゴリの追加に失敗しました');
-      }
+      if (err instanceof ApiError) alert(err.message);
+      else alert('カテゴリの追加に失敗しました');
     }
   }
 
@@ -202,7 +342,7 @@ export default function DashboardPage() {
     if (!newStoreName.trim()) return;
     try {
       const newStore = await storeApi.create(
-        newStoreName.trim(), 
+        newStoreName.trim(),
         newStoreType.trim() ? newStoreType.trim() : undefined
       ) as StoreResponse;
       setStores([...stores, newStore]);
@@ -211,11 +351,8 @@ export default function DashboardPage() {
       setNewStoreType('');
       setIsAddingStore(false);
     } catch (err) {
-      if (err instanceof ApiError) {
-        alert(err.message);
-      } else {
-        alert('店舗の追加に失敗しました');
-      }
+      if (err instanceof ApiError) alert(err.message);
+      else alert('店舗の追加に失敗しました');
     }
   }
 
@@ -253,11 +390,8 @@ export default function DashboardPage() {
       await fetchEntries();
       closeModal();
     } catch (err) {
-      if (err instanceof ApiError) {
-        setModalSubmitError(err.message);
-      } else {
-        setModalSubmitError('保存に失敗しました。入力内容を確認してください。');
-      }
+      if (err instanceof ApiError) setModalSubmitError(err.message);
+      else setModalSubmitError('保存に失敗しました。入力内容を確認してください。');
     } finally {
       setModalLoading(false);
     }
@@ -273,48 +407,54 @@ export default function DashboardPage() {
       await fetchEntries();
       closeModal();
     } catch (err) {
-      if (err instanceof ApiError) {
-        setModalSubmitError(err.message);
-      } else {
-        setModalSubmitError('削除に失敗しました。');
-      }
+      if (err instanceof ApiError) setModalSubmitError(err.message);
+      else setModalSubmitError('削除に失敗しました。');
     } finally {
       setModalLoading(false);
     }
   }
 
-  // サマリー計算
-  const totalIncome = entries
-    .filter((e) => e.type === 'INCOME')
-    .reduce((sum, e) => sum + e.amount, 0);
-  const totalExpense = entries
-    .filter((e) => e.type === 'EXPENSE')
-    .reduce((sum, e) => sum + e.amount, 0);
-  const balance = totalIncome - totalExpense;
+  // クイック入力 (PC)
+  async function handleQuickEntry(e: React.FormEvent) {
+    e.preventDefault();
+    if (!quickDate || !quickAmount || !quickCategoryId) return;
+    setQuickLoading(true);
+    try {
+      await entryApi.create({
+        entryDate: quickDate,
+        amount: parseFloat(quickAmount),
+        categoryId: parseInt(quickCategoryId, 10),
+        type: 'EXPENSE',
+        memo: quickMemo.trim() || null,
+      });
+      setQuickAmount('');
+      setQuickMemo('');
+      await fetchEntries();
+    } catch (err) {
+      if (err instanceof ApiError) alert(err.message);
+      else alert('登録に失敗しました');
+    } finally {
+      setQuickLoading(false);
+    }
+  }
 
-  // カテゴリ別
+  // --- 計算値 ---
+  const totalIncome = entries.filter((e) => e.type === 'INCOME').reduce((sum, e) => sum + e.amount, 0);
+  const totalExpense = entries.filter((e) => e.type === 'EXPENSE').reduce((sum, e) => sum + e.amount, 0);
+  const balance = totalIncome - totalExpense;
   const categoryData = aggregateByCategory(entries);
+  const sortedEntries = [...entries].sort((a, b) => b.entryDate.localeCompare(a.entryDate));
 
   // 月の移動
   function prevMonth() {
-    if (month === 1) {
-      setYear(year - 1);
-      setMonth(12);
-    } else {
-      setMonth(month - 1);
-    }
+    if (month === 1) { setYear(year - 1); setMonth(12); }
+    else { setMonth(month - 1); }
   }
-
   function nextMonth() {
-    if (month === 12) {
-      setYear(year + 1);
-      setMonth(1);
-    } else {
-      setMonth(month + 1);
-    }
+    if (month === 12) { setYear(year + 1); setMonth(1); }
+    else { setMonth(month + 1); }
   }
 
-  // 挨拶
   function getGreeting(): string {
     const hour = new Date().getHours();
     if (hour < 12) return 'おはようございます';
@@ -322,9 +462,191 @@ export default function DashboardPage() {
     return 'お疲れさまです';
   }
 
+  // ==========================================
+  // サマリーカード (共通)
+  // ==========================================
+  const summaryCards = (
+    <div className="summary-cards">
+      <div className="summary-card income">
+        <div className="summary-card-header">
+          <span className="summary-card-label">収入</span>
+          <div className="summary-card-icon">📈</div>
+        </div>
+        <div className="summary-card-amount positive">
+          {loading ? '---' : formatCurrency(totalIncome)}
+        </div>
+      </div>
+      <div className="summary-card expense">
+        <div className="summary-card-header">
+          <span className="summary-card-label">支出</span>
+          <div className="summary-card-icon">📉</div>
+        </div>
+        <div className="summary-card-amount negative">
+          {loading ? '---' : formatCurrency(totalExpense)}
+        </div>
+      </div>
+      <div className="summary-card balance">
+        <div className="summary-card-header">
+          <span className="summary-card-label">残高</span>
+          <div className="summary-card-icon">💎</div>
+        </div>
+        <div className={`summary-card-amount ${balance >= 0 ? 'positive' : 'negative'}`}>
+          {loading ? '---' : formatCurrency(balance)}
+        </div>
+      </div>
+    </div>
+  );
+
+  // ==========================================
+  // モバイル サマリー（横スクロール）
+  // ==========================================
+  const mobileSummary = (
+    <div className="mobile-summary-scroll">
+      <div className="mobile-summary-card">
+        <div className="mobile-summary-card-label">収入</div>
+        <div className="mobile-summary-card-value positive">{loading ? '---' : formatCurrency(totalIncome)}</div>
+      </div>
+      <div className="mobile-summary-card">
+        <div className="mobile-summary-card-label">支出</div>
+        <div className="mobile-summary-card-value negative">{loading ? '---' : formatCurrency(totalExpense)}</div>
+      </div>
+      <div className="mobile-summary-card">
+        <div className="mobile-summary-card-label">残高</div>
+        <div className={`mobile-summary-card-value ${balance >= 0 ? 'positive' : 'negative'}`}>
+          {loading ? '---' : formatCurrency(balance)}
+        </div>
+      </div>
+      <div className="mobile-summary-card">
+        <div className="mobile-summary-card-label">件数</div>
+        <div className="mobile-summary-card-value neutral">{entries.length}</div>
+      </div>
+    </div>
+  );
+
+  // ==========================================
+  // カテゴリ別支出チャート (共通)
+  // ==========================================
+  const categoryChart = (
+    <div className="category-chart">
+      <div className="dashboard-section-header">
+        <h2 className="dashboard-section-title">カテゴリ別支出</h2>
+      </div>
+      {categoryData.length > 0 ? (
+        <div className="category-bar-chart">
+          {categoryData.map((cat) => (
+            <div key={cat.name} className="category-bar-item">
+              <div className="category-bar-header">
+                <span className="category-bar-name">{cat.name}</span>
+                <span className="category-bar-amount">{formatCurrency(cat.amount)}</span>
+              </div>
+              <div className="category-bar-track">
+                <div
+                  className={`category-bar-fill cat-color-${cat.colorIndex}`}
+                  style={{ width: `${cat.percentage}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="empty-state">
+          <div className="empty-state-icon">📊</div>
+          <div className="empty-state-text">支出データなし</div>
+        </div>
+      )}
+    </div>
+  );
+
+  // ==========================================
+  // 取引履歴テーブル (PC)
+  // ==========================================
+  const entriesTable = (
+    <div className="dashboard-section">
+      <div className="dashboard-section-header">
+        <h2 className="dashboard-section-title">取引履歴</h2>
+        <span style={{ fontSize: '0.8rem', color: 'rgba(148, 163, 184, 0.5)' }}>
+          {entries.length} 件
+        </span>
+      </div>
+      <div className="entries-table-wrap">
+        {sortedEntries.length > 0 ? (
+          <table className="entries-table">
+            <thead>
+              <tr>
+                <th>日付</th>
+                <th>種別</th>
+                <th>カテゴリ</th>
+                <th>店舗</th>
+                <th>金額</th>
+                <th>メモ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedEntries.map((entry) => (
+                <tr key={entry.id} onClick={() => openEditModal(entry)}>
+                  <td>{formatDate(entry.entryDate)}</td>
+                  <td>
+                    <span className={`entry-type-badge ${entry.type.toLowerCase()}`}>
+                      {entry.type === 'INCOME' ? '収入' : '支出'}
+                    </span>
+                  </td>
+                  <td>{entry.categoryName}</td>
+                  <td>{entry.storeName || <span style={{ color: 'rgba(148, 163, 184, 0.3)' }}>—</span>}</td>
+                  <td>
+                    <span className={`entry-amount ${entry.type.toLowerCase()}`}>
+                      {entry.type === 'INCOME' ? '+' : '-'}{formatCurrency(entry.amount)}
+                    </span>
+                  </td>
+                  <td>{entry.memo || <span style={{ color: 'rgba(148, 163, 184, 0.3)' }}>—</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div className="empty-state">
+            <div className="empty-state-icon">📝</div>
+            <div className="empty-state-text">この月の取引はまだありません</div>
+            <div className="empty-state-hint">右下の「＋」ボタンから最初の収支を登録しましょう</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // ==========================================
+  // 取引カードリスト (モバイル)
+  // ==========================================
+  const entriesCardList = (
+    <div className="entry-card-list">
+      {sortedEntries.length > 0 ? (
+        sortedEntries.map((entry) => (
+          <div key={entry.id} className="entry-card" onClick={() => openEditModal(entry)}>
+            <div className="entry-card-top">
+              <span className="entry-card-date">{formatDate(entry.entryDate)}</span>
+              <span className={`entry-card-amount ${entry.type.toLowerCase()}`}>
+                {entry.type === 'INCOME' ? '+' : '-'}{formatCurrency(entry.amount)}
+              </span>
+            </div>
+            <div className="entry-card-bottom">
+              <span className="entry-card-category">{entry.categoryName}</span>
+              {entry.storeName && <span className="entry-card-store">{entry.storeName}</span>}
+              {entry.memo && <span style={{ color: 'rgba(148,163,184,0.3)' }}>· {entry.memo}</span>}
+            </div>
+          </div>
+        ))
+      ) : (
+        <div className="empty-state">
+          <div className="empty-state-icon">📝</div>
+          <div className="empty-state-text">この月の取引はまだありません</div>
+          <div className="empty-state-hint">下の「＋」ボタンから収支を登録しましょう</div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <>
-      {/* 挨拶 */}
+      {/* ヘッダー */}
       <div className="dashboard-greeting">
         <h1>{getGreeting()}、{user?.username}さん</h1>
         <p>{year}年{month}月の家計サマリー</p>
@@ -332,58 +654,17 @@ export default function DashboardPage() {
 
       {/* 月セレクタ */}
       <div className="month-selector">
-        <button onClick={prevMonth} aria-label="前月" id="prev-month-btn">
-          ◀
-        </button>
-        <span className="month-selector-label">
-          {year}年 {month}月
-        </span>
-        <button onClick={nextMonth} aria-label="翌月" id="next-month-btn">
-          ▶
-        </button>
+        <button onClick={prevMonth} aria-label="前月" id="prev-month-btn">◀</button>
+        <span className="month-selector-label">{year}年 {month}月</span>
+        <button onClick={nextMonth} aria-label="翌月" id="next-month-btn">▶</button>
       </div>
 
-      {/* サマリーカード */}
-      <div className="summary-cards">
-        <div className="summary-card income">
-          <div className="summary-card-header">
-            <span className="summary-card-label">収入</span>
-            <div className="summary-card-icon">📈</div>
-          </div>
-          <div className="summary-card-amount positive">
-            {loading ? '---' : formatCurrency(totalIncome)}
-          </div>
-        </div>
-
-        <div className="summary-card expense">
-          <div className="summary-card-header">
-            <span className="summary-card-label">支出</span>
-            <div className="summary-card-icon">📉</div>
-          </div>
-          <div className="summary-card-amount negative">
-            {loading ? '---' : formatCurrency(totalExpense)}
-          </div>
-        </div>
-
-        <div className="summary-card balance">
-          <div className="summary-card-header">
-            <span className="summary-card-label">残高</span>
-            <div className="summary-card-icon">💎</div>
-          </div>
-          <div className={`summary-card-amount ${balance >= 0 ? 'positive' : 'negative'}`}>
-            {loading ? '---' : formatCurrency(balance)}
-          </div>
-        </div>
-      </div>
-
-      {/* エラー表示 */}
       {error && (
         <div className="auth-error-banner" style={{ marginBottom: '1.5rem' }}>
           ⚠️ {error}
         </div>
       )}
 
-      {/* コンテンツエリア */}
       {loading ? (
         <div className="loading-state">
           <span className="loading-spinner" />
@@ -391,141 +672,100 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
-          {/* カテゴリ別支出 & 取引履歴 */}
-          <div className="category-breakdown">
-            {/* カテゴリ別支出バーチャート */}
-            <div className="category-chart">
-              <div className="dashboard-section-header">
-                <h2 className="dashboard-section-title">カテゴリ別支出</h2>
-              </div>
-              {categoryData.length > 0 ? (
-                <div className="category-bar-chart">
-                  {categoryData.map((cat) => (
-                    <div key={cat.name} className="category-bar-item">
-                      <div className="category-bar-header">
-                        <span className="category-bar-name">{cat.name}</span>
-                        <span className="category-bar-amount">
-                          {formatCurrency(cat.amount)}
-                        </span>
-                      </div>
-                      <div className="category-bar-track">
-                        <div
-                          className={`category-bar-fill cat-color-${cat.colorIndex}`}
-                          style={{ width: `${cat.percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-state">
-                  <div className="empty-state-icon">📊</div>
-                  <div className="empty-state-text">支出データなし</div>
-                </div>
-              )}
-            </div>
+          {/* ======================================== */}
+          {/* PC レイアウト (2カラム)                    */}
+          {/* ======================================== */}
+          <div className="desktop-only">
+            {summaryCards}
 
-            {/* 月間統計 */}
-            <div className="category-chart">
-              <div className="dashboard-section-header">
-                <h2 className="dashboard-section-title">月間統計</h2>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', padding: '0.5rem 0' }}>
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'rgba(148, 163, 184, 0.6)', marginBottom: '0.25rem' }}>
-                    取引件数
-                  </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f1f5f9' }}>
-                    {entries.length}<span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'rgba(148, 163, 184, 0.7)' }}> 件</span>
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'rgba(148, 163, 184, 0.6)', marginBottom: '0.25rem' }}>
-                    収入件数
-                  </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#2dd4a0' }}>
-                    {entries.filter(e => e.type === 'INCOME').length}<span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'rgba(148, 163, 184, 0.7)' }}> 件</span>
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'rgba(148, 163, 184, 0.6)', marginBottom: '0.25rem' }}>
-                    支出件数
-                  </div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ef4444' }}>
-                    {entries.filter(e => e.type === 'EXPENSE').length}<span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'rgba(148, 163, 184, 0.7)' }}> 件</span>
-                  </div>
-                </div>
-                {totalExpense > 0 && entries.filter(e => e.type === 'EXPENSE').length > 0 && (
-                  <div>
-                    <div style={{ fontSize: '0.8rem', color: 'rgba(148, 163, 184, 0.6)', marginBottom: '0.25rem' }}>
-                      1日あたりの平均支出
+            <div className="dashboard-2col" style={{ marginTop: '1.5rem' }}>
+              {/* 左カラム: カテゴリ + クイック入力 + インポート */}
+              <div className="dashboard-sidebar">
+                {categoryChart}
+
+                {/* クイック入力ウィジェット */}
+                <div className="quick-entry-widget">
+                  <h3>⚡ クイック支出登録</h3>
+                  <form onSubmit={handleQuickEntry}>
+                    <div className="quick-entry-row">
+                      <input
+                        type="date"
+                        value={quickDate}
+                        onChange={(e) => setQuickDate(e.target.value)}
+                        required
+                      />
+                      <input
+                        type="number"
+                        placeholder="金額"
+                        min="1"
+                        value={quickAmount}
+                        onChange={(e) => setQuickAmount(e.target.value)}
+                        required
+                      />
                     </div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f97316' }}>
-                      {formatCurrency(Math.round(totalExpense / new Date(year, month, 0).getDate()))}
+                    <div className="quick-entry-row">
+                      <select
+                        value={quickCategoryId}
+                        onChange={(e) => setQuickCategoryId(e.target.value)}
+                        required
+                      >
+                        <option value="">カテゴリ</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                      </select>
                     </div>
-                  </div>
-                )}
+                    <div className="quick-entry-row">
+                      <input
+                        type="text"
+                        placeholder="メモ（任意）"
+                        value={quickMemo}
+                        onChange={(e) => setQuickMemo(e.target.value)}
+                      />
+                    </div>
+                    <button type="submit" className="quick-entry-submit" disabled={quickLoading}>
+                      {quickLoading ? '登録中...' : '登録する'}
+                    </button>
+                  </form>
+                </div>
+
+                {/* インポートパネル (PC) */}
+                <ImportPanel onImported={() => { fetchEntries(); fetchCategoriesAndStores(); }} />
               </div>
+
+              {/* 右カラム: 取引テーブル */}
+              {entriesTable}
             </div>
           </div>
 
-          {/* 取引履歴テーブル */}
-          <div className="dashboard-section" style={{ marginTop: '2rem' }}>
-            <div className="dashboard-section-header">
-              <h2 className="dashboard-section-title">取引履歴</h2>
-              <span style={{ fontSize: '0.8rem', color: 'rgba(148, 163, 184, 0.5)' }}>
-                {entries.length} 件
-              </span>
+          {/* ======================================== */}
+          {/* モバイル レイアウト (タブ切り替え)          */}
+          {/* ======================================== */}
+          <div className="mobile-only">
+            {/* 横スクロールサマリー */}
+            {mobileSummary}
+
+            {/* タブ */}
+            <div className="mobile-tabs" style={{ marginTop: '1rem' }}>
+              <button
+                className={`mobile-tab-btn ${mobileTab === 'entries' ? 'active' : ''}`}
+                onClick={() => setMobileTab('entries')}
+              >
+                📋 取引
+              </button>
+              <button
+                className={`mobile-tab-btn ${mobileTab === 'import' ? 'active' : ''}`}
+                onClick={() => setMobileTab('import')}
+              >
+                📥 取込
+              </button>
             </div>
 
-            <div className="entries-table-wrap">
-              {entries.length > 0 ? (
-                <table className="entries-table">
-                  <thead>
-                    <tr>
-                      <th>日付</th>
-                      <th>種別</th>
-                      <th>カテゴリ</th>
-                      <th className="hide-mobile">店舗</th>
-                      <th>金額</th>
-                      <th className="hide-mobile">メモ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {entries
-                      .sort((a, b) => b.entryDate.localeCompare(a.entryDate))
-                      .map((entry) => (
-                        <tr key={entry.id} onClick={() => openEditModal(entry)}>
-                          <td>{formatDate(entry.entryDate)}</td>
-                          <td>
-                            <span className={`entry-type-badge ${entry.type.toLowerCase()}`}>
-                              {entry.type === 'INCOME' ? '収入' : '支出'}
-                            </span>
-                          </td>
-                          <td>{entry.categoryName}</td>
-                          <td className="hide-mobile">
-                            {entry.storeName || <span style={{ color: 'rgba(148, 163, 184, 0.3)' }}>—</span>}
-                          </td>
-                          <td>
-                            <span className={`entry-amount ${entry.type.toLowerCase()}`}>
-                              {entry.type === 'INCOME' ? '+' : '-'}{formatCurrency(entry.amount)}
-                            </span>
-                          </td>
-                          <td className="hide-mobile">
-                            {entry.memo || <span style={{ color: 'rgba(148, 163, 184, 0.3)' }}>—</span>}
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              ) : (
-                <div className="empty-state">
-                  <div className="empty-state-icon">📝</div>
-                  <div className="empty-state-text">この月の取引はまだありません</div>
-                  <div className="empty-state-hint">右下の「＋」ボタンから最初の収支を登録しましょう</div>
-                </div>
-              )}
-            </div>
+            {/* タブコンテンツ */}
+            {mobileTab === 'entries' && entriesCardList}
+            {mobileTab === 'import' && (
+              <ImportPanel onImported={() => { fetchEntries(); fetchCategoriesAndStores(); }} />
+            )}
           </div>
         </>
       )}
@@ -535,7 +775,9 @@ export default function DashboardPage() {
         ＋
       </button>
 
-      {/* 収支追加・編集モーダル */}
+      {/* ======================================== */}
+      {/* 収支追加・編集モーダル                      */}
+      {/* ======================================== */}
       {isModalOpen && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
@@ -547,7 +789,7 @@ export default function DashboardPage() {
                 ×
               </button>
             </div>
-            
+
             <form onSubmit={handleModalSubmit}>
               <div className="modal-body">
                 {modalSubmitError && (
@@ -617,9 +859,7 @@ export default function DashboardPage() {
                     >
                       <option value="">-- カテゴリを選択してください --</option>
                       {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </option>
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
                       ))}
                     </select>
                     <button
@@ -633,7 +873,6 @@ export default function DashboardPage() {
                   </div>
                   {formErrors.categoryId && <span className="field-error-text">{formErrors.categoryId}</span>}
 
-                  {/* カテゴリ インライン追加パネル */}
                   {isAddingCategory && (
                     <div className="inline-add-panel">
                       <input
@@ -642,23 +881,8 @@ export default function DashboardPage() {
                         value={newCategoryName}
                         onChange={(e) => setNewCategoryName(e.target.value)}
                       />
-                      <button
-                        type="button"
-                        className="inline-add-save-btn"
-                        onClick={handleAddCategoryInline}
-                      >
-                        追加
-                      </button>
-                      <button
-                        type="button"
-                        className="inline-add-cancel-btn"
-                        onClick={() => {
-                          setIsAddingCategory(false);
-                          setNewCategoryName('');
-                        }}
-                      >
-                        閉じる
-                      </button>
+                      <button type="button" className="inline-add-save-btn" onClick={handleAddCategoryInline}>追加</button>
+                      <button type="button" className="inline-add-cancel-btn" onClick={() => { setIsAddingCategory(false); setNewCategoryName(''); }}>閉じる</button>
                     </div>
                   )}
                 </div>
@@ -689,7 +913,6 @@ export default function DashboardPage() {
                     </button>
                   </div>
 
-                  {/* 店舗 インライン追加パネル */}
                   {isAddingStore && (
                     <div className="inline-add-panel" style={{ flexDirection: 'column', gap: '0.4rem' }}>
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
@@ -709,24 +932,8 @@ export default function DashboardPage() {
                         />
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.4rem' }}>
-                        <button
-                          type="button"
-                          className="inline-add-save-btn"
-                          onClick={handleAddStoreInline}
-                        >
-                          追加
-                        </button>
-                        <button
-                          type="button"
-                          className="inline-add-cancel-btn"
-                          onClick={() => {
-                            setIsAddingStore(false);
-                            setNewStoreName('');
-                            setNewStoreType('');
-                          }}
-                        >
-                          閉じる
-                        </button>
+                        <button type="button" className="inline-add-save-btn" onClick={handleAddStoreInline}>追加</button>
+                        <button type="button" className="inline-add-cancel-btn" onClick={() => { setIsAddingStore(false); setNewStoreName(''); setNewStoreType(''); }}>閉じる</button>
                       </div>
                     </div>
                   )}

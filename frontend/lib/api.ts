@@ -1,4 +1,4 @@
-import { ErrorResponse, UserResponse } from '@/types';
+import { ErrorResponse, UserResponse, MonthlySummary, ImportResult } from '@/types';
 import { getUserId } from './auth';
 
 const API_BASE = '/api';
@@ -150,4 +150,19 @@ export const storeApi = {
     }),
   delete: (storeId: number) =>
     fetchApi(`/stores/${storeId}`, { method: 'DELETE' }),
+};
+
+// --- Analytics API ---
+export const analyticsApi = {
+  getMonthlySummary: (year: number, month: number) =>
+    fetchApi<MonthlySummary>(`/analytics/monthly?year=${year}&month=${month}`),
+};
+
+// --- Import API ---
+export const importApi = {
+  import: (format: 'csv' | 'markdown', content: string) =>
+    fetchApi<ImportResult>('/import', {
+      method: 'POST',
+      body: JSON.stringify({ format, content }),
+    }),
 };

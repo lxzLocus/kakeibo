@@ -80,3 +80,47 @@ export interface ErrorResponse {
   timestamp: string;
   validationErrors?: Record<string, string> | null;
 }
+
+// --- Analytics ---
+export interface CategorySummary {
+  categoryId: number;
+  name: string;
+  amount: number;
+  percentage: number;
+  transactionCount: number;
+}
+
+export interface StoreSummary {
+  storeId: number;
+  name: string;
+  amount: number;
+  percentage: number;
+  transactionCount: number;
+}
+
+export interface DailySummary {
+  date: string;           // yyyy-MM-dd
+  income: number;
+  expense: number;
+}
+
+export interface MonthlySummary {
+  month: string;           // "2026-05"
+  totalIncome: number;
+  totalExpense: number;
+  balance: number;
+  transactionCount: number;
+  dailyAverageExpense: number;
+  byCategory: CategorySummary[];
+  byStore: StoreSummary[];
+  dailyTrend: DailySummary[];
+}
+
+// --- Import ---
+export interface ImportResult {
+  totalRows: number;
+  successCount: number;
+  errorCount: number;
+  errors: string[];
+  createdEntryIds: number[];
+}
