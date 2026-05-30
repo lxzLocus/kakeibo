@@ -1,0 +1,8 @@
+{
+  "chat.tools.terminal.autoApprove": {
+    "/^cd d:\\\\Files\\\\workspace\\\\kakeibo\\\\backend ; \\.\\\\mvnw clean compile$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
+  }
+}

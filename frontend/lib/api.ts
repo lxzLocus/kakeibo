@@ -1,4 +1,4 @@
-import { ErrorResponse, UserResponse, MonthlySummary, ImportResult } from '@/types';
+import { ErrorResponse, UserResponse, MonthlySummary, ImportResult, InventoryResponse, InventoryRequest, MealResponse, MealRequest } from '@/types';
 import { getUserId } from './auth';
 
 const API_BASE = '/api';
@@ -164,5 +164,48 @@ export const importApi = {
     fetchApi<ImportResult>('/import', {
       method: 'POST',
       body: JSON.stringify({ format, content }),
+    }),
+};
+
+// --- Inventory API ---
+export const inventoryApi = {
+  getAll: (storage?: string) =>
+    fetchApi<InventoryResponse[]>(`/inventory${storage ? `?storage=${storage}` : ''}`),
+  getExpiringSoon: (days: number = 3) =>
+    fetchApi<InventoryResponse[]>(`/inventory/expiring?days=${days}`),
+  create: (data: InventoryRequest) =>
+    fetchApi<InventoryResponse>('/inventory', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  update: (id: number, data: InventoryRequest) =>
+    fetchApi<InventoryResponse>(`/inventory/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  consume: (id: number) =>
+    fetchApi<InventoryResponse>(`/inventory/${id}/consume`, {
+      method: 'PUT',
+    }),
+  delete: (id: number) =>
+    fetchApi<void>(`/inventory/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
+// --- Meal API ---
+export const mealApi = {
+  getAll: (since: string, until: string) =>
+    fetchApi<MealResponse[]>(`/meals?since=${since}&until=${until}`),
+  getById: (id: number) =>
+    fetchApi<MealResponse>(`/meals/${id}`),
+  create: (data: MealRequest) =>
+    fetchApi<MealResponse>('/meals', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  delete: (id: number) =>
+    fetchApi<void>(`/meals/${id}`, {
+      method: 'DELETE',
     }),
 };

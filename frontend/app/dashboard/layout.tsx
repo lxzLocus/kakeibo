@@ -61,6 +61,18 @@ export default function DashboardLayout({
             >
               分析
             </Link>
+            <Link
+              href="/dashboard/inventory"
+              className={`dashboard-nav-link ${pathname === '/dashboard/inventory' ? 'active' : ''}`}
+            >
+              在庫
+            </Link>
+            <Link
+              href="/dashboard/meals"
+              className={`dashboard-nav-link ${pathname === '/dashboard/meals' ? 'active' : ''}`}
+            >
+              食事
+            </Link>
           </nav>
         </div>
 
@@ -102,11 +114,20 @@ export default function DashboardLayout({
           <span className="bottom-nav-item-icon">📊</span>
           分析
         </Link>
-        {/* 中央の追加ボタンはダッシュボードページのFABで代替 */}
-        <button className="bottom-nav-item" style={{ opacity: 0.3, pointerEvents: 'none' }}>
-          <span className="bottom-nav-item-icon">⚙️</span>
-          設定
-        </button>
+        <Link
+          href="/dashboard/inventory"
+          className={`bottom-nav-item ${pathname === '/dashboard/inventory' ? 'active' : ''}`}
+        >
+          <span className="bottom-nav-item-icon">🥬</span>
+          在庫
+        </Link>
+        <Link
+          href="/dashboard/meals"
+          className={`bottom-nav-item ${pathname === '/dashboard/meals' ? 'active' : ''}`}
+        >
+          <span className="bottom-nav-item-icon">🍽️</span>
+          食事
+        </Link>
       </nav>
     </div>
   );

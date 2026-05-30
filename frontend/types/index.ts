@@ -124,3 +124,63 @@ export interface ImportResult {
   errors: string[];
   createdEntryIds: number[];
 }
+
+// --- Inventory ---
+export interface InventoryResponse {
+  id: number;
+  itemName: string;
+  quantity: number;
+  unit: string;
+  purchasePrice?: number;
+  purchaseDate?: string;
+  expiryDate?: string;
+  storage: 'REFRIGERATED' | 'FROZEN' | 'ROOM_TEMP';
+  isConsumed: boolean;
+  daysUntilExpiry?: number;
+  createdAt: string;
+}
+
+export interface InventoryRequest {
+  itemName: string;
+  quantity: number;
+  unit?: string;
+  purchasePrice?: number;
+  purchaseDate?: string;
+  expiryDate?: string;
+  storage?: 'REFRIGERATED' | 'FROZEN' | 'ROOM_TEMP';
+}
+
+// --- Meal ---
+export interface MealItemResponse {
+  id: number;
+  inventoryId: number;
+  itemName: string;
+  quantityUsed: number;
+  estimatedCost: number;
+}
+
+export interface MealResponse {
+  id: number;
+  mealDatetime: string;
+  mealType: 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK';
+  title: string;
+  servings: number;
+  note?: string;
+  estimatedTotalCost: number;
+  costPerServing: number;
+  items: MealItemResponse[];
+}
+
+export interface MealItemRequest {
+  inventoryId: number;
+  quantityUsed: number;
+}
+
+export interface MealRequest {
+  mealDatetime: string;
+  mealType: 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK';
+  title: string;
+  servings: number;
+  note?: string;
+  items: MealItemRequest[];
+}

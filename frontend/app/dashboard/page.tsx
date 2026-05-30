@@ -710,8 +710,8 @@ export default function DashboardPage() {
                         required
                       >
                         <option value="">カテゴリ</option>
-                        {categories.map((cat) => (
-                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        {categories.map((cat, index) => (
+                          <option key={`quick-cat-${cat.id}-${index}`} value={cat.id}>{cat.name}</option>
                         ))}
                       </select>
                     </div>
@@ -771,7 +771,7 @@ export default function DashboardPage() {
       )}
 
       {/* 収支追加 FAB ボタン */}
-      <button className="fab-btn" onClick={openAddModal} aria-label="収支を追加">
+      <button className="fab-btn mobile-only" onClick={openAddModal} aria-label="収支を追加">
         ＋
       </button>
 
@@ -858,8 +858,8 @@ export default function DashboardPage() {
                       required
                     >
                       <option value="">-- カテゴリを選択してください --</option>
-                      {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      {categories.map((cat, index) => (
+                        <option key={`modal-cat-${cat.id}-${index}`} value={cat.id}>{cat.name}</option>
                       ))}
                     </select>
                     <button
@@ -897,8 +897,8 @@ export default function DashboardPage() {
                       onChange={(e) => setModalStoreId(e.target.value)}
                     >
                       <option value="">-- なし / 選択解除 --</option>
-                      {stores.map((store) => (
-                        <option key={store.id} value={store.id}>
+                      {stores.map((store, index) => (
+                        <option key={`modal-store-${store.id}-${index}`} value={store.id}>
                           {store.name} {store.type ? `(${store.type})` : ''}
                         </option>
                       ))}

@@ -8,9 +8,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 
 import java.time.format.DateTimeParseException;
 import java.util.HashMap;
@@ -114,6 +117,57 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    // --- 必須パラメーター不足例外 (400 Bad Request) ---
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponseDto> handleMissingParameter(
+            MissingServletRequestParameterException ex, HttpServletRequest request) {
+
+        log.warn("Missing required parameter: {} [path={}]", ex.getParameterName(), request.getRequestURI());
+
+        ErrorResponseDto error = ErrorResponseDto.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Bad Request")
+                .message("必須パラメーターが不足しています: " + ex.getParameterName())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    // --- リソースが存在しない例外 (404 Not Found) ---
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleNoResourceFound(
+            NoResourceFoundException ex, HttpServletRequest request) {
+
+        log.warn("Resource not found [path={}]", request.getRequestURI());
+
+        ErrorResponseDto error = ErrorResponseDto.builder()
+                .status(HttpStatus.NOT_FOUND.value())
+                .error("Not Found")
+                .message("リクエストされたリソースが見つかりません")
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    // --- メソッド不許可例外 (405 Method Not Allowed) ---
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponseDto> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+
+        log.warn("Method not supported: {} [path={}]", ex.getMethod(), request.getRequestURI());
+
+        ErrorResponseDto error = ErrorResponseDto.builder()
+                .status(HttpStatus.METHOD_NOT_ALLOWED.value())
+                .error("Method Not Allowed")
+                .message("許可されていないHTTPメソッドです: " + ex.getMethod())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(error);
     }
 
     // --- 予期しない例外 (500 Internal Server Error) ---
