@@ -1,6 +1,7 @@
 package com.study.kakeibo.repository;
 
 import com.study.kakeibo.entity.Category;
+import com.study.kakeibo.entity.EntryType;
 import org.springframework.stereotype.Repository;
 import com.study.kakeibo.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +13,9 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
 
     /* Getter */
     boolean existsByName(String name);
+
+    // 収入/支出 区分を含めた重複チェック
+    boolean existsByUserAndNameAndType(User user, String name, EntryType type);
 
     Optional<Category> findByName(String name);
 

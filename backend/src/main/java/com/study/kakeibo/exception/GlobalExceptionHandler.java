@@ -170,6 +170,23 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(error);
     }
 
+    // --- LLM API エラー (502 Bad Gateway) ---
+    @ExceptionHandler(LlmException.class)
+    public ResponseEntity<ErrorResponseDto> handleLlm(
+            LlmException ex, HttpServletRequest request) {
+
+        log.warn("LLM error: {} [path={}]", ex.getMessage(), request.getRequestURI());
+
+        ErrorResponseDto error = ErrorResponseDto.builder()
+                .status(HttpStatus.BAD_GATEWAY.value())
+                .error("LLM Error")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(error);
+    }
+
     // --- 予期しない例外 (500 Internal Server Error) ---
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDto> handleGenericException(

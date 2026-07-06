@@ -26,11 +26,13 @@ export interface UserResponse {
 // --- Category ---
 export interface CategoryRequest {
   name: string;
+  type?: EntryType;
 }
 
 export interface CategoryResponse {
-  id: number;
+  categoryId: number;
   name: string;
+  type: EntryType;
   createdAt: string;
 }
 
@@ -41,7 +43,7 @@ export interface StoreRequest {
 }
 
 export interface StoreResponse {
-  id: number;
+  storeId: number;
   name: string;
   type: string | null;
   createdAt: string;
@@ -183,4 +185,131 @@ export interface MealRequest {
   servings: number;
   note?: string;
   items: MealItemRequest[];
+}
+
+// --- LLM設定（ユーザごとのAPIキー） ---
+export interface LlmConfigResponse {
+  configured: boolean;
+  baseUrl: string | null;
+  model: string | null;
+  hasKey: boolean;
+  maskedKey: string | null;
+  supportsVision: boolean;
+}
+
+export interface LlmConfigRequest {
+  baseUrl: string;
+  model: string;
+  apiKey?: string;       // 空なら既存キーを維持
+  supportsVision: boolean;
+}
+
+// チャット用・画像(OCR)用の2系統
+export type LlmPurpose = 'chat' | 'vision';
+
+export interface LlmConfigsResponse {
+  chat: LlmConfigResponse;
+  vision: LlmConfigResponse;
+}
+
+// --- AIチャット ---
+export interface ChatSessionResponse {
+  id: number;
+  title: string;
+  messageCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChatMessageResponse {
+  id: number;
+  sessionId: number;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  imageUrl: string | null;
+  createdAt: string;
+}
+
+export interface SendMessageResponse {
+  userMessage: ChatMessageResponse;
+  aiMessage: ChatMessageResponse;
+}
+
+// --- 貯蓄目標・固定費 ---
+export interface GoalRequest {
+  targetName: string;
+  targetAmount: number;
+  targetDate: string;     // yyyy-MM-dd
+  currentSavings: number;
+}
+
+export interface GoalResponse {
+  id: number;
+  targetName: string;
+  targetAmount: number;
+  targetDate: string;
+  currentSavings: number;
+}
+
+export interface FixedCostRequest {
+  name: string;
+  amount: number;
+  paymentDay?: number | null;
+}
+
+export interface FixedCostResponse {
+  id: number;
+  name: string;
+  amount: number;
+  paymentDay: number | null;
+}
+
+// --- シミュレーション ---
+export interface GoalAchievementDates {
+  achievingRate: number;
+  achievable: boolean;
+  estimatedOnly: boolean;
+  earliest: string | null;
+  optimistic: string | null;
+  median: string | null;
+  medianMonthsAhead: number | null;
+}
+
+export interface SimulationResult {
+  startDate: string;
+  goalDate: string;
+  totalMonths: number;
+  goalAmount: number;
+  currentSavings: number;
+  monthlyIncome: number;
+  fixedExpense: number;
+  variableExpense: number;
+  monthlySurplus: number;
+  neededMonthlySavings: number;
+  achievementRate: number;
+  labels: string[];
+  snapDates: string[];
+  p10: number[];
+  p25: number[];
+  p50: number[];
+  p75: number[];
+  p90: number[];
+  finalP10: number;
+  finalP50: number;
+  finalP90: number;
+  goalAchievementDates: GoalAchievementDates;
+}
+
+// --- レシートOCR ---
+export interface ReceiptItem {
+  name: string;
+  price: number | null;
+}
+
+export interface ReceiptDraft {
+  entryDate: string | null;
+  totalAmount: number | null;
+  storeName: string | null;
+  suggestedCategoryName: string | null;
+  items: ReceiptItem[] | null;
 }

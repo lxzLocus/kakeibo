@@ -129,8 +129,17 @@ public class LoggingAspect {
                 .map(arg -> {
                     if (arg == null) return "null";
                     String str = arg.toString();
-                    // パスワードが含まれている可能性のある文字列をマスキング
-                    if (str.toLowerCase().contains("password")) {
+                    String lower = str.toLowerCase();
+                    // パスワード・APIキー等の機密情報をマスキング
+                    if (lower.contains("password")
+                            || lower.contains("apikey")
+                            || lower.contains("api_key")
+                            || lower.contains("secret")
+                            || lower.contains("bearer ")) {
+                        return "[MASKED]";
+                    }
+                    // APIキーらしき生の値（sk-... : OpenAI/OpenRouter/Anthropic/DeepSeek 等）
+                    if (str.startsWith("sk-") || str.startsWith("sk_")) {
                         return "[MASKED]";
                     }
                     // 長すぎる文字列は省略

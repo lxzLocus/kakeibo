@@ -12,10 +12,11 @@ CREATE TABLE IF NOT EXISTS category (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
     name VARCHAR(50) NOT NULL,
+    type VARCHAR(16) NOT NULL DEFAULT 'EXPENSE',   -- 収入(INCOME)/支出(EXPENSE) 区分
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
-    UNIQUE KEY uk_user_category (user_id, name)
+    UNIQUE KEY uk_user_category_type (user_id, name, type)
 );
 
 CREATE TABLE IF NOT EXISTS store (
@@ -91,4 +92,74 @@ CREATE TABLE IF NOT EXISTS meal_item (
     FOREIGN KEY (meal_id) REFERENCES meal(id) ON DELETE CASCADE,
     FOREIGN KEY (inventory_id) REFERENCES inventory(id),
     INDEX idx_meal (meal_id)
+);
+
+-- ==========================================================
+-- AI機能: ユーザ別APIキー / チャット / シミュレーション
+-- ==========================================================
+
+-- ユーザごとのLLM接続設定（APIキーは暗号化して保存）
+-- purpose: 'CHAT'(テキスト対話) / 'VISION'(画像・OCR) で別プロバイダを設定可能
+CREATE TABLE IF NOT EXISTS user_llm_config (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    purpose VARCHAR(16) NOT NULL DEFAULT 'CHAT',
+    base_url VARCHAR(255) NOT NULL,
+    model VARCHAR(100) NOT NULL,
+    api_key_enc TEXT NOT NULL,
+    supports_vision BOOLEAN NOT NULL DEFAULT FALSE,   -- 画像入力(Vision)対応か
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_user_purpose (user_id, purpose)
+);
+
+-- AIチャットのセッション
+CREATE TABLE IF NOT EXISTS chat_session (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+    INDEX idx_chat_user (user_id, updated_at)
+);
+
+-- AIチャットのメッセージ
+CREATE TABLE IF NOT EXISTS chat_message (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    session_id BIGINT NOT NULL,
+    role VARCHAR(16) NOT NULL,
+    content TEXT NOT NULL,
+    image_path VARCHAR(255) NULL,       -- 添付画像の保存ファイル名（./chat-uploads/）
+    content_type VARCHAR(100) NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (session_id) REFERENCES chat_session(id) ON DELETE CASCADE,
+    INDEX idx_message_session (session_id, created_at)
+);
+
+-- 貯蓄目標（シミュレーション用。1ユーザ1件）
+CREATE TABLE IF NOT EXISTS goal (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL UNIQUE,
+    target_name VARCHAR(100) NOT NULL,
+    target_amount DECIMAL(15, 2) NOT NULL,
+    target_date DATE NOT NULL,
+    current_savings DECIMAL(15, 2) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+);
+
+-- 固定費（家賃・サブスクなど）
+CREATE TABLE IF NOT EXISTS fixed_cost (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    amount DECIMAL(15, 2) NOT NULL,
+    payment_day INT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+    INDEX idx_fixed_user (user_id)
 );

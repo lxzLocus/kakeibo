@@ -25,6 +25,7 @@ public class CategoryController {
                 category.getId(),
                 category.getUser().getId(),
                 category.getName(),
+                category.getType(),
                 category.getCreatedAt()
         );
     }
@@ -35,7 +36,7 @@ public class CategoryController {
             @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody CategoryRequestDto request
     ) {
-        Category newCategory = categoryService.addCategory(userId, request.getName());
+        Category newCategory = categoryService.addCategory(userId, request.getName(), request.getType());
         return ResponseEntity.ok(toDto(newCategory));
     }
 

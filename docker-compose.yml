@@ -21,7 +21,8 @@ services:
     container_name: kakeibo-backend
     tty: true
     ports:
-      - "8080:8080" 
+      # ホスト側8080が別サービスで使用中のため8081に変更（コンテナ間通信はkakeibo-backend:8080のまま）
+      - "8081:8080"
     volumes:
       - type: bind
         source: ./backend
@@ -37,8 +38,14 @@ services:
     container_name: kakeibo-database
     restart: unless-stopped
     tty: true
+    # 開発用のMySQLチューニング: コミット毎のfsyncをやめて書き込みを高速化
+    # （Docker Desktop/Windowsのディスクfsyncが遅く、INSERTが数秒かかるため）
+    command:
+      - --innodb-flush-log-at-trx-commit=2
+      - --sync-binlog=0
     ports:
-      - "3306:3306"
+      # ホスト側3306が別サービスで使用中のため3307に変更（コンテナ間通信はkakeibo-database:3306のまま）
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: kakeibo

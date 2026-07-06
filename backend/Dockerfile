@@ -7,6 +7,9 @@ RUN apk add --no-cache \
     wget \
     vim \
     maven \
-    bash
+    bash \
+    tesseract-ocr \
+    tesseract-ocr-data-jpn \
+    tesseract-ocr-data-eng
 
 CMD ["tail", "-f", "/dev/null"]

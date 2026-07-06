@@ -1,12 +1,13 @@
 package com.study.kakeibo.service;
 
 import com.study.kakeibo.entity.Category;
+import com.study.kakeibo.entity.EntryType;
 import java.util.List;
 
 public interface CategoryService {
 
-    // カテゴリの追加
-    Category addCategory(Long userId, String name);
+    // カテゴリの追加（収入/支出 区分つき）
+    Category addCategory(Long userId, String name, EntryType type);
 
     // ユーザーのカテゴリ一覧取得
     List<Category> getCategoriesByUserId(Long userId);

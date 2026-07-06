@@ -56,7 +56,7 @@ class CategoryControllerTest {
     @Test
     @DisplayName("POST /categories — 正常に作成")
     void create_success() throws Exception {
-        when(categoryService.addCategory(eq(1L), eq("食費"))).thenReturn(sampleCategory);
+        when(categoryService.addCategory(eq(1L), eq("食費"), any())).thenReturn(sampleCategory);
 
         String body = """
                 { "name": "食費" }
@@ -75,7 +75,7 @@ class CategoryControllerTest {
     @Test
     @DisplayName("POST /categories — 重複名で 400")
     void create_duplicate() throws Exception {
-        when(categoryService.addCategory(eq(1L), eq("食費")))
+        when(categoryService.addCategory(eq(1L), eq("食費"), any()))
                 .thenThrow(new IllegalArgumentException("Category with name '食費' already exists for this user."));
 
         String body = """

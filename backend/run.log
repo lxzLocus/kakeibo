@@ -1,0 +1,829 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.0.0)
+
+2026-07-05T10:58:21.973Z  INFO 38230 --- [kakeibo] [           main] com.study.kakeibo.KakeiboApplication     : Starting KakeiboApplication using Java 21.0.11 with PID 38230 (/app/target/classes started by root in /app)
+2026-07-05T10:58:21.981Z  INFO 38230 --- [kakeibo] [           main] com.study.kakeibo.KakeiboApplication     : No active profile set, falling back to 1 default profile: "default"
+2026-07-05T10:58:25.574Z  INFO 38230 --- [kakeibo] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-07-05T10:58:26.262Z  INFO 38230 --- [kakeibo] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 667 ms. Found 12 JPA repository interfaces.
+2026-07-05T10:58:27.982Z  INFO 38230 --- [kakeibo] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-07-05T10:58:28.026Z  INFO 38230 --- [kakeibo] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-07-05T10:58:28.026Z  INFO 38230 --- [kakeibo] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.14]
+2026-07-05T10:58:28.115Z  INFO 38230 --- [kakeibo] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 6024 ms
+2026-07-05T10:58:28.693Z  INFO 38230 --- [kakeibo] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-07-05T10:58:28.960Z  INFO 38230 --- [kakeibo] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 7.1.8.Final
+2026-07-05T10:58:30.922Z  INFO 38230 --- [kakeibo] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-07-05T10:58:31.064Z  INFO 38230 --- [kakeibo] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-07-05T10:58:31.708Z  INFO 38230 --- [kakeibo] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@8f09a02
+2026-07-05T10:58:31.715Z  INFO 38230 --- [kakeibo] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-07-05T10:58:31.958Z  INFO 38230 --- [kakeibo] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:mysql://kakeibo-database:3306/kakeibo?serverTimezone=Asia/Tokyo]
+	Database driver: MySQL Connector/J
+	Database dialect: MySQLDialect
+	Database version: 8.4.10
+	Default catalog/schema: kakeibo/undefined
+	Autocommit mode: undefined/unknown
+	Isolation level: REPEATABLE_READ [default REPEATABLE_READ]
+	JDBC fetch size: none
+	Pool: DatasourceConnectionProviderImpl
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-07-05T10:58:35.579Z  INFO 38230 --- [kakeibo] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-07-05T10:58:35.872Z  INFO 38230 --- [kakeibo] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-07-05T10:58:36.247Z  INFO 38230 --- [kakeibo] [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-07-05T10:58:38.291Z  WARN 38230 --- [kakeibo] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-07-05T10:58:38.783Z  WARN 38230 --- [kakeibo] [           main] .s.a.UserDetailsServiceAutoConfiguration : 
+
+Using generated security password: 08d357f4-628d-41bc-ae68-14a545fd4da2
+
+This generated password is for development use only. Your security configuration must be updated before running your application in production.
+
+2026-07-05T10:58:38.809Z  INFO 38230 --- [kakeibo] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2026-07-05T10:58:40.178Z  INFO 38230 --- [kakeibo] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-07-05T10:58:40.183Z  INFO 38230 --- [kakeibo] [           main] com.study.kakeibo.KakeiboApplication     : Started KakeiboApplication in 19.334 seconds (process running for 19.983)
+2026-07-05T10:59:15.811Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-07-05T10:59:15.812Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-07-05T10:59:15.814Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2026-07-05T10:59:16.153Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.controller.LlmConfigController     : ▶ REQUEST  upsert | args=[1, chat, LlmConfigRequestDto(baseUrl=https://api.deepseek.com, model=deepseek-chat, supportsVision=false)]
+2026-07-05T10:59:16.173Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.LlmConfigService     : → SERVICE  upsert | args=[1, CHAT, https://api.deepseek.com, deepseek-chat, [MASKED], false]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T10:59:17.472Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  upsert | 1299ms | result=null
+Hibernate: update user_llm_config set api_key_enc=?,base_url=?,model=?,purpose=?,supports_vision=?,updated_at=?,user_id=? where id=?
+2026-07-05T10:59:17.562Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[1, CHAT]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T10:59:17.572Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 3ms | result=Optional[MaskedConfig[baseUrl=https://api.deepseek.com, model=deepseek-chat, hasKey=true, maskedKey=****UMMY, supportsVision=false]]
+2026-07-05T10:59:17.578Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.controller.LlmConfigController     : ◀ RESPONSE upsert | 1424ms
+2026-07-05T10:59:17.773Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.controller.ChatController    : ▶ REQUEST  create | args=[1, CreateChatRequestDto(title=null)]
+2026-07-05T10:59:17.775Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] com.study.kakeibo.service.ChatService    : → SERVICE  createSession | args=[1, null]
+Hibernate: insert into chat_session (created_at,title,updated_at,user_id) values (?,?,?,?)
+2026-07-05T10:59:17.819Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] com.study.kakeibo.service.ChatService    : ← SERVICE  createSession | 43ms | result=ChatSession(id=6, userId=1, title=新しいチャット, createdAt=2026-07-05T10:59:17.788387, updatedAt=2026-07-05T10:59:17.788442)
+2026-07-05T10:59:17.821Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] com.study.kakeibo.service.ChatService    : → SERVICE  countMessages | args=[6]
+Hibernate: select count(cm1_0.id) from chat_message cm1_0 where cm1_0.session_id=?
+2026-07-05T10:59:17.849Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] com.study.kakeibo.service.ChatService    : ← SERVICE  countMessages | 27ms | result=0
+2026-07-05T10:59:17.849Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.controller.ChatController    : ◀ RESPONSE create | 75ms
+2026-07-05T10:59:18.148Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.controller.ChatController    : ▶ REQUEST  sendMessageStream | args=[1, 6, ����ɂ���, null]
+2026-07-05T10:59:18.152Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.controller.ChatController    : ◀ RESPONSE sendMessageStream | 4ms
+2026-07-05T10:59:18.153Z DEBUG 38230 --- [kakeibo] [pool-2-thread-1] com.study.kakeibo.service.ChatService    : → SERVICE  prepareStream | args=[1, 6, ����ɂ���, null]
+Hibernate: select cs1_0.id,cs1_0.created_at,cs1_0.title,cs1_0.updated_at,cs1_0.user_id from chat_session cs1_0 where cs1_0.id=? and cs1_0.user_id=?
+2026-07-05T10:59:18.159Z DEBUG 38230 --- [kakeibo] [pool-2-thread-1] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getDecryptedConfig | args=[1, CHAT]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T10:59:18.162Z DEBUG 38230 --- [kakeibo] [pool-2-thread-1] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getDecryptedConfig | 2ms | result=LlmConfig[baseUrl=https://api.deepseek.com, model=deepseek-chat, apiKey=***REDACTED***, supportsVision=false]
+Hibernate: insert into chat_message (content,content_type,created_at,image_path,role,session_id) values (?,?,?,?,?,?)
+Hibernate: select cm1_0.id,cm1_0.content,cm1_0.content_type,cm1_0.created_at,cm1_0.image_path,cm1_0.role,cm1_0.session_id from chat_message cm1_0 where cm1_0.session_id=? order by cm1_0.created_at,cm1_0.id
+2026-07-05T10:59:18.186Z DEBUG 38230 --- [kakeibo] [pool-2-thread-1] c.s.k.service.impl.AnalyticsServiceImpl  : → SERVICE  getMonthlySummary | args=[1, 2026, 7]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select e1_0.id,e1_0.amount,e1_0.category_id,e1_0.created_at,e1_0.entry_date,e1_0.memo,e1_0.store_id,e1_0.type,e1_0.updated_at,e1_0.user_id from entry e1_0 where e1_0.user_id=? and e1_0.entry_date between ? and ?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+2026-07-05T10:59:18.277Z DEBUG 38230 --- [kakeibo] [pool-2-thread-1] c.s.k.service.impl.AnalyticsServiceImpl  : ← SERVICE  getMonthlySummary | 86ms | result=AnalyticsResponseDto(month=2026-07, totalIncome=0, totalExpense=500.00, balance=-500.00, transactionCount=1, dailyAverageExpense=16, byCategory=[AnalyticsResponseDto.CategorySummary(categoryId=14, name=flow-19450, amount=500.00, percentage=100.0, transactionCount=1)], byStore=[], dailyTrend=[Analyti...(truncated)
+2026-07-05T10:59:18.278Z DEBUG 38230 --- [kakeibo] [pool-2-thread-1] c.s.k.service.llm.PromptLoaderService    : → SERVICE  load | args=[prompts/chat/system.md, {financialContext=2026-07の状況: 収入 0円, 支出 500.00円, 収支 -500.00円。 主な支出カテゴリ: flow-19450(500.00円) }]
+2026-07-05T10:59:18.310Z DEBUG 38230 --- [kakeibo] [pool-2-thread-1] c.s.k.service.llm.PromptLoaderService    : ← SERVICE  load | 31ms | result=あなたは家計簿アプリに組み込まれた、親しみやすい家計相談アシスタントです。
+
+# 役割
+- ユーザーの収入・支出・貯蓄に関する相談に、具体的でわかりやすい日本語で答えます。
+- 節約・予算管理・お金の使い方の工夫など、日常の家計に役立つ実践的なアドバイスを行います。
+- 回答は簡潔に（おおむね300文字以内）、必要なら箇条書きを使います。
+
+# 厳守事項
+- 特定の金融商品・株式・暗号資産などへの投資勧誘や、断定的な投資助言は行いません。
+- 税務・法律の専門的判断が必要な場合は、専門家への相談を促します。
+- ユーザーの家計データを尊重し、否定的・批判的な物言いは避け、前向きな提案を心がけま...(truncated)
+2026-07-05T10:59:18.322Z DEBUG 38230 --- [kakeibo] [pool-2-thread-1] com.study.kakeibo.service.ChatService    : ← SERVICE  prepareStream | 163ms | result=StreamPrep[userMessage=ChatMessage(id=6, sessionId=6, role=user, content=����ɂ���, imagePath=null, contentType=null, createdAt=2026-07-05T10:59:18.163920), apiMessages=[Message[role=system, content=あなたは家計簿アプリに組み込まれた、親しみやすい家計相談アシスタントです。
+
+# 役割
+- ユーザーの収入・支出・貯蓄に関する相談に、具体的でわかりやすい日本語で答えます。
+- 節約・予算管理・お金の使い...(truncated)
+2026-07-05T10:59:18.332Z DEBUG 38230 --- [kakeibo] [pool-2-thread-1] com.study.kakeibo.service.ChatService    : → SERVICE  streamReply | args=[[MASKED], com.study.kakeibo.controller.ChatController$$Lambda/0x00007fa3cfd66d80@4ff9868c]
+2026-07-05T10:59:18.333Z DEBUG 38230 --- [kakeibo] [pool-2-thread-1] c.study.kakeibo.service.llm.LlmClient    : → SERVICE  chatStream | args=[[MASKED], [Message[role=system, content=あなたは家計簿アプリに組み込まれた、親しみやすい家計相談アシスタントです。
+
+# 役割
+- ユーザーの収入・支出・貯蓄に関する相談に、具体的でわかりやすい日本語で答えます。
+- 節約・予算管理・お金の使い方の工夫など、日常の家計に役立つ実践的なアドバイスを行います。
+- 回答は簡潔に（おおむね300文字以内）、必要なら箇条書きを使います。...(truncated), 2048, com.study.kakeibo.controller.ChatController$$Lambda/0x00007fa3cfd66d80@4ff9868c]
+2026-07-05T10:59:18.761Z  WARN 38230 --- [kakeibo] [pool-2-thread-1] c.study.kakeibo.service.llm.LlmClient    : ✖ SERVICE  chatStream | 428ms | exception=LlmException: LLM APIエラー (HTTP 401)。APIキーが正しいか確認してください。 [接続先: https://api.deepseek.com/v1/chat/completions / 応答: {"error":{"message":"Authentication Fails, Your api key: ****UMMY is invalid","type":"authentication_error","param":null,"code":"invalid_request_error"}}]
+2026-07-05T10:59:18.762Z  WARN 38230 --- [kakeibo] [pool-2-thread-1] com.study.kakeibo.service.ChatService    : ✖ SERVICE  streamReply | 429ms | exception=LlmException: LLM APIエラー (HTTP 401)。APIキーが正しいか確認してください。 [接続先: https://api.deepseek.com/v1/chat/completions / 応答: {"error":{"message":"Authentication Fails, Your api key: ****UMMY is invalid","type":"authentication_error","param":null,"code":"invalid_request_error"}}]
+2026-07-05T10:59:18.858Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.controller.ChatController    : ▶ REQUEST  delete | args=[1, 6]
+2026-07-05T10:59:18.859Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] com.study.kakeibo.service.ChatService    : → SERVICE  deleteSession | args=[1, 6]
+Hibernate: select cs1_0.id,cs1_0.created_at,cs1_0.title,cs1_0.updated_at,cs1_0.user_id from chat_session cs1_0 where cs1_0.id=? and cs1_0.user_id=?
+Hibernate: select cm1_0.id,cm1_0.content,cm1_0.content_type,cm1_0.created_at,cm1_0.image_path,cm1_0.role,cm1_0.session_id from chat_message cm1_0 where cm1_0.session_id=?
+2026-07-05T10:59:18.873Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] com.study.kakeibo.service.ChatService    : ← SERVICE  deleteSession | 13ms | result=null
+Hibernate: delete from chat_message where id=?
+Hibernate: delete from chat_session where id=?
+2026-07-05T10:59:18.885Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.controller.ChatController    : ◀ RESPONSE delete | 27ms
+2026-07-05T11:08:52.090Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.controller.ChatController    : ▶ REQUEST  list | args=[3]
+2026-07-05T11:08:52.090Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T11:08:52.090Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.controller.ChatController    : ▶ REQUEST  list | args=[3]
+2026-07-05T11:08:52.090Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T11:08:52.092Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] com.study.kakeibo.service.ChatService    : → SERVICE  listSessions | args=[3]
+2026-07-05T11:08:52.092Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] com.study.kakeibo.service.ChatService    : → SERVICE  listSessions | args=[3]
+Hibernate: select cs1_0.id,cs1_0.created_at,cs1_0.title,cs1_0.updated_at,cs1_0.user_id from chat_session cs1_0 where cs1_0.user_id=? order by cs1_0.updated_at desc
+Hibernate: select cs1_0.id,cs1_0.created_at,cs1_0.title,cs1_0.updated_at,cs1_0.user_id from chat_session cs1_0 where cs1_0.user_id=? order by cs1_0.updated_at desc
+2026-07-05T11:08:52.101Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] com.study.kakeibo.service.ChatService    : ← SERVICE  listSessions | 8ms | result=[ChatSession(id=3, userId=3, title=新しいチャット, createdAt=2026-07-04T18:01:19, updatedAt=2026-07-04T18:01:19)]
+2026-07-05T11:08:52.101Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] com.study.kakeibo.service.ChatService    : ← SERVICE  listSessions | 8ms | result=[ChatSession(id=3, userId=3, title=新しいチャット, createdAt=2026-07-04T18:01:19, updatedAt=2026-07-04T18:01:19)]
+2026-07-05T11:08:52.103Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+2026-07-05T11:08:52.103Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+2026-07-05T11:08:52.103Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] com.study.kakeibo.service.ChatService    : → SERVICE  countMessages | args=[3]
+2026-07-05T11:08:52.103Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] com.study.kakeibo.service.ChatService    : → SERVICE  countMessages | args=[3]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+Hibernate: select count(cm1_0.id) from chat_message cm1_0 where cm1_0.session_id=?
+Hibernate: select count(cm1_0.id) from chat_message cm1_0 where cm1_0.session_id=?
+2026-07-05T11:08:52.106Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] com.study.kakeibo.service.ChatService    : ← SERVICE  countMessages | 2ms | result=2
+2026-07-05T11:08:52.106Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] com.study.kakeibo.service.ChatService    : ← SERVICE  countMessages | 2ms | result=2
+2026-07-05T11:08:52.106Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.controller.ChatController    : ◀ RESPONSE list | 15ms
+2026-07-05T11:08:52.107Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 4ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T11:08:52.107Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.controller.ChatController    : ◀ RESPONSE list | 16ms
+2026-07-05T11:08:52.107Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 4ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T11:08:52.109Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+2026-07-05T11:08:52.109Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T11:08:52.112Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 3ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T11:08:52.112Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 3ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T11:08:52.114Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 23ms
+2026-07-05T11:08:52.114Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 23ms
+2026-07-05T11:08:52.161Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.controller.ChatController    : ▶ REQUEST  listMessages | args=[3, 3]
+2026-07-05T11:08:52.163Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] com.study.kakeibo.service.ChatService    : → SERVICE  listMessages | args=[3, 3]
+Hibernate: select cs1_0.id,cs1_0.created_at,cs1_0.title,cs1_0.updated_at,cs1_0.user_id from chat_session cs1_0 where cs1_0.id=? and cs1_0.user_id=?
+Hibernate: select cm1_0.id,cm1_0.content,cm1_0.content_type,cm1_0.created_at,cm1_0.image_path,cm1_0.role,cm1_0.session_id from chat_message cm1_0 where cm1_0.session_id=? order by cm1_0.created_at,cm1_0.id
+2026-07-05T11:08:52.172Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] com.study.kakeibo.service.ChatService    : ← SERVICE  listMessages | 9ms | result=[ChatMessage(id=2, sessionId=3, role=user, content=ちわ, imagePath=null, contentType=null, createdAt=2026-07-05T05:43:54), ChatMessage(id=3, sessionId=3, role=assistant, content=ちわ〜！家計相談アシスタントだよ！
+気軽に話しかけてくれてありがとう😊
+今日はどんなお悩み？ それとも雑談OKだよ！, imagePath=null, contentType=null, createdAt=2026-07-05T05:44)]
+2026-07-05T11:08:52.173Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.controller.ChatController    : ▶ REQUEST  listMessages | args=[3, 3]
+2026-07-05T11:08:52.175Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] com.study.kakeibo.service.ChatService    : → SERVICE  listMessages | args=[3, 3]
+2026-07-05T11:08:52.175Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.controller.ChatController    : ◀ RESPONSE listMessages | 13ms
+Hibernate: select cs1_0.id,cs1_0.created_at,cs1_0.title,cs1_0.updated_at,cs1_0.user_id from chat_session cs1_0 where cs1_0.id=? and cs1_0.user_id=?
+Hibernate: select cm1_0.id,cm1_0.content,cm1_0.content_type,cm1_0.created_at,cm1_0.image_path,cm1_0.role,cm1_0.session_id from chat_message cm1_0 where cm1_0.session_id=? order by cm1_0.created_at,cm1_0.id
+2026-07-05T11:08:52.182Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] com.study.kakeibo.service.ChatService    : ← SERVICE  listMessages | 7ms | result=[ChatMessage(id=2, sessionId=3, role=user, content=ちわ, imagePath=null, contentType=null, createdAt=2026-07-05T05:43:54), ChatMessage(id=3, sessionId=3, role=assistant, content=ちわ〜！家計相談アシスタントだよ！
+気軽に話しかけてくれてありがとう😊
+今日はどんなお悩み？ それとも雑談OKだよ！, imagePath=null, contentType=null, createdAt=2026-07-05T05:44)]
+2026-07-05T11:08:52.184Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.controller.ChatController    : ◀ RESPONSE listMessages | 10ms
+2026-07-05T11:34:03.581Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.controller.AnalyticsController     : ▶ REQUEST  getMonthlySummary | args=[3, 2026, 7]
+2026-07-05T11:34:03.581Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.k.controller.AnalyticsController     : ▶ REQUEST  getMonthlySummary | args=[3, 2026, 7]
+2026-07-05T11:34:03.582Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.service.impl.AnalyticsServiceImpl  : → SERVICE  getMonthlySummary | args=[3, 2026, 7]
+2026-07-05T11:34:03.582Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] c.s.k.service.impl.AnalyticsServiceImpl  : → SERVICE  getMonthlySummary | args=[3, 2026, 7]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select e1_0.id,e1_0.amount,e1_0.category_id,e1_0.created_at,e1_0.entry_date,e1_0.memo,e1_0.store_id,e1_0.type,e1_0.updated_at,e1_0.user_id from entry e1_0 where e1_0.user_id=? and e1_0.entry_date between ? and ?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+2026-07-05T11:34:03.599Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] c.s.k.service.impl.AnalyticsServiceImpl  : ← SERVICE  getMonthlySummary | 17ms | result=AnalyticsResponseDto(month=2026-07, totalIncome=350000.00, totalExpense=4205.00, balance=345795.00, transactionCount=3, dailyAverageExpense=136, byCategory=[AnalyticsResponseDto.CategorySummary(categoryId=15, name=光熱費, amount=3000.00, percentage=71.3, transactionCount=1), AnalyticsResponseDto.Catego...(truncated)
+2026-07-05T11:34:03.600Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.k.controller.AnalyticsController     : ◀ RESPONSE getMonthlySummary | 18ms
+Hibernate: select e1_0.id,e1_0.amount,e1_0.category_id,e1_0.created_at,e1_0.entry_date,e1_0.memo,e1_0.store_id,e1_0.type,e1_0.updated_at,e1_0.user_id from entry e1_0 where e1_0.user_id=? and e1_0.entry_date between ? and ?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+2026-07-05T11:34:03.642Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.service.impl.AnalyticsServiceImpl  : ← SERVICE  getMonthlySummary | 60ms | result=AnalyticsResponseDto(month=2026-07, totalIncome=350000.00, totalExpense=4205.00, balance=345795.00, transactionCount=3, dailyAverageExpense=136, byCategory=[AnalyticsResponseDto.CategorySummary(categoryId=15, name=光熱費, amount=3000.00, percentage=71.3, transactionCount=1), AnalyticsResponseDto.Catego...(truncated)
+2026-07-05T11:34:03.642Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.controller.AnalyticsController     : ◀ RESPONSE getMonthlySummary | 60ms
+2026-07-05T11:34:08.916Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.controller.ChatController    : ▶ REQUEST  list | args=[3]
+2026-07-05T11:34:08.916Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T11:34:08.917Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] com.study.kakeibo.service.ChatService    : → SERVICE  listSessions | args=[3]
+2026-07-05T11:34:08.917Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+Hibernate: select cs1_0.id,cs1_0.created_at,cs1_0.title,cs1_0.updated_at,cs1_0.user_id from chat_session cs1_0 where cs1_0.user_id=? order by cs1_0.updated_at desc
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T11:34:08.922Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] com.study.kakeibo.service.ChatService    : ← SERVICE  listSessions | 5ms | result=[ChatSession(id=3, userId=3, title=新しいチャット, createdAt=2026-07-04T18:01:19, updatedAt=2026-07-04T18:01:19)]
+2026-07-05T11:34:08.923Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] com.study.kakeibo.service.ChatService    : → SERVICE  countMessages | args=[3]
+Hibernate: select count(cm1_0.id) from chat_message cm1_0 where cm1_0.session_id=?
+2026-07-05T11:34:08.925Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] com.study.kakeibo.service.ChatService    : ← SERVICE  countMessages | 2ms | result=2
+2026-07-05T11:34:08.925Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.controller.ChatController    : ◀ RESPONSE list | 9ms
+2026-07-05T11:34:08.928Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 11ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T11:34:08.930Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T11:34:08.932Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 2ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T11:34:08.933Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 17ms
+2026-07-05T11:34:08.934Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T11:34:08.934Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.controller.ChatController    : ▶ REQUEST  list | args=[3]
+2026-07-05T11:34:08.935Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+2026-07-05T11:34:08.935Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] com.study.kakeibo.service.ChatService    : → SERVICE  listSessions | args=[3]
+Hibernate: select cs1_0.id,cs1_0.created_at,cs1_0.title,cs1_0.updated_at,cs1_0.user_id from chat_session cs1_0 where cs1_0.user_id=? order by cs1_0.updated_at desc
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T11:34:08.937Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] com.study.kakeibo.service.ChatService    : ← SERVICE  listSessions | 2ms | result=[ChatSession(id=3, userId=3, title=新しいチャット, createdAt=2026-07-04T18:01:19, updatedAt=2026-07-04T18:01:19)]
+2026-07-05T11:34:08.937Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 2ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T11:34:08.939Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] com.study.kakeibo.service.ChatService    : → SERVICE  countMessages | args=[3]
+Hibernate: select count(cm1_0.id) from chat_message cm1_0 where cm1_0.session_id=?
+2026-07-05T11:34:08.939Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T11:34:08.942Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 2ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T11:34:08.943Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 9ms
+2026-07-05T11:34:08.946Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] com.study.kakeibo.service.ChatService    : ← SERVICE  countMessages | 7ms | result=2
+2026-07-05T11:34:08.947Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.controller.ChatController    : ◀ RESPONSE list | 13ms
+2026-07-05T11:34:08.968Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.controller.ChatController    : ▶ REQUEST  listMessages | args=[3, 3]
+2026-07-05T11:34:08.970Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] com.study.kakeibo.service.ChatService    : → SERVICE  listMessages | args=[3, 3]
+Hibernate: select cs1_0.id,cs1_0.created_at,cs1_0.title,cs1_0.updated_at,cs1_0.user_id from chat_session cs1_0 where cs1_0.id=? and cs1_0.user_id=?
+Hibernate: select cm1_0.id,cm1_0.content,cm1_0.content_type,cm1_0.created_at,cm1_0.image_path,cm1_0.role,cm1_0.session_id from chat_message cm1_0 where cm1_0.session_id=? order by cm1_0.created_at,cm1_0.id
+2026-07-05T11:34:08.974Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] com.study.kakeibo.service.ChatService    : ← SERVICE  listMessages | 4ms | result=[ChatMessage(id=2, sessionId=3, role=user, content=ちわ, imagePath=null, contentType=null, createdAt=2026-07-05T05:43:54), ChatMessage(id=3, sessionId=3, role=assistant, content=ちわ〜！家計相談アシスタントだよ！
+気軽に話しかけてくれてありがとう😊
+今日はどんなお悩み？ それとも雑談OKだよ！, imagePath=null, contentType=null, createdAt=2026-07-05T05:44)]
+2026-07-05T11:34:08.975Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.controller.ChatController    : ◀ RESPONSE listMessages | 6ms
+2026-07-05T11:34:08.980Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.controller.ChatController    : ▶ REQUEST  listMessages | args=[3, 3]
+2026-07-05T11:34:08.981Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] com.study.kakeibo.service.ChatService    : → SERVICE  listMessages | args=[3, 3]
+Hibernate: select cs1_0.id,cs1_0.created_at,cs1_0.title,cs1_0.updated_at,cs1_0.user_id from chat_session cs1_0 where cs1_0.id=? and cs1_0.user_id=?
+Hibernate: select cm1_0.id,cm1_0.content,cm1_0.content_type,cm1_0.created_at,cm1_0.image_path,cm1_0.role,cm1_0.session_id from chat_message cm1_0 where cm1_0.session_id=? order by cm1_0.created_at,cm1_0.id
+2026-07-05T11:34:08.985Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] com.study.kakeibo.service.ChatService    : ← SERVICE  listMessages | 3ms | result=[ChatMessage(id=2, sessionId=3, role=user, content=ちわ, imagePath=null, contentType=null, createdAt=2026-07-05T05:43:54), ChatMessage(id=3, sessionId=3, role=assistant, content=ちわ〜！家計相談アシスタントだよ！
+気軽に話しかけてくれてありがとう😊
+今日はどんなお悩み？ それとも雑談OKだよ！, imagePath=null, contentType=null, createdAt=2026-07-05T05:44)]
+2026-07-05T11:34:08.987Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.controller.ChatController    : ◀ RESPONSE listMessages | 6ms
+2026-07-05T11:34:21.425Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T11:34:21.425Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T11:34:21.426Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+2026-07-05T11:34:21.426Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T11:34:21.429Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 2ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T11:34:21.429Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 2ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T11:34:21.430Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+2026-07-05T11:34:21.430Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T11:34:21.433Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 2ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T11:34:21.433Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 3ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T11:34:21.434Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 9ms
+2026-07-05T11:34:21.434Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 8ms
+2026-07-05T11:34:34.880Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.controller.GoalController    : ▶ REQUEST  get | args=[3]
+2026-07-05T11:34:34.880Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.kakeibo.controller.GoalController    : ▶ REQUEST  get | args=[3]
+2026-07-05T11:34:34.881Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] com.study.kakeibo.service.GoalService    : → SERVICE  getGoal | args=[3]
+2026-07-05T11:34:34.881Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] com.study.kakeibo.service.GoalService    : → SERVICE  getGoal | args=[3]
+Hibernate: select g1_0.id,g1_0.created_at,g1_0.current_savings,g1_0.target_amount,g1_0.target_date,g1_0.target_name,g1_0.updated_at,g1_0.user_id from goal g1_0 where g1_0.user_id=?
+Hibernate: select g1_0.id,g1_0.created_at,g1_0.current_savings,g1_0.target_amount,g1_0.target_date,g1_0.target_name,g1_0.updated_at,g1_0.user_id from goal g1_0 where g1_0.user_id=?
+2026-07-05T11:34:34.891Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] com.study.kakeibo.service.GoalService    : ← SERVICE  getGoal | 3ms | result=Optional[Goal(id=2, userId=3, targetName=資金, targetAmount=2400000.00, targetDate=2027-08-04, currentSavings=1000000.00, createdAt=2026-07-05T03:30:01, updatedAt=2026-07-05T03:30:01)]
+2026-07-05T11:34:34.891Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] com.study.kakeibo.service.GoalService    : ← SERVICE  getGoal | 8ms | result=Optional[Goal(id=2, userId=3, targetName=資金, targetAmount=2400000.00, targetDate=2027-08-04, currentSavings=1000000.00, createdAt=2026-07-05T03:30:01, updatedAt=2026-07-05T03:30:01)]
+2026-07-05T11:34:34.893Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.controller.GoalController    : ◀ RESPONSE get | 13ms
+2026-07-05T11:34:34.893Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.kakeibo.controller.GoalController    : ◀ RESPONSE get | 13ms
+2026-07-05T11:34:34.928Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.controller.FixedCostController     : ▶ REQUEST  list | args=[3]
+2026-07-05T11:34:34.930Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.service.FixedCostService     : → SERVICE  list | args=[3]
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.user_id=? order by fc1_0.id
+2026-07-05T11:34:34.935Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.service.FixedCostService     : ← SERVICE  list | 5ms | result=[]
+2026-07-05T11:34:34.936Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.controller.FixedCostController     : ▶ REQUEST  list | args=[3]
+2026-07-05T11:34:34.936Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.controller.FixedCostController     : ◀ RESPONSE list | 7ms
+2026-07-05T11:34:34.937Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.service.FixedCostService     : → SERVICE  list | args=[3]
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.user_id=? order by fc1_0.id
+2026-07-05T11:34:34.938Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.service.FixedCostService     : ← SERVICE  list | 1ms | result=[]
+2026-07-05T11:34:34.939Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.controller.FixedCostController     : ◀ RESPONSE list | 3ms
+2026-07-05T11:41:20.344Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.k.controller.FixedCostController     : ▶ REQUEST  create | args=[1, FixedCostRequestDto(name=rentX, amount=80000, paymentDay=null)]
+2026-07-05T11:41:20.347Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.service.FixedCostService     : → SERVICE  create | args=[1, rentX, 80000, null]
+Hibernate: insert into fixed_cost (amount,created_at,name,payment_day,updated_at,user_id) values (?,?,?,?,?,?)
+2026-07-05T11:41:20.419Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.service.FixedCostService     : ← SERVICE  create | 72ms | result=FixedCost(id=2, userId=1, name=rentX, amount=80000, paymentDay=null, createdAt=2026-07-05T11:41:20.366628, updatedAt=2026-07-05T11:41:20.366651)
+2026-07-05T11:41:20.424Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.k.controller.FixedCostController     : ◀ RESPONSE create | 79ms
+2026-07-05T11:41:20.505Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.controller.FixedCostController     : ▶ REQUEST  create | args=[1, FixedCostRequestDto(name=netX, amount=5000, paymentDay=null)]
+2026-07-05T11:41:20.506Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.FixedCostService     : → SERVICE  create | args=[1, netX, 5000, null]
+Hibernate: insert into fixed_cost (amount,created_at,name,payment_day,updated_at,user_id) values (?,?,?,?,?,?)
+2026-07-05T11:41:20.510Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.FixedCostService     : ← SERVICE  create | 3ms | result=FixedCost(id=3, userId=1, name=netX, amount=5000, paymentDay=null, createdAt=2026-07-05T11:41:20.507454, updatedAt=2026-07-05T11:41:20.507474)
+2026-07-05T11:41:20.511Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.controller.FixedCostController     : ◀ RESPONSE create | 5ms
+2026-07-05T11:41:20.589Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.controller.FixedCostController     : ▶ REQUEST  create | args=[1, FixedCostRequestDto(name=gymX, amount=7000, paymentDay=null)]
+2026-07-05T11:41:20.589Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.service.FixedCostService     : → SERVICE  create | args=[1, gymX, 7000, null]
+Hibernate: insert into fixed_cost (amount,created_at,name,payment_day,updated_at,user_id) values (?,?,?,?,?,?)
+2026-07-05T11:41:21.575Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.service.FixedCostService     : ← SERVICE  create | 985ms | result=FixedCost(id=4, userId=1, name=gymX, amount=7000, paymentDay=null, createdAt=2026-07-05T11:41:20.590397, updatedAt=2026-07-05T11:41:20.590412)
+2026-07-05T11:41:21.576Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.controller.FixedCostController     : ◀ RESPONSE create | 987ms
+2026-07-05T11:41:21.654Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.controller.FixedCostController     : ▶ REQUEST  list | args=[1]
+2026-07-05T11:41:21.655Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.service.FixedCostService     : → SERVICE  list | args=[1]
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.user_id=? order by fc1_0.id
+2026-07-05T11:41:21.661Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.service.FixedCostService     : ← SERVICE  list | 5ms | result=[FixedCost(id=1, userId=1, name=rent, amount=80000.00, paymentDay=27, createdAt=2026-06-30T15:22:43, updatedAt=2026-06-30T15:22:43), FixedCost(id=2, userId=1, name=rentX, amount=80000.00, paymentDay=null, createdAt=2026-07-05T11:41:20, updatedAt=2026-07-05T11:41:20), FixedCost(id=3, userId=1, name=n...(truncated)
+2026-07-05T11:41:21.662Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.controller.FixedCostController     : ◀ RESPONSE list | 8ms
+2026-07-05T11:45:02.283Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.controller.FixedCostController     : ▶ REQUEST  create | args=[1, FixedCostRequestDto(name=proxyA, amount=1000, paymentDay=null)]
+2026-07-05T11:45:02.286Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.service.FixedCostService     : → SERVICE  create | args=[1, proxyA, 1000, null]
+Hibernate: insert into fixed_cost (amount,created_at,name,payment_day,updated_at,user_id) values (?,?,?,?,?,?)
+2026-07-05T11:45:02.297Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.service.FixedCostService     : ← SERVICE  create | 11ms | result=FixedCost(id=5, userId=1, name=proxyA, amount=1000, paymentDay=null, createdAt=2026-07-05T11:45:02.289944, updatedAt=2026-07-05T11:45:02.290013)
+2026-07-05T11:45:02.300Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.controller.FixedCostController     : ◀ RESPONSE create | 16ms
+2026-07-05T11:45:02.449Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.controller.FixedCostController     : ▶ REQUEST  create | args=[1, FixedCostRequestDto(name=proxyB, amount=2000, paymentDay=null)]
+2026-07-05T11:45:02.450Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.service.FixedCostService     : → SERVICE  create | args=[1, proxyB, 2000, null]
+Hibernate: insert into fixed_cost (amount,created_at,name,payment_day,updated_at,user_id) values (?,?,?,?,?,?)
+2026-07-05T11:45:02.454Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.service.FixedCostService     : ← SERVICE  create | 3ms | result=FixedCost(id=6, userId=1, name=proxyB, amount=2000, paymentDay=null, createdAt=2026-07-05T11:45:02.451745, updatedAt=2026-07-05T11:45:02.451763)
+2026-07-05T11:45:02.456Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.controller.FixedCostController     : ◀ RESPONSE create | 7ms
+2026-07-05T11:45:02.598Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.k.controller.FixedCostController     : ▶ REQUEST  list | args=[1]
+2026-07-05T11:45:02.600Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.service.FixedCostService     : → SERVICE  list | args=[1]
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.user_id=? order by fc1_0.id
+2026-07-05T11:45:02.609Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.service.FixedCostService     : ← SERVICE  list | 9ms | result=[FixedCost(id=1, userId=1, name=rent, amount=80000.00, paymentDay=27, createdAt=2026-06-30T15:22:43, updatedAt=2026-06-30T15:22:43), FixedCost(id=2, userId=1, name=rentX, amount=80000.00, paymentDay=null, createdAt=2026-07-05T11:41:20, updatedAt=2026-07-05T11:41:20), FixedCost(id=3, userId=1, name=n...(truncated)
+2026-07-05T11:45:02.612Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.k.controller.FixedCostController     : ◀ RESPONSE list | 13ms
+2026-07-05T11:46:53.743Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.k.controller.FixedCostController     : ▶ REQUEST  delete | args=[1, 2]
+2026-07-05T11:46:53.745Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.service.FixedCostService     : → SERVICE  delete | args=[1, 2]
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.id=? and fc1_0.user_id=?
+2026-07-05T11:46:53.768Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.service.FixedCostService     : ← SERVICE  delete | 23ms | result=null
+Hibernate: delete from fixed_cost where id=?
+2026-07-05T11:46:53.772Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.k.controller.FixedCostController     : ◀ RESPONSE delete | 28ms
+2026-07-05T11:46:53.853Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.k.controller.FixedCostController     : ▶ REQUEST  delete | args=[1, 3]
+2026-07-05T11:46:53.854Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.service.FixedCostService     : → SERVICE  delete | args=[1, 3]
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.id=? and fc1_0.user_id=?
+2026-07-05T11:46:53.857Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.service.FixedCostService     : ← SERVICE  delete | 3ms | result=null
+Hibernate: delete from fixed_cost where id=?
+2026-07-05T11:46:53.860Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.k.controller.FixedCostController     : ◀ RESPONSE delete | 7ms
+2026-07-05T11:46:53.946Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.k.controller.FixedCostController     : ▶ REQUEST  delete | args=[1, 4]
+2026-07-05T11:46:53.947Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.service.FixedCostService     : → SERVICE  delete | args=[1, 4]
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.id=? and fc1_0.user_id=?
+2026-07-05T11:46:53.949Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.service.FixedCostService     : ← SERVICE  delete | 2ms | result=null
+Hibernate: delete from fixed_cost where id=?
+2026-07-05T11:46:53.951Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.k.controller.FixedCostController     : ◀ RESPONSE delete | 5ms
+2026-07-05T11:46:54.034Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.k.controller.FixedCostController     : ▶ REQUEST  delete | args=[1, 5]
+2026-07-05T11:46:54.035Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] c.s.kakeibo.service.FixedCostService     : → SERVICE  delete | args=[1, 5]
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.id=? and fc1_0.user_id=?
+2026-07-05T11:46:54.038Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] c.s.kakeibo.service.FixedCostService     : ← SERVICE  delete | 3ms | result=null
+Hibernate: delete from fixed_cost where id=?
+2026-07-05T11:46:54.041Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.k.controller.FixedCostController     : ◀ RESPONSE delete | 7ms
+2026-07-05T11:46:54.123Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.controller.FixedCostController     : ▶ REQUEST  delete | args=[1, 6]
+2026-07-05T11:46:54.124Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.service.FixedCostService     : → SERVICE  delete | args=[1, 6]
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.id=? and fc1_0.user_id=?
+2026-07-05T11:46:54.126Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.service.FixedCostService     : ← SERVICE  delete | 2ms | result=null
+Hibernate: delete from fixed_cost where id=?
+2026-07-05T11:46:54.129Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.controller.FixedCostController     : ◀ RESPONSE delete | 6ms
+2026-07-05T11:46:54.207Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.k.controller.FixedCostController     : ▶ REQUEST  list | args=[1]
+2026-07-05T11:46:54.208Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.service.FixedCostService     : → SERVICE  list | args=[1]
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.user_id=? order by fc1_0.id
+2026-07-05T11:46:54.210Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.service.FixedCostService     : ← SERVICE  list | 1ms | result=[FixedCost(id=1, userId=1, name=rent, amount=80000.00, paymentDay=27, createdAt=2026-06-30T15:22:43, updatedAt=2026-06-30T15:22:43)]
+2026-07-05T11:46:54.212Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.k.controller.FixedCostController     : ◀ RESPONSE list | 5ms
+2026-07-05T12:40:52.102Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.controller.CategoryController      : ▶ REQUEST  getCategories | args=[3]
+2026-07-05T12:40:52.102Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.controller.CategoryController      : ▶ REQUEST  getCategories | args=[3]
+2026-07-05T12:40:52.112Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.controller.EntryController   : ▶ REQUEST  getEntries | args=[3, 2026-07-01, 2026-07-31]
+2026-07-05T12:40:52.143Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.service.impl.CategoryServiceImpl   : → SERVICE  getCategoriesByUserId | args=[3]
+2026-07-05T12:40:52.112Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.controller.EntryController   : ▶ REQUEST  getEntries | args=[3, 2026-07-01, 2026-07-31]
+2026-07-05T12:40:52.143Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.service.impl.CategoryServiceImpl   : → SERVICE  getCategoriesByUserId | args=[3]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+2026-07-05T12:40:52.165Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.k.service.impl.EntryServiceImpl      : → SERVICE  getEntryByUserAndDateRange | args=[3, 2026-07-01, 2026-07-31]
+2026-07-05T12:40:52.165Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.k.service.impl.EntryServiceImpl      : → SERVICE  getEntryByUserAndDateRange | args=[3, 2026-07-01, 2026-07-31]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select e1_0.id,e1_0.amount,e1_0.category_id,e1_0.created_at,e1_0.entry_date,e1_0.memo,e1_0.store_id,e1_0.type,e1_0.updated_at,e1_0.user_id from entry e1_0 where e1_0.user_id=? and e1_0.entry_date between ? and ?
+Hibernate: select e1_0.id,e1_0.amount,e1_0.category_id,e1_0.created_at,e1_0.entry_date,e1_0.memo,e1_0.store_id,e1_0.type,e1_0.updated_at,e1_0.user_id from entry e1_0 where e1_0.user_id=? and e1_0.entry_date between ? and ?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.user_id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.user_id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+2026-07-05T12:40:52.215Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.service.impl.CategoryServiceImpl   : ← SERVICE  getCategoriesByUserId | 72ms | result=[Category(id=16, name=ガソリン, type=EXPENSE, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), createdAt=2026-07-05T04:12:41, updatedAt=2026-07-05T04:12:41), Category(id=15, name=光熱費, type=EXPENSE, ...(truncated)
+2026-07-05T12:40:52.216Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.service.impl.CategoryServiceImpl   : ← SERVICE  getCategoriesByUserId | 71ms | result=[Category(id=16, name=ガソリン, type=EXPENSE, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), createdAt=2026-07-05T04:12:41, updatedAt=2026-07-05T04:12:41), Category(id=15, name=光熱費, type=EXPENSE, ...(truncated)
+2026-07-05T12:40:52.218Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.controller.CategoryController      : ◀ RESPONSE getCategories | 75ms
+2026-07-05T12:40:52.218Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.controller.CategoryController      : ◀ RESPONSE getCategories | 76ms
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+2026-07-05T12:40:52.223Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.k.service.impl.EntryServiceImpl      : ← SERVICE  getEntryByUserAndDateRange | 39ms | result=[Entry(id=7, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), entryDate=2026-07-03, amount=1205.00, category=Category(id=8, name=水道, type=EXPENSE, user=User(id=3, username=user, email=user@user....(truncated)
+2026-07-05T12:40:52.224Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.k.service.impl.EntryServiceImpl      : ← SERVICE  getEntryByUserAndDateRange | 39ms | result=[Entry(id=7, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), entryDate=2026-07-03, amount=1205.00, category=Category(id=8, name=水道, type=EXPENSE, user=User(id=3, username=user, email=user@user....(truncated)
+2026-07-05T12:40:52.225Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.controller.EntryController   : ◀ RESPONSE getEntries | 82ms
+2026-07-05T12:40:52.225Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.controller.EntryController   : ◀ RESPONSE getEntries | 82ms
+2026-07-05T12:40:52.444Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.kakeibo.controller.StoreController   : ▶ REQUEST  getStores | args=[3]
+2026-07-05T12:40:52.444Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.controller.StoreController   : ▶ REQUEST  getStores | args=[3]
+2026-07-05T12:40:52.444Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] c.s.k.service.impl.StoreServiceImpl      : → SERVICE  getStoresByUserId | args=[3]
+2026-07-05T12:40:52.445Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.service.impl.StoreServiceImpl      : → SERVICE  getStoresByUserId | args=[3]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select s1_0.id,s1_0.created_at,s1_0.name,s1_0.type,s1_0.updated_at,s1_0.user_id from store s1_0 where s1_0.user_id=?
+Hibernate: select s1_0.id,s1_0.created_at,s1_0.name,s1_0.type,s1_0.updated_at,s1_0.user_id from store s1_0 where s1_0.user_id=?
+2026-07-05T12:40:52.459Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] c.s.k.service.impl.StoreServiceImpl      : ← SERVICE  getStoresByUserId | 14ms | result=[]
+2026-07-05T12:40:52.459Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.service.impl.StoreServiceImpl      : ← SERVICE  getStoresByUserId | 14ms | result=[]
+2026-07-05T12:40:52.461Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.kakeibo.controller.StoreController   : ◀ RESPONSE getStores | 17ms
+2026-07-05T12:40:52.461Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.controller.StoreController   : ◀ RESPONSE getStores | 16ms
+2026-07-05T12:41:24.625Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.controller.EntryController   : ▶ REQUEST  getEntries | args=[3, 2026-07-01, 2026-07-31]
+2026-07-05T12:41:24.625Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.controller.CategoryController      : ▶ REQUEST  getCategories | args=[3]
+2026-07-05T12:41:24.625Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.controller.EntryController   : ▶ REQUEST  getEntries | args=[3, 2026-07-01, 2026-07-31]
+2026-07-05T12:41:24.626Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.service.impl.CategoryServiceImpl   : → SERVICE  getCategoriesByUserId | args=[3]
+2026-07-05T12:41:24.625Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.k.controller.CategoryController      : ▶ REQUEST  getCategories | args=[3]
+2026-07-05T12:41:24.625Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.service.impl.EntryServiceImpl      : → SERVICE  getEntryByUserAndDateRange | args=[3, 2026-07-01, 2026-07-31]
+2026-07-05T12:41:24.626Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] c.s.k.service.impl.EntryServiceImpl      : → SERVICE  getEntryByUserAndDateRange | args=[3, 2026-07-01, 2026-07-31]
+2026-07-05T12:41:24.626Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.k.service.impl.CategoryServiceImpl   : → SERVICE  getCategoriesByUserId | args=[3]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.user_id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.user_id=?
+Hibernate: select e1_0.id,e1_0.amount,e1_0.category_id,e1_0.created_at,e1_0.entry_date,e1_0.memo,e1_0.store_id,e1_0.type,e1_0.updated_at,e1_0.user_id from entry e1_0 where e1_0.user_id=? and e1_0.entry_date between ? and ?
+Hibernate: select e1_0.id,e1_0.amount,e1_0.category_id,e1_0.created_at,e1_0.entry_date,e1_0.memo,e1_0.store_id,e1_0.type,e1_0.updated_at,e1_0.user_id from entry e1_0 where e1_0.user_id=? and e1_0.entry_date between ? and ?
+2026-07-05T12:41:24.634Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.service.impl.CategoryServiceImpl   : ← SERVICE  getCategoriesByUserId | 8ms | result=[Category(id=16, name=ガソリン, type=EXPENSE, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), createdAt=2026-07-05T04:12:41, updatedAt=2026-07-05T04:12:41), Category(id=15, name=光熱費, type=EXPENSE, ...(truncated)
+2026-07-05T12:41:24.635Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.controller.CategoryController      : ◀ RESPONSE getCategories | 9ms
+2026-07-05T12:41:24.635Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.k.service.impl.CategoryServiceImpl   : ← SERVICE  getCategoriesByUserId | 7ms | result=[Category(id=16, name=ガソリン, type=EXPENSE, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), createdAt=2026-07-05T04:12:41, updatedAt=2026-07-05T04:12:41), Category(id=15, name=光熱費, type=EXPENSE, ...(truncated)
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+2026-07-05T12:41:24.649Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.k.controller.CategoryController      : ◀ RESPONSE getCategories | 23ms
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+2026-07-05T12:41:24.655Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.service.impl.EntryServiceImpl      : ← SERVICE  getEntryByUserAndDateRange | 9ms | result=[Entry(id=7, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), entryDate=2026-07-03, amount=1205.00, category=Category(id=8, name=水道, type=EXPENSE, user=User(id=3, username=user, email=user@user....(truncated)
+2026-07-05T12:41:24.655Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] c.s.k.service.impl.EntryServiceImpl      : ← SERVICE  getEntryByUserAndDateRange | 8ms | result=[Entry(id=7, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), entryDate=2026-07-03, amount=1205.00, category=Category(id=8, name=水道, type=EXPENSE, user=User(id=3, username=user, email=user@user....(truncated)
+2026-07-05T12:41:24.656Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.controller.EntryController   : ◀ RESPONSE getEntries | 31ms
+2026-07-05T12:41:24.656Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.controller.EntryController   : ◀ RESPONSE getEntries | 30ms
+2026-07-05T12:41:24.677Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.controller.StoreController   : ▶ REQUEST  getStores | args=[3]
+2026-07-05T12:41:24.677Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.service.impl.StoreServiceImpl      : → SERVICE  getStoresByUserId | args=[3]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select s1_0.id,s1_0.created_at,s1_0.name,s1_0.type,s1_0.updated_at,s1_0.user_id from store s1_0 where s1_0.user_id=?
+2026-07-05T12:41:24.683Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.service.impl.StoreServiceImpl      : ← SERVICE  getStoresByUserId | 6ms | result=[]
+2026-07-05T12:41:24.683Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.controller.StoreController   : ◀ RESPONSE getStores | 6ms
+2026-07-05T12:41:24.686Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.controller.StoreController   : ▶ REQUEST  getStores | args=[3]
+2026-07-05T12:41:24.687Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.k.service.impl.StoreServiceImpl      : → SERVICE  getStoresByUserId | args=[3]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select s1_0.id,s1_0.created_at,s1_0.name,s1_0.type,s1_0.updated_at,s1_0.user_id from store s1_0 where s1_0.user_id=?
+2026-07-05T12:41:24.696Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.k.service.impl.StoreServiceImpl      : ← SERVICE  getStoresByUserId | 9ms | result=[]
+2026-07-05T12:41:24.696Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.controller.StoreController   : ◀ RESPONSE getStores | 9ms
+2026-07-05T12:41:52.405Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.controller.CategoryController      : ▶ REQUEST  getCategories | args=[3]
+2026-07-05T12:41:52.405Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.k.controller.CategoryController      : ▶ REQUEST  getCategories | args=[3]
+2026-07-05T12:41:52.405Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.controller.EntryController   : ▶ REQUEST  getEntries | args=[3, 2026-07-01, 2026-07-31]
+2026-07-05T12:41:52.406Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] c.s.k.service.impl.CategoryServiceImpl   : → SERVICE  getCategoriesByUserId | args=[3]
+2026-07-05T12:41:52.405Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.controller.EntryController   : ▶ REQUEST  getEntries | args=[3, 2026-07-01, 2026-07-31]
+2026-07-05T12:41:52.406Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.service.impl.CategoryServiceImpl   : → SERVICE  getCategoriesByUserId | args=[3]
+2026-07-05T12:41:52.406Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.service.impl.EntryServiceImpl      : → SERVICE  getEntryByUserAndDateRange | args=[3, 2026-07-01, 2026-07-31]
+2026-07-05T12:41:52.406Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.k.service.impl.EntryServiceImpl      : → SERVICE  getEntryByUserAndDateRange | args=[3, 2026-07-01, 2026-07-31]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.user_id=?
+Hibernate: select e1_0.id,e1_0.amount,e1_0.category_id,e1_0.created_at,e1_0.entry_date,e1_0.memo,e1_0.store_id,e1_0.type,e1_0.updated_at,e1_0.user_id from entry e1_0 where e1_0.user_id=? and e1_0.entry_date between ? and ?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.user_id=?
+Hibernate: select e1_0.id,e1_0.amount,e1_0.category_id,e1_0.created_at,e1_0.entry_date,e1_0.memo,e1_0.store_id,e1_0.type,e1_0.updated_at,e1_0.user_id from entry e1_0 where e1_0.user_id=? and e1_0.entry_date between ? and ?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+2026-07-05T12:41:52.418Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.service.impl.CategoryServiceImpl   : ← SERVICE  getCategoriesByUserId | 11ms | result=[Category(id=16, name=ガソリン, type=EXPENSE, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), createdAt=2026-07-05T04:12:41, updatedAt=2026-07-05T04:12:41), Category(id=15, name=光熱費, type=EXPENSE, ...(truncated)
+2026-07-05T12:41:52.418Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] c.s.k.service.impl.CategoryServiceImpl   : ← SERVICE  getCategoriesByUserId | 12ms | result=[Category(id=16, name=ガソリン, type=EXPENSE, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), createdAt=2026-07-05T04:12:41, updatedAt=2026-07-05T04:12:41), Category(id=15, name=光熱費, type=EXPENSE, ...(truncated)
+2026-07-05T12:41:52.419Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.controller.CategoryController      : ◀ RESPONSE getCategories | 14ms
+2026-07-05T12:41:52.420Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.k.controller.CategoryController      : ◀ RESPONSE getCategories | 14ms
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+2026-07-05T12:41:52.424Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.service.impl.EntryServiceImpl      : ← SERVICE  getEntryByUserAndDateRange | 11ms | result=[Entry(id=7, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), entryDate=2026-07-03, amount=1205.00, category=Category(id=8, name=水道, type=EXPENSE, user=User(id=3, username=user, email=user@user....(truncated)
+2026-07-05T12:41:52.425Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.k.service.impl.EntryServiceImpl      : ← SERVICE  getEntryByUserAndDateRange | 11ms | result=[Entry(id=7, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), entryDate=2026-07-03, amount=1205.00, category=Category(id=8, name=水道, type=EXPENSE, user=User(id=3, username=user, email=user@user....(truncated)
+2026-07-05T12:41:52.425Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.controller.EntryController   : ◀ RESPONSE getEntries | 19ms
+2026-07-05T12:41:52.426Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.controller.EntryController   : ◀ RESPONSE getEntries | 20ms
+2026-07-05T12:41:52.505Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.controller.StoreController   : ▶ REQUEST  getStores | args=[3]
+2026-07-05T12:41:52.505Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.controller.StoreController   : ▶ REQUEST  getStores | args=[3]
+2026-07-05T12:41:52.506Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.k.service.impl.StoreServiceImpl      : → SERVICE  getStoresByUserId | args=[3]
+2026-07-05T12:41:52.506Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.service.impl.StoreServiceImpl      : → SERVICE  getStoresByUserId | args=[3]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select s1_0.id,s1_0.created_at,s1_0.name,s1_0.type,s1_0.updated_at,s1_0.user_id from store s1_0 where s1_0.user_id=?
+Hibernate: select s1_0.id,s1_0.created_at,s1_0.name,s1_0.type,s1_0.updated_at,s1_0.user_id from store s1_0 where s1_0.user_id=?
+2026-07-05T12:41:52.516Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.service.impl.StoreServiceImpl      : ← SERVICE  getStoresByUserId | 9ms | result=[]
+2026-07-05T12:41:52.517Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.controller.StoreController   : ◀ RESPONSE getStores | 11ms
+2026-07-05T12:41:52.517Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.k.service.impl.StoreServiceImpl      : ← SERVICE  getStoresByUserId | 10ms | result=[]
+2026-07-05T12:41:52.518Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.controller.StoreController   : ◀ RESPONSE getStores | 12ms
+2026-07-05T12:42:04.931Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.k.controller.CategoryController      : ▶ REQUEST  createCategory | args=[3, CategoryRequestDto(name=ボーナス, type=INCOME)]
+2026-07-05T12:42:04.932Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] c.s.k.service.impl.CategoryServiceImpl   : → SERVICE  addCategory | args=[3, ボーナス, INCOME]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select c1_0.id from category c1_0 where c1_0.user_id=? and c1_0.name=? and c1_0.type=? limit ?
+Hibernate: insert into category (created_at,name,type,updated_at,user_id) values (?,?,?,?,?)
+2026-07-05T12:42:04.987Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] c.s.k.service.impl.CategoryServiceImpl   : ← SERVICE  addCategory | 54ms | result=Category(id=21, name=ボーナス, type=INCOME, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), createdAt=2026-07-05T12:42:04.973321, updatedAt=2026-07-05T12:42:04.973333)
+2026-07-05T12:42:04.987Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.k.controller.CategoryController      : ◀ RESPONSE createCategory | 55ms
+2026-07-05T12:42:18.300Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.controller.EntryController   : ▶ REQUEST  createEntry | args=[3, EntryRequestDto(entryDate=2026-07-05, amount=3000000, categoryId=21, storeId=null, type=INCOME, memo=null)]
+2026-07-05T12:42:18.301Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.service.impl.EntryServiceImpl      : → SERVICE  addEntry | args=[3, 2026-07-05, 3000000, 21, null, INCOME, null]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: insert into entry (amount,category_id,created_at,entry_date,memo,store_id,type,updated_at,user_id) values (?,?,?,?,?,?,?,?,?)
+2026-07-05T12:42:18.321Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.service.impl.EntryServiceImpl      : ← SERVICE  addEntry | 19ms | result=Entry(id=13, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), entryDate=2026-07-05, amount=3000000, category=Category(id=21, name=ボーナス, type=INCOME, user=User(id=3, username=user, email=user@use...(truncated)
+2026-07-05T12:42:18.321Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.controller.EntryController   : ◀ RESPONSE createEntry | 21ms
+2026-07-05T12:42:18.348Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.controller.EntryController   : ▶ REQUEST  getEntries | args=[3, 2026-07-01, 2026-07-31]
+2026-07-05T12:42:18.348Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.service.impl.EntryServiceImpl      : → SERVICE  getEntryByUserAndDateRange | args=[3, 2026-07-01, 2026-07-31]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select e1_0.id,e1_0.amount,e1_0.category_id,e1_0.created_at,e1_0.entry_date,e1_0.memo,e1_0.store_id,e1_0.type,e1_0.updated_at,e1_0.user_id from entry e1_0 where e1_0.user_id=? and e1_0.entry_date between ? and ?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+2026-07-05T12:42:18.362Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.service.impl.EntryServiceImpl      : ← SERVICE  getEntryByUserAndDateRange | 6ms | result=[Entry(id=7, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), entryDate=2026-07-03, amount=1205.00, category=Category(id=8, name=水道, type=EXPENSE, user=User(id=3, username=user, email=user@user....(truncated)
+2026-07-05T12:42:18.362Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.controller.EntryController   : ◀ RESPONSE getEntries | 14ms
+2026-07-05T12:42:40.097Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T12:42:40.097Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T12:42:40.100Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+2026-07-05T12:42:40.100Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T12:42:40.110Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 8ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:42:40.110Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 8ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:42:40.112Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+2026-07-05T12:42:40.112Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T12:42:40.118Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 3ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:42:40.118Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 4ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:42:40.120Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 22ms
+2026-07-05T12:42:40.120Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 22ms
+2026-07-05T12:42:42.012Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.controller.GoalController    : ▶ REQUEST  get | args=[3]
+2026-07-05T12:42:42.012Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.kakeibo.controller.GoalController    : ▶ REQUEST  get | args=[3]
+2026-07-05T12:42:42.013Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] com.study.kakeibo.service.GoalService    : → SERVICE  getGoal | args=[3]
+2026-07-05T12:42:42.013Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] com.study.kakeibo.service.GoalService    : → SERVICE  getGoal | args=[3]
+Hibernate: select g1_0.id,g1_0.created_at,g1_0.current_savings,g1_0.target_amount,g1_0.target_date,g1_0.target_name,g1_0.updated_at,g1_0.user_id from goal g1_0 where g1_0.user_id=?
+Hibernate: select g1_0.id,g1_0.created_at,g1_0.current_savings,g1_0.target_amount,g1_0.target_date,g1_0.target_name,g1_0.updated_at,g1_0.user_id from goal g1_0 where g1_0.user_id=?
+2026-07-05T12:42:42.017Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] com.study.kakeibo.service.GoalService    : ← SERVICE  getGoal | 3ms | result=Optional[Goal(id=2, userId=3, targetName=資金, targetAmount=2400000.00, targetDate=2027-08-04, currentSavings=1000000.00, createdAt=2026-07-05T03:30:01, updatedAt=2026-07-05T03:30:01)]
+2026-07-05T12:42:42.017Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] com.study.kakeibo.service.GoalService    : ← SERVICE  getGoal | 4ms | result=Optional[Goal(id=2, userId=3, targetName=資金, targetAmount=2400000.00, targetDate=2027-08-04, currentSavings=1000000.00, createdAt=2026-07-05T03:30:01, updatedAt=2026-07-05T03:30:01)]
+2026-07-05T12:42:42.018Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.kakeibo.controller.GoalController    : ◀ RESPONSE get | 6ms
+2026-07-05T12:42:42.018Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.controller.GoalController    : ◀ RESPONSE get | 6ms
+2026-07-05T12:42:42.060Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.k.controller.FixedCostController     : ▶ REQUEST  list | args=[3]
+2026-07-05T12:42:42.060Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.controller.FixedCostController     : ▶ REQUEST  list | args=[3]
+2026-07-05T12:42:42.061Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.FixedCostService     : → SERVICE  list | args=[3]
+2026-07-05T12:42:42.061Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.service.FixedCostService     : → SERVICE  list | args=[3]
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.user_id=? order by fc1_0.id
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.user_id=? order by fc1_0.id
+2026-07-05T12:42:42.064Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.service.FixedCostService     : ← SERVICE  list | 2ms | result=[]
+2026-07-05T12:42:42.064Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.FixedCostService     : ← SERVICE  list | 3ms | result=[]
+2026-07-05T12:42:42.065Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.k.controller.FixedCostController     : ◀ RESPONSE list | 5ms
+2026-07-05T12:42:42.065Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.controller.FixedCostController     : ◀ RESPONSE list | 5ms
+2026-07-05T12:42:47.279Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T12:42:47.279Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T12:42:47.280Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+2026-07-05T12:42:47.280Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T12:42:47.285Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 4ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:42:47.285Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 4ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:42:47.287Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+2026-07-05T12:42:47.287Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T12:42:47.290Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 3ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:42:47.290Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 2ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:42:47.291Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 12ms
+2026-07-05T12:42:47.291Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 12ms
+2026-07-05T12:42:49.313Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.controller.GoalController    : ▶ REQUEST  get | args=[3]
+2026-07-05T12:42:49.314Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.controller.GoalController    : ▶ REQUEST  get | args=[3]
+2026-07-05T12:42:49.315Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] com.study.kakeibo.service.GoalService    : → SERVICE  getGoal | args=[3]
+2026-07-05T12:42:49.315Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] com.study.kakeibo.service.GoalService    : → SERVICE  getGoal | args=[3]
+Hibernate: select g1_0.id,g1_0.created_at,g1_0.current_savings,g1_0.target_amount,g1_0.target_date,g1_0.target_name,g1_0.updated_at,g1_0.user_id from goal g1_0 where g1_0.user_id=?
+Hibernate: select g1_0.id,g1_0.created_at,g1_0.current_savings,g1_0.target_amount,g1_0.target_date,g1_0.target_name,g1_0.updated_at,g1_0.user_id from goal g1_0 where g1_0.user_id=?
+2026-07-05T12:42:49.317Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] com.study.kakeibo.service.GoalService    : ← SERVICE  getGoal | 2ms | result=Optional[Goal(id=2, userId=3, targetName=資金, targetAmount=2400000.00, targetDate=2027-08-04, currentSavings=1000000.00, createdAt=2026-07-05T03:30:01, updatedAt=2026-07-05T03:30:01)]
+2026-07-05T12:42:49.317Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] com.study.kakeibo.service.GoalService    : ← SERVICE  getGoal | 2ms | result=Optional[Goal(id=2, userId=3, targetName=資金, targetAmount=2400000.00, targetDate=2027-08-04, currentSavings=1000000.00, createdAt=2026-07-05T03:30:01, updatedAt=2026-07-05T03:30:01)]
+2026-07-05T12:42:49.318Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.controller.GoalController    : ◀ RESPONSE get | 4ms
+2026-07-05T12:42:49.318Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.controller.GoalController    : ◀ RESPONSE get | 4ms
+2026-07-05T12:42:49.354Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.k.controller.FixedCostController     : ▶ REQUEST  list | args=[3]
+2026-07-05T12:42:49.354Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.controller.FixedCostController     : ▶ REQUEST  list | args=[3]
+2026-07-05T12:42:49.355Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.service.FixedCostService     : → SERVICE  list | args=[3]
+2026-07-05T12:42:49.355Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.service.FixedCostService     : → SERVICE  list | args=[3]
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.user_id=? order by fc1_0.id
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.user_id=? order by fc1_0.id
+2026-07-05T12:42:49.358Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.service.FixedCostService     : ← SERVICE  list | 2ms | result=[]
+2026-07-05T12:42:49.358Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.service.FixedCostService     : ← SERVICE  list | 2ms | result=[]
+2026-07-05T12:42:49.359Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.k.controller.FixedCostController     : ◀ RESPONSE list | 4ms
+2026-07-05T12:42:49.359Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.controller.FixedCostController     : ◀ RESPONSE list | 4ms
+2026-07-05T12:43:10.782Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.k.controller.FixedCostController     : ▶ REQUEST  create | args=[3, FixedCostRequestDto(name=家賃, amount=90000, paymentDay=null)]
+2026-07-05T12:43:10.783Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] c.s.kakeibo.service.FixedCostService     : → SERVICE  create | args=[3, 家賃, 90000, null]
+Hibernate: insert into fixed_cost (amount,created_at,name,payment_day,updated_at,user_id) values (?,?,?,?,?,?)
+2026-07-05T12:43:10.791Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] c.s.kakeibo.service.FixedCostService     : ← SERVICE  create | 8ms | result=FixedCost(id=7, userId=3, name=家賃, amount=90000, paymentDay=null, createdAt=2026-07-05T12:43:10.787662, updatedAt=2026-07-05T12:43:10.787689)
+2026-07-05T12:43:10.793Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.k.controller.FixedCostController     : ◀ RESPONSE create | 11ms
+2026-07-05T12:43:10.816Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.controller.FixedCostController     : ▶ REQUEST  list | args=[3]
+2026-07-05T12:43:10.817Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.service.FixedCostService     : → SERVICE  list | args=[3]
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.user_id=? order by fc1_0.id
+2026-07-05T12:43:10.820Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.service.FixedCostService     : ← SERVICE  list | 3ms | result=[FixedCost(id=7, userId=3, name=家賃, amount=90000.00, paymentDay=null, createdAt=2026-07-05T12:43:11, updatedAt=2026-07-05T12:43:11)]
+2026-07-05T12:43:10.821Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.controller.FixedCostController     : ◀ RESPONSE list | 5ms
+2026-07-05T12:43:29.549Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.k.controller.FixedCostController     : ▶ REQUEST  create | args=[3, FixedCostRequestDto(name=サブスク, amount=4000, paymentDay=null)]
+2026-07-05T12:43:29.550Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.service.FixedCostService     : → SERVICE  create | args=[3, サブスク, 4000, null]
+Hibernate: insert into fixed_cost (amount,created_at,name,payment_day,updated_at,user_id) values (?,?,?,?,?,?)
+2026-07-05T12:43:29.555Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.service.FixedCostService     : ← SERVICE  create | 4ms | result=FixedCost(id=8, userId=3, name=サブスク, amount=4000, paymentDay=null, createdAt=2026-07-05T12:43:29.552132, updatedAt=2026-07-05T12:43:29.552143)
+2026-07-05T12:43:29.557Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.k.controller.FixedCostController     : ◀ RESPONSE create | 8ms
+2026-07-05T12:43:29.582Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.controller.FixedCostController     : ▶ REQUEST  list | args=[3]
+2026-07-05T12:43:29.583Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.FixedCostService     : → SERVICE  list | args=[3]
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.user_id=? order by fc1_0.id
+2026-07-05T12:43:29.586Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.FixedCostService     : ← SERVICE  list | 3ms | result=[FixedCost(id=7, userId=3, name=家賃, amount=90000.00, paymentDay=null, createdAt=2026-07-05T12:43:11, updatedAt=2026-07-05T12:43:11), FixedCost(id=8, userId=3, name=サブスク, amount=4000.00, paymentDay=null, createdAt=2026-07-05T12:43:30, updatedAt=2026-07-05T12:43:30)]
+2026-07-05T12:43:29.587Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.controller.FixedCostController     : ◀ RESPONSE list | 5ms
+2026-07-05T12:43:33.332Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T12:43:33.332Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T12:43:33.334Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+2026-07-05T12:43:33.334Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T12:43:33.338Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 3ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:43:33.338Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 3ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:43:33.340Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+2026-07-05T12:43:33.340Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T12:43:33.343Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 3ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:43:33.343Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 3ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:43:33.344Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 11ms
+2026-07-05T12:43:33.344Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 11ms
+2026-07-05T12:43:34.797Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.controller.GoalController    : ▶ REQUEST  get | args=[3]
+2026-07-05T12:43:34.797Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.controller.GoalController    : ▶ REQUEST  get | args=[3]
+2026-07-05T12:43:34.798Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] com.study.kakeibo.service.GoalService    : → SERVICE  getGoal | args=[3]
+2026-07-05T12:43:34.798Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] com.study.kakeibo.service.GoalService    : → SERVICE  getGoal | args=[3]
+Hibernate: select g1_0.id,g1_0.created_at,g1_0.current_savings,g1_0.target_amount,g1_0.target_date,g1_0.target_name,g1_0.updated_at,g1_0.user_id from goal g1_0 where g1_0.user_id=?
+Hibernate: select g1_0.id,g1_0.created_at,g1_0.current_savings,g1_0.target_amount,g1_0.target_date,g1_0.target_name,g1_0.updated_at,g1_0.user_id from goal g1_0 where g1_0.user_id=?
+2026-07-05T12:43:34.801Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] com.study.kakeibo.service.GoalService    : ← SERVICE  getGoal | 1ms | result=Optional[Goal(id=2, userId=3, targetName=資金, targetAmount=2400000.00, targetDate=2027-08-04, currentSavings=1000000.00, createdAt=2026-07-05T03:30:01, updatedAt=2026-07-05T03:30:01)]
+2026-07-05T12:43:34.801Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] com.study.kakeibo.service.GoalService    : ← SERVICE  getGoal | 2ms | result=Optional[Goal(id=2, userId=3, targetName=資金, targetAmount=2400000.00, targetDate=2027-08-04, currentSavings=1000000.00, createdAt=2026-07-05T03:30:01, updatedAt=2026-07-05T03:30:01)]
+2026-07-05T12:43:34.802Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.controller.GoalController    : ◀ RESPONSE get | 5ms
+2026-07-05T12:43:34.802Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.controller.GoalController    : ◀ RESPONSE get | 5ms
+2026-07-05T12:43:34.861Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.controller.FixedCostController     : ▶ REQUEST  list | args=[3]
+2026-07-05T12:43:34.861Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.k.controller.FixedCostController     : ▶ REQUEST  list | args=[3]
+2026-07-05T12:43:34.862Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.service.FixedCostService     : → SERVICE  list | args=[3]
+2026-07-05T12:43:34.862Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.service.FixedCostService     : → SERVICE  list | args=[3]
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.user_id=? order by fc1_0.id
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.user_id=? order by fc1_0.id
+2026-07-05T12:43:34.864Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.service.FixedCostService     : ← SERVICE  list | 1ms | result=[FixedCost(id=7, userId=3, name=家賃, amount=90000.00, paymentDay=null, createdAt=2026-07-05T12:43:11, updatedAt=2026-07-05T12:43:11), FixedCost(id=8, userId=3, name=サブスク, amount=4000.00, paymentDay=null, createdAt=2026-07-05T12:43:30, updatedAt=2026-07-05T12:43:30)]
+2026-07-05T12:43:34.864Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.service.FixedCostService     : ← SERVICE  list | 2ms | result=[FixedCost(id=7, userId=3, name=家賃, amount=90000.00, paymentDay=null, createdAt=2026-07-05T12:43:11, updatedAt=2026-07-05T12:43:11), FixedCost(id=8, userId=3, name=サブスク, amount=4000.00, paymentDay=null, createdAt=2026-07-05T12:43:30, updatedAt=2026-07-05T12:43:30)]
+2026-07-05T12:43:34.866Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.controller.FixedCostController     : ◀ RESPONSE list | 5ms
+2026-07-05T12:43:34.866Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.k.controller.FixedCostController     : ◀ RESPONSE list | 5ms
+2026-07-05T12:53:18.157Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T12:53:18.157Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T12:53:18.159Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+2026-07-05T12:53:18.159Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T12:53:18.168Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 8ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:53:18.168Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 8ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:53:18.170Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+2026-07-05T12:53:18.170Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T12:53:18.172Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 2ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:53:18.172Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 2ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:53:18.174Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 16ms
+2026-07-05T12:53:18.174Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 16ms
+2026-07-05T12:53:21.605Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T12:53:21.605Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T12:53:21.606Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+2026-07-05T12:53:21.606Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T12:53:21.609Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 3ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:53:21.609Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 2ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:53:21.612Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+2026-07-05T12:53:21.612Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T12:53:21.615Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 3ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:53:21.615Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 3ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:53:21.616Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 11ms
+2026-07-05T12:53:21.616Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 11ms
+2026-07-05T12:53:23.429Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.controller.GoalController    : ▶ REQUEST  get | args=[3]
+2026-07-05T12:53:23.430Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.controller.GoalController    : ▶ REQUEST  get | args=[3]
+2026-07-05T12:53:23.431Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] com.study.kakeibo.service.GoalService    : → SERVICE  getGoal | args=[3]
+2026-07-05T12:53:23.432Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] com.study.kakeibo.service.GoalService    : → SERVICE  getGoal | args=[3]
+Hibernate: select g1_0.id,g1_0.created_at,g1_0.current_savings,g1_0.target_amount,g1_0.target_date,g1_0.target_name,g1_0.updated_at,g1_0.user_id from goal g1_0 where g1_0.user_id=?
+Hibernate: select g1_0.id,g1_0.created_at,g1_0.current_savings,g1_0.target_amount,g1_0.target_date,g1_0.target_name,g1_0.updated_at,g1_0.user_id from goal g1_0 where g1_0.user_id=?
+2026-07-05T12:53:23.435Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] com.study.kakeibo.service.GoalService    : ← SERVICE  getGoal | 3ms | result=Optional[Goal(id=2, userId=3, targetName=資金, targetAmount=2400000.00, targetDate=2027-08-04, currentSavings=1000000.00, createdAt=2026-07-05T03:30:01, updatedAt=2026-07-05T03:30:01)]
+2026-07-05T12:53:23.438Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.controller.GoalController    : ◀ RESPONSE get | 7ms
+2026-07-05T12:53:23.438Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] com.study.kakeibo.service.GoalService    : ← SERVICE  getGoal | 6ms | result=Optional[Goal(id=2, userId=3, targetName=資金, targetAmount=2400000.00, targetDate=2027-08-04, currentSavings=1000000.00, createdAt=2026-07-05T03:30:01, updatedAt=2026-07-05T03:30:01)]
+2026-07-05T12:53:23.441Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.controller.GoalController    : ◀ RESPONSE get | 11ms
+2026-07-05T12:53:23.498Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.controller.FixedCostController     : ▶ REQUEST  list | args=[3]
+2026-07-05T12:53:23.498Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.controller.FixedCostController     : ▶ REQUEST  list | args=[3]
+2026-07-05T12:53:23.500Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.service.FixedCostService     : → SERVICE  list | args=[3]
+2026-07-05T12:53:23.500Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.service.FixedCostService     : → SERVICE  list | args=[3]
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.user_id=? order by fc1_0.id
+Hibernate: select fc1_0.id,fc1_0.amount,fc1_0.created_at,fc1_0.name,fc1_0.payment_day,fc1_0.updated_at,fc1_0.user_id from fixed_cost fc1_0 where fc1_0.user_id=? order by fc1_0.id
+2026-07-05T12:53:23.505Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.service.FixedCostService     : ← SERVICE  list | 4ms | result=[FixedCost(id=7, userId=3, name=家賃, amount=90000.00, paymentDay=null, createdAt=2026-07-05T12:43:11, updatedAt=2026-07-05T12:43:11), FixedCost(id=8, userId=3, name=サブスク, amount=4000.00, paymentDay=null, createdAt=2026-07-05T12:43:30, updatedAt=2026-07-05T12:43:30)]
+2026-07-05T12:53:23.505Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.service.FixedCostService     : ← SERVICE  list | 4ms | result=[FixedCost(id=7, userId=3, name=家賃, amount=90000.00, paymentDay=null, createdAt=2026-07-05T12:43:11, updatedAt=2026-07-05T12:43:11), FixedCost(id=8, userId=3, name=サブスク, amount=4000.00, paymentDay=null, createdAt=2026-07-05T12:43:30, updatedAt=2026-07-05T12:43:30)]
+2026-07-05T12:53:23.506Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.controller.FixedCostController     : ◀ RESPONSE list | 7ms
+2026-07-05T12:53:23.506Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.controller.FixedCostController     : ◀ RESPONSE list | 7ms
+2026-07-05T12:53:35.520Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T12:53:35.520Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T12:53:35.522Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+2026-07-05T12:53:35.522Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T12:53:35.525Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 3ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:53:35.525Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 3ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:53:35.527Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+2026-07-05T12:53:35.527Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T12:53:35.529Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 2ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:53:35.529Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 2ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:53:35.530Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 9ms
+2026-07-05T12:53:35.530Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 9ms
+2026-07-05T12:53:40.512Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T12:53:40.515Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T12:53:40.519Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 4ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:53:40.522Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T12:53:40.526Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 4ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:53:40.528Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 15ms
+2026-07-05T12:53:40.551Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.kakeibo.controller.ChatController    : ▶ REQUEST  list | args=[3]
+2026-07-05T12:53:40.553Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] com.study.kakeibo.service.ChatService    : → SERVICE  listSessions | args=[3]
+2026-07-05T12:53:40.554Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.controller.LlmConfigController     : ▶ REQUEST  getAll | args=[3]
+2026-07-05T12:53:40.555Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.controller.ChatController    : ▶ REQUEST  list | args=[3]
+Hibernate: select cs1_0.id,cs1_0.created_at,cs1_0.title,cs1_0.updated_at,cs1_0.user_id from chat_session cs1_0 where cs1_0.user_id=? order by cs1_0.updated_at desc
+2026-07-05T12:53:40.556Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, CHAT]
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T12:53:40.557Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] com.study.kakeibo.service.ChatService    : → SERVICE  listSessions | args=[3]
+Hibernate: select cs1_0.id,cs1_0.created_at,cs1_0.title,cs1_0.updated_at,cs1_0.user_id from chat_session cs1_0 where cs1_0.user_id=? order by cs1_0.updated_at desc
+2026-07-05T12:53:40.559Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 3ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=deepseek/deepseek-v4-flash, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+2026-07-05T12:53:40.559Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] com.study.kakeibo.service.ChatService    : ← SERVICE  listSessions | 5ms | result=[ChatSession(id=3, userId=3, title=新しいチャット, createdAt=2026-07-04T18:01:19, updatedAt=2026-07-04T18:01:19)]
+2026-07-05T12:53:40.560Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] com.study.kakeibo.service.ChatService    : → SERVICE  countMessages | args=[3]
+2026-07-05T12:53:40.561Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.LlmConfigService     : → SERVICE  getMasked | args=[3, VISION]
+Hibernate: select count(cm1_0.id) from chat_message cm1_0 where cm1_0.session_id=?
+Hibernate: select ulc1_0.id,ulc1_0.api_key_enc,ulc1_0.base_url,ulc1_0.created_at,ulc1_0.model,ulc1_0.purpose,ulc1_0.supports_vision,ulc1_0.updated_at,ulc1_0.user_id from user_llm_config ulc1_0 where ulc1_0.user_id=? and ulc1_0.purpose=?
+2026-07-05T12:53:40.562Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] com.study.kakeibo.service.ChatService    : ← SERVICE  listSessions | 4ms | result=[ChatSession(id=3, userId=3, title=新しいチャット, createdAt=2026-07-04T18:01:19, updatedAt=2026-07-04T18:01:19)]
+2026-07-05T12:53:40.565Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] com.study.kakeibo.service.ChatService    : → SERVICE  countMessages | args=[3]
+2026-07-05T12:53:40.565Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.kakeibo.service.LlmConfigService     : ← SERVICE  getMasked | 4ms | result=Optional[MaskedConfig[baseUrl=https://openrouter.ai/api/v1/, model=google/gemini-3.1-flash-lite-image, hasKey=true, maskedKey=****9f1b, supportsVision=false]]
+Hibernate: select count(cm1_0.id) from chat_message cm1_0 where cm1_0.session_id=?
+2026-07-05T12:53:40.567Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.controller.LlmConfigController     : ◀ RESPONSE getAll | 13ms
+2026-07-05T12:53:40.567Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] com.study.kakeibo.service.ChatService    : ← SERVICE  countMessages | 6ms | result=2
+2026-07-05T12:53:40.568Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.kakeibo.controller.ChatController    : ◀ RESPONSE list | 17ms
+2026-07-05T12:53:40.568Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] com.study.kakeibo.service.ChatService    : ← SERVICE  countMessages | 3ms | result=2
+2026-07-05T12:53:40.569Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.controller.ChatController    : ◀ RESPONSE list | 13ms
+2026-07-05T12:53:40.617Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.controller.ChatController    : ▶ REQUEST  listMessages | args=[3, 3]
+2026-07-05T12:53:40.618Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] com.study.kakeibo.service.ChatService    : → SERVICE  listMessages | args=[3, 3]
+Hibernate: select cs1_0.id,cs1_0.created_at,cs1_0.title,cs1_0.updated_at,cs1_0.user_id from chat_session cs1_0 where cs1_0.id=? and cs1_0.user_id=?
+Hibernate: select cm1_0.id,cm1_0.content,cm1_0.content_type,cm1_0.created_at,cm1_0.image_path,cm1_0.role,cm1_0.session_id from chat_message cm1_0 where cm1_0.session_id=? order by cm1_0.created_at,cm1_0.id
+2026-07-05T12:53:40.624Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] com.study.kakeibo.service.ChatService    : ← SERVICE  listMessages | 5ms | result=[ChatMessage(id=2, sessionId=3, role=user, content=ちわ, imagePath=null, contentType=null, createdAt=2026-07-05T05:43:54), ChatMessage(id=3, sessionId=3, role=assistant, content=ちわ〜！家計相談アシスタントだよ！
+気軽に話しかけてくれてありがとう😊
+今日はどんなお悩み？ それとも雑談OKだよ！, imagePath=null, contentType=null, createdAt=2026-07-05T05:44)]
+2026-07-05T12:53:40.625Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.controller.ChatController    : ◀ RESPONSE listMessages | 8ms
+2026-07-05T12:53:40.628Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.controller.ChatController    : ▶ REQUEST  listMessages | args=[3, 3]
+2026-07-05T12:53:40.629Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] com.study.kakeibo.service.ChatService    : → SERVICE  listMessages | args=[3, 3]
+Hibernate: select cs1_0.id,cs1_0.created_at,cs1_0.title,cs1_0.updated_at,cs1_0.user_id from chat_session cs1_0 where cs1_0.id=? and cs1_0.user_id=?
+Hibernate: select cm1_0.id,cm1_0.content,cm1_0.content_type,cm1_0.created_at,cm1_0.image_path,cm1_0.role,cm1_0.session_id from chat_message cm1_0 where cm1_0.session_id=? order by cm1_0.created_at,cm1_0.id
+2026-07-05T12:53:40.635Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] com.study.kakeibo.service.ChatService    : ← SERVICE  listMessages | 6ms | result=[ChatMessage(id=2, sessionId=3, role=user, content=ちわ, imagePath=null, contentType=null, createdAt=2026-07-05T05:43:54), ChatMessage(id=3, sessionId=3, role=assistant, content=ちわ〜！家計相談アシスタントだよ！
+気軽に話しかけてくれてありがとう😊
+今日はどんなお悩み？ それとも雑談OKだよ！, imagePath=null, contentType=null, createdAt=2026-07-05T05:44)]
+2026-07-05T12:53:40.636Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.kakeibo.controller.ChatController    : ◀ RESPONSE listMessages | 8ms
+2026-07-05T12:54:15.055Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.controller.AnalyticsController     : ▶ REQUEST  getMonthlySummary | args=[3, 2026, 7]
+2026-07-05T12:54:15.056Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.service.impl.AnalyticsServiceImpl  : → SERVICE  getMonthlySummary | args=[3, 2026, 7]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select e1_0.id,e1_0.amount,e1_0.category_id,e1_0.created_at,e1_0.entry_date,e1_0.memo,e1_0.store_id,e1_0.type,e1_0.updated_at,e1_0.user_id from entry e1_0 where e1_0.user_id=? and e1_0.entry_date between ? and ?
+2026-07-05T12:54:15.068Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.controller.AnalyticsController     : ▶ REQUEST  getMonthlySummary | args=[3, 2026, 7]
+2026-07-05T12:54:15.069Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.service.impl.AnalyticsServiceImpl  : → SERVICE  getMonthlySummary | args=[3, 2026, 7]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select e1_0.id,e1_0.amount,e1_0.category_id,e1_0.created_at,e1_0.entry_date,e1_0.memo,e1_0.store_id,e1_0.type,e1_0.updated_at,e1_0.user_id from entry e1_0 where e1_0.user_id=? and e1_0.entry_date between ? and ?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+2026-07-05T12:54:15.081Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.service.impl.AnalyticsServiceImpl  : ← SERVICE  getMonthlySummary | 22ms | result=AnalyticsResponseDto(month=2026-07, totalIncome=3350000.00, totalExpense=4205.00, balance=3345795.00, transactionCount=4, dailyAverageExpense=136, byCategory=[AnalyticsResponseDto.CategorySummary(categoryId=15, name=光熱費, amount=3000.00, percentage=71.3, transactionCount=1), AnalyticsResponseDto.Cate...(truncated)
+2026-07-05T12:54:15.081Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.controller.AnalyticsController     : ◀ RESPONSE getMonthlySummary | 26ms
+2026-07-05T12:54:15.083Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.service.impl.AnalyticsServiceImpl  : ← SERVICE  getMonthlySummary | 13ms | result=AnalyticsResponseDto(month=2026-07, totalIncome=3350000.00, totalExpense=4205.00, balance=3345795.00, transactionCount=4, dailyAverageExpense=136, byCategory=[AnalyticsResponseDto.CategorySummary(categoryId=15, name=光熱費, amount=3000.00, percentage=71.3, transactionCount=1), AnalyticsResponseDto.Cate...(truncated)
+2026-07-05T12:54:15.083Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.controller.AnalyticsController     : ◀ RESPONSE getMonthlySummary | 15ms
+2026-07-05T12:54:16.700Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.controller.EntryController   : ▶ REQUEST  getEntries | args=[3, 2026-07-01, 2026-07-31]
+2026-07-05T12:54:16.700Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.service.impl.EntryServiceImpl      : → SERVICE  getEntryByUserAndDateRange | args=[3, 2026-07-01, 2026-07-31]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select e1_0.id,e1_0.amount,e1_0.category_id,e1_0.created_at,e1_0.entry_date,e1_0.memo,e1_0.store_id,e1_0.type,e1_0.updated_at,e1_0.user_id from entry e1_0 where e1_0.user_id=? and e1_0.entry_date between ? and ?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+2026-07-05T12:54:16.710Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.controller.CategoryController      : ▶ REQUEST  getCategories | args=[3]
+2026-07-05T12:54:16.710Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.controller.EntryController   : ▶ REQUEST  getEntries | args=[3, 2026-07-01, 2026-07-31]
+2026-07-05T12:54:16.711Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.controller.CategoryController      : ▶ REQUEST  getCategories | args=[3]
+2026-07-05T12:54:16.712Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.service.impl.CategoryServiceImpl   : → SERVICE  getCategoriesByUserId | args=[3]
+2026-07-05T12:54:16.712Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.k.service.impl.EntryServiceImpl      : → SERVICE  getEntryByUserAndDateRange | args=[3, 2026-07-01, 2026-07-31]
+2026-07-05T12:54:16.713Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.service.impl.CategoryServiceImpl   : → SERVICE  getCategoriesByUserId | args=[3]
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.user_id=?
+Hibernate: select e1_0.id,e1_0.amount,e1_0.category_id,e1_0.created_at,e1_0.entry_date,e1_0.memo,e1_0.store_id,e1_0.type,e1_0.updated_at,e1_0.user_id from entry e1_0 where e1_0.user_id=? and e1_0.entry_date between ? and ?
+2026-07-05T12:54:16.721Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.service.impl.EntryServiceImpl      : ← SERVICE  getEntryByUserAndDateRange | 8ms | result=[Entry(id=7, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), entryDate=2026-07-03, amount=1205.00, category=Category(id=8, name=水道, type=EXPENSE, user=User(id=3, username=user, email=user@user....(truncated)
+2026-07-05T12:54:16.722Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.kakeibo.controller.EntryController   : ◀ RESPONSE getEntries | 22ms
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.user_id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+2026-07-05T12:54:16.723Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.service.impl.CategoryServiceImpl   : ← SERVICE  getCategoriesByUserId | 10ms | result=[Category(id=16, name=ガソリン, type=EXPENSE, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), createdAt=2026-07-05T04:12:41, updatedAt=2026-07-05T04:12:41), Category(id=21, name=ボーナス, type=INCOME, ...(truncated)
+2026-07-05T12:54:16.724Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.controller.CategoryController      : ◀ RESPONSE getCategories | 12ms
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+2026-07-05T12:54:16.727Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.service.impl.CategoryServiceImpl   : ← SERVICE  getCategoriesByUserId | 14ms | result=[Category(id=16, name=ガソリン, type=EXPENSE, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), createdAt=2026-07-05T04:12:41, updatedAt=2026-07-05T04:12:41), Category(id=21, name=ボーナス, type=INCOME, ...(truncated)
+2026-07-05T12:54:16.728Z  INFO 38230 --- [kakeibo] [nio-8080-exec-1] c.s.k.controller.CategoryController      : ◀ RESPONSE getCategories | 15ms
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+2026-07-05T12:54:16.734Z DEBUG 38230 --- [kakeibo] [io-8080-exec-10] c.s.k.service.impl.EntryServiceImpl      : ← SERVICE  getEntryByUserAndDateRange | 10ms | result=[Entry(id=7, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), entryDate=2026-07-03, amount=1205.00, category=Category(id=8, name=水道, type=EXPENSE, user=User(id=3, username=user, email=user@user....(truncated)
+2026-07-05T12:54:16.734Z  INFO 38230 --- [kakeibo] [io-8080-exec-10] c.s.kakeibo.controller.EntryController   : ◀ RESPONSE getEntries | 22ms
+2026-07-05T12:54:16.822Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.controller.StoreController   : ▶ REQUEST  getStores | args=[3]
+2026-07-05T12:54:16.822Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.kakeibo.controller.StoreController   : ▶ REQUEST  getStores | args=[3]
+2026-07-05T12:54:16.822Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.k.service.impl.StoreServiceImpl      : → SERVICE  getStoresByUserId | args=[3]
+2026-07-05T12:54:16.822Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] c.s.k.service.impl.StoreServiceImpl      : → SERVICE  getStoresByUserId | args=[3]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select s1_0.id,s1_0.created_at,s1_0.name,s1_0.type,s1_0.updated_at,s1_0.user_id from store s1_0 where s1_0.user_id=?
+Hibernate: select s1_0.id,s1_0.created_at,s1_0.name,s1_0.type,s1_0.updated_at,s1_0.user_id from store s1_0 where s1_0.user_id=?
+2026-07-05T12:54:16.830Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-5] c.s.k.service.impl.StoreServiceImpl      : ← SERVICE  getStoresByUserId | 8ms | result=[]
+2026-07-05T12:54:16.830Z  INFO 38230 --- [kakeibo] [nio-8080-exec-5] c.s.kakeibo.controller.StoreController   : ◀ RESPONSE getStores | 8ms
+2026-07-05T12:54:16.830Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-3] c.s.k.service.impl.StoreServiceImpl      : ← SERVICE  getStoresByUserId | 8ms | result=[]
+2026-07-05T12:54:16.830Z  INFO 38230 --- [kakeibo] [nio-8080-exec-3] c.s.kakeibo.controller.StoreController   : ◀ RESPONSE getStores | 8ms
+2026-07-05T12:54:17.761Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.k.controller.CategoryController      : ▶ REQUEST  getCategories | args=[3]
+2026-07-05T12:54:17.761Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.controller.EntryController   : ▶ REQUEST  getEntries | args=[3, 2026-08-01, 2026-08-31]
+2026-07-05T12:54:17.762Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] c.s.k.service.impl.CategoryServiceImpl   : → SERVICE  getCategoriesByUserId | args=[3]
+2026-07-05T12:54:17.762Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.k.service.impl.EntryServiceImpl      : → SERVICE  getEntryByUserAndDateRange | args=[3, 2026-08-01, 2026-08-31]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.user_id=?
+Hibernate: select e1_0.id,e1_0.amount,e1_0.category_id,e1_0.created_at,e1_0.entry_date,e1_0.memo,e1_0.store_id,e1_0.type,e1_0.updated_at,e1_0.user_id from entry e1_0 where e1_0.user_id=? and e1_0.entry_date between ? and ?
+2026-07-05T12:54:17.768Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-2] c.s.k.service.impl.EntryServiceImpl      : ← SERVICE  getEntryByUserAndDateRange | 6ms | result=[]
+2026-07-05T12:54:17.768Z  INFO 38230 --- [kakeibo] [nio-8080-exec-2] c.s.kakeibo.controller.EntryController   : ◀ RESPONSE getEntries | 6ms
+2026-07-05T12:54:17.769Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-9] c.s.k.service.impl.CategoryServiceImpl   : ← SERVICE  getCategoriesByUserId | 6ms | result=[Category(id=16, name=ガソリン, type=EXPENSE, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), createdAt=2026-07-05T04:12:41, updatedAt=2026-07-05T04:12:41), Category(id=21, name=ボーナス, type=INCOME, ...(truncated)
+2026-07-05T12:54:17.769Z  INFO 38230 --- [kakeibo] [nio-8080-exec-9] c.s.k.controller.CategoryController      : ◀ RESPONSE getCategories | 7ms
+2026-07-05T12:54:17.811Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.controller.StoreController   : ▶ REQUEST  getStores | args=[3]
+2026-07-05T12:54:17.812Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.service.impl.StoreServiceImpl      : → SERVICE  getStoresByUserId | args=[3]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select s1_0.id,s1_0.created_at,s1_0.name,s1_0.type,s1_0.updated_at,s1_0.user_id from store s1_0 where s1_0.user_id=?
+2026-07-05T12:54:17.818Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-7] c.s.k.service.impl.StoreServiceImpl      : ← SERVICE  getStoresByUserId | 6ms | result=[]
+2026-07-05T12:54:17.818Z  INFO 38230 --- [kakeibo] [nio-8080-exec-7] c.s.kakeibo.controller.StoreController   : ◀ RESPONSE getStores | 6ms
+2026-07-05T12:54:18.961Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.controller.CategoryController      : ▶ REQUEST  getCategories | args=[3]
+2026-07-05T12:54:18.961Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.controller.EntryController   : ▶ REQUEST  getEntries | args=[3, 2026-07-01, 2026-07-31]
+2026-07-05T12:54:18.961Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.service.impl.CategoryServiceImpl   : → SERVICE  getCategoriesByUserId | args=[3]
+2026-07-05T12:54:18.961Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.service.impl.EntryServiceImpl      : → SERVICE  getEntryByUserAndDateRange | args=[3, 2026-07-01, 2026-07-31]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select e1_0.id,e1_0.amount,e1_0.category_id,e1_0.created_at,e1_0.entry_date,e1_0.memo,e1_0.store_id,e1_0.type,e1_0.updated_at,e1_0.user_id from entry e1_0 where e1_0.user_id=? and e1_0.entry_date between ? and ?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.user_id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+2026-07-05T12:54:18.967Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.service.impl.CategoryServiceImpl   : ← SERVICE  getCategoriesByUserId | 4ms | result=[Category(id=16, name=ガソリン, type=EXPENSE, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), createdAt=2026-07-05T04:12:41, updatedAt=2026-07-05T04:12:41), Category(id=21, name=ボーナス, type=INCOME, ...(truncated)
+2026-07-05T12:54:18.967Z  INFO 38230 --- [kakeibo] [nio-8080-exec-8] c.s.k.controller.CategoryController      : ◀ RESPONSE getCategories | 6ms
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+Hibernate: select c1_0.id,c1_0.created_at,c1_0.name,c1_0.type,c1_0.updated_at,c1_0.user_id from category c1_0 where c1_0.id=?
+2026-07-05T12:54:18.974Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-4] c.s.k.service.impl.EntryServiceImpl      : ← SERVICE  getEntryByUserAndDateRange | 4ms | result=[Entry(id=7, user=User(id=3, username=user, email=user@user.com, password=$2a$10$y83UXBwxj8sywuqaq0AMhehIvkhITqsTY4cHH1ZGoVKG44VKl0YbK, createdAt=2026-07-01T00:50:35), entryDate=2026-07-03, amount=1205.00, category=Category(id=8, name=水道, type=EXPENSE, user=User(id=3, username=user, email=user@user....(truncated)
+2026-07-05T12:54:18.975Z  INFO 38230 --- [kakeibo] [nio-8080-exec-4] c.s.kakeibo.controller.EntryController   : ◀ RESPONSE getEntries | 14ms
+2026-07-05T12:54:18.995Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.controller.StoreController   : ▶ REQUEST  getStores | args=[3]
+2026-07-05T12:54:18.996Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.service.impl.StoreServiceImpl      : → SERVICE  getStoresByUserId | args=[3]
+Hibernate: select u1_0.id,u1_0.created_at,u1_0.email,u1_0.password,u1_0.username from user u1_0 where u1_0.id=?
+Hibernate: select s1_0.id,s1_0.created_at,s1_0.name,s1_0.type,s1_0.updated_at,s1_0.user_id from store s1_0 where s1_0.user_id=?
+2026-07-05T12:54:19.001Z DEBUG 38230 --- [kakeibo] [nio-8080-exec-6] c.s.k.service.impl.StoreServiceImpl      : ← SERVICE  getStoresByUserId | 5ms | result=[]
+2026-07-05T12:54:19.002Z  INFO 38230 --- [kakeibo] [nio-8080-exec-6] c.s.kakeibo.controller.StoreController   : ◀ RESPONSE getStores | 6ms

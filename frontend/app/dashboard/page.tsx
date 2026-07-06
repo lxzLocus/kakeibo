@@ -1,9 +1,52 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { entryApi, categoryApi, storeApi, importApi, ApiError } from '@/lib/api';
+import { entryApi, categoryApi, storeApi, importApi, receiptApi, ApiError } from '@/lib/api';
 import { getUser } from '@/lib/auth';
-import { EntryResponse, CategoryResponse, StoreResponse, ImportResult } from '@/types';
+import { EntryResponse, CategoryResponse, StoreResponse, ImportResult, ReceiptDraft } from '@/types';
+
+/**
+ * アップロード前に画像を縮小してJPEG化する（大きな写真によるアップロードエラー/低速を防ぐ）。
+ */
+async function downscaleImage(file: File, maxDim = 1600, quality = 0.8): Promise<Blob> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+    const w = Math.max(1, Math.round(bitmap.width * scale));
+    const h = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    const blob: Blob | null = await new Promise((resolve) =>
+      canvas.toBlob((b) => resolve(b), 'image/jpeg', quality)
+    );
+    return blob ?? file;
+  } catch {
+    // 変換に失敗した場合は元ファイルをそのまま使う
+    return file;
+  }
+}
+
+// --- 前回入力の記憶（localStorage） ---
+const lastCategoryKey = (type: string) => `kakeibo_last_category_${type}`;
+const LAST_STORE_KEY = 'kakeibo_last_store';
+function readLast(key: string): string {
+  try {
+    return localStorage.getItem(key) ?? '';
+  } catch {
+    return '';
+  }
+}
+function writeLast(key: string, value: string) {
+  try {
+    if (value) localStorage.setItem(key, value);
+  } catch {
+    /* ignore */
+  }
+}
 
 // ==========================================
 // ユーティリティ
@@ -171,11 +214,11 @@ total: 719
           <div className="import-result-header">
             <div className="import-result-stat">
               成功
-              <strong className="success">{result.successCount} 件</strong>
+              <strong className="success">{result.successCount.toLocaleString()} 件</strong>
             </div>
             <div className="import-result-stat">
               エラー
-              <strong className={result.errorCount > 0 ? 'error' : 'success'}>{result.errorCount} 件</strong>
+              <strong className={result.errorCount > 0 ? 'error' : 'success'}>{result.errorCount.toLocaleString()} 件</strong>
             </div>
             <div className="import-result-stat">
               処理行数
@@ -225,6 +268,11 @@ export default function DashboardPage() {
   const [modalCategoryId, setModalCategoryId] = useState('');
   const [modalStoreId, setModalStoreId] = useState('');
   const [modalMemo, setModalMemo] = useState('');
+
+  // レシートOCR状態
+  const [receiptScanning, setReceiptScanning] = useState(false);
+  const [receiptScanMsg, setReceiptScanMsg] = useState('');
+  const [receiptScanError, setReceiptScanError] = useState('');
 
   // インライン追加状態
   const [isAddingCategory, setIsAddingCategory] = useState(false);
@@ -286,14 +334,30 @@ export default function DashboardPage() {
   }, [fetchEntries, fetchCategoriesAndStores]);
 
   // --- モーダル操作 ---
+  // 指定タイプで前回選択したカテゴリを復元（存在すれば）。無ければ空。
+  function lastCategoryFor(type: 'INCOME' | 'EXPENSE'): string {
+    const last = readLast(lastCategoryKey(type));
+    return categories.some((c) => String(c.categoryId) === last && c.type === type) ? last : '';
+  }
+
+  // 収支タイプ切り替え（カテゴリはタイプ別のため選択を調整）
+  function handleModalTypeChange(type: 'INCOME' | 'EXPENSE') {
+    setModalType(type);
+    setModalCategoryId(lastCategoryFor(type));
+    if (type === 'INCOME') setModalStoreId(''); // 収入に店舗は不要
+    setIsAddingCategory(false);
+  }
+
   function openAddModal() {
     setEditingEntry(null);
     setModalType('EXPENSE');
     const today = new Date();
     setModalDate(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`);
     setModalAmount('');
-    setModalCategoryId('');
-    setModalStoreId('');
+    // 前回入力を復元
+    setModalCategoryId(lastCategoryFor('EXPENSE'));
+    const lastStore = readLast(LAST_STORE_KEY);
+    setModalStoreId(stores.some((s) => String(s.storeId) === lastStore) ? lastStore : '');
     setModalMemo('');
     setFormErrors({});
     setModalSubmitError('');
@@ -320,15 +384,58 @@ export default function DashboardPage() {
   function closeModal() {
     setIsModalOpen(false);
     setEditingEntry(null);
+    setReceiptScanning(false);
+    setReceiptScanMsg('');
+    setReceiptScanError('');
+  }
+
+  // レシート画像を選択 → 縮小 → ローカルOCR+LLM補正 → フォームへ反映
+  async function handleReceiptFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // 同じファイルを連続で選べるようにリセット
+    if (!file) return;
+    setReceiptScanMsg('');
+    setReceiptScanError('');
+    setReceiptScanning(true);
+    try {
+      const compressed = await downscaleImage(file);
+      const draft: ReceiptDraft = await receiptApi.scan(compressed);
+
+      if (draft.entryDate) setModalDate(draft.entryDate);
+      if (draft.totalAmount != null) setModalAmount(String(draft.totalAmount));
+
+      if (draft.suggestedCategoryName) {
+        // レシートは支出。支出カテゴリの中から照合
+        const cat = categories.find((c) => c.name === draft.suggestedCategoryName && c.type === 'EXPENSE');
+        if (cat) setModalCategoryId(String(cat.categoryId));
+      }
+      if (draft.storeName) {
+        const store = stores.find((s) => s.name === draft.storeName);
+        if (store) setModalStoreId(String(store.storeId));
+      }
+      const itemsMemo = (draft.items ?? [])
+        .map((i) => `${i.name}${i.price != null ? ` ¥${i.price.toLocaleString()}` : ''}`)
+        .join(', ');
+      const memo = [draft.storeName, itemsMemo].filter(Boolean).join(' / ');
+      if (memo) setModalMemo(memo);
+
+      setReceiptScanMsg('読み取りました。内容を確認して登録してください。');
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'レシートの読み取りに失敗しました';
+      setReceiptScanError(msg);
+    } finally {
+      setReceiptScanning(false);
+    }
   }
 
   // カテゴリをインラインで作成
   async function handleAddCategoryInline() {
     if (!newCategoryName.trim()) return;
     try {
-      const newCat = await categoryApi.create(newCategoryName.trim()) as CategoryResponse;
+      // 現在の収支タイプでカテゴリを作成
+      const newCat = await categoryApi.create(newCategoryName.trim(), modalType) as CategoryResponse;
       setCategories([...categories, newCat]);
-      setModalCategoryId(String(newCat.id));
+      setModalCategoryId(String(newCat.categoryId));
       setNewCategoryName('');
       setIsAddingCategory(false);
     } catch (err) {
@@ -346,7 +453,7 @@ export default function DashboardPage() {
         newStoreType.trim() ? newStoreType.trim() : undefined
       ) as StoreResponse;
       setStores([...stores, newStore]);
-      setModalStoreId(String(newStore.id));
+      setModalStoreId(String(newStore.storeId));
       setNewStoreName('');
       setNewStoreType('');
       setIsAddingStore(false);
@@ -386,6 +493,10 @@ export default function DashboardPage() {
       } else {
         await entryApi.create(payload);
       }
+
+      // 前回入力を記憶（次回の初期値に）
+      writeLast(lastCategoryKey(modalType), modalCategoryId);
+      if (modalType === 'EXPENSE' && modalStoreId) writeLast(LAST_STORE_KEY, modalStoreId);
 
       await fetchEntries();
       closeModal();
@@ -518,7 +629,7 @@ export default function DashboardPage() {
       </div>
       <div className="mobile-summary-card">
         <div className="mobile-summary-card-label">件数</div>
-        <div className="mobile-summary-card-value neutral">{entries.length}</div>
+        <div className="mobile-summary-card-value neutral">{entries.length.toLocaleString()}</div>
       </div>
     </div>
   );
@@ -565,7 +676,7 @@ export default function DashboardPage() {
       <div className="dashboard-section-header">
         <h2 className="dashboard-section-title">取引履歴</h2>
         <span style={{ fontSize: '0.8rem', color: 'rgba(148, 163, 184, 0.5)' }}>
-          {entries.length} 件
+          {entries.length.toLocaleString()} 件
         </span>
       </div>
       <div className="entries-table-wrap">
@@ -710,8 +821,8 @@ export default function DashboardPage() {
                         required
                       >
                         <option value="">カテゴリ</option>
-                        {categories.map((cat, index) => (
-                          <option key={`quick-cat-${cat.id}-${index}`} value={cat.id}>{cat.name}</option>
+                        {categories.filter((cat) => cat.type === 'EXPENSE').map((cat, index) => (
+                          <option key={`quick-cat-${cat.categoryId}-${index}`} value={cat.categoryId}>{cat.name}</option>
                         ))}
                       </select>
                     </div>
@@ -803,18 +914,48 @@ export default function DashboardPage() {
                   <button
                     type="button"
                     className={`type-switch-btn expense ${modalType === 'EXPENSE' ? 'active' : ''}`}
-                    onClick={() => setModalType('EXPENSE')}
+                    onClick={() => handleModalTypeChange('EXPENSE')}
                   >
                     支出 (Expense)
                   </button>
                   <button
                     type="button"
                     className={`type-switch-btn income ${modalType === 'INCOME' ? 'active' : ''}`}
-                    onClick={() => setModalType('INCOME')}
+                    onClick={() => handleModalTypeChange('INCOME')}
                   >
                     収入 (Income)
                   </button>
                 </div>
+
+                {/* レシートから入力（新規の支出のみ）: 撮影 or 画像選択 → OCR → 反映 */}
+                {!editingEntry && modalType === 'EXPENSE' && (
+                  <div className="receipt-inline">
+                    <div className="receipt-upload-actions">
+                      <label className={`receipt-action-btn ${receiptScanning ? 'disabled' : ''}`}>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleReceiptFile}
+                          disabled={receiptScanning}
+                          style={{ display: 'none' }}
+                        />
+                        <span style={{ fontSize: '1.5rem' }}>📷</span>
+                        レシートを撮影 / 画像を選択
+                      </label>
+                    </div>
+                    {receiptScanning && (
+                      <div className="loading-state" style={{ padding: '0.5rem 0' }}>
+                        <span className="loading-spinner" />レシートを読み取り中...
+                      </div>
+                    )}
+                    {receiptScanMsg && (
+                      <div className="auth-success-banner" style={{ margin: '0.5rem 0 0' }}>✅ {receiptScanMsg}</div>
+                    )}
+                    {receiptScanError && (
+                      <div className="auth-error-banner" style={{ margin: '0.5rem 0 0' }}>⚠️ {receiptScanError}</div>
+                    )}
+                  </div>
+                )}
 
                 {/* 日付 */}
                 <div className="modal-field">
@@ -858,8 +999,8 @@ export default function DashboardPage() {
                       required
                     >
                       <option value="">-- カテゴリを選択してください --</option>
-                      {categories.map((cat, index) => (
-                        <option key={`modal-cat-${cat.id}-${index}`} value={cat.id}>{cat.name}</option>
+                      {categories.filter((cat) => cat.type === modalType).map((cat, index) => (
+                        <option key={`modal-cat-${cat.categoryId}-${index}`} value={cat.categoryId}>{cat.name}</option>
                       ))}
                     </select>
                     <button
@@ -887,7 +1028,8 @@ export default function DashboardPage() {
                   )}
                 </div>
 
-                {/* 店舗 */}
+                {/* 店舗（支出のみ。収入では非表示） */}
+                {modalType === 'EXPENSE' && (
                 <div className="modal-field">
                   <label htmlFor="modal-store">店舗 (任意)</label>
                   <div className="modal-input-wrap">
@@ -898,7 +1040,7 @@ export default function DashboardPage() {
                     >
                       <option value="">-- なし / 選択解除 --</option>
                       {stores.map((store, index) => (
-                        <option key={`modal-store-${store.id}-${index}`} value={store.id}>
+                        <option key={`modal-store-${store.storeId}-${index}`} value={store.storeId}>
                           {store.name} {store.type ? `(${store.type})` : ''}
                         </option>
                       ))}
@@ -938,6 +1080,7 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* メモ */}
                 <div className="modal-field">
@@ -966,19 +1109,19 @@ export default function DashboardPage() {
                     </button>
                   )}
                   <button
+                    type="submit"
+                    className="modal-btn primary"
+                    disabled={modalLoading}
+                  >
+                    {modalLoading ? '保存中...' : '保存する'}
+                  </button>
+                  <button
                     type="button"
                     className="modal-btn secondary"
                     onClick={closeModal}
                     disabled={modalLoading}
                   >
                     キャンセル
-                  </button>
-                  <button
-                    type="submit"
-                    className="modal-btn primary"
-                    disabled={modalLoading}
-                  >
-                    {modalLoading ? '保存中...' : '保存する'}
                   </button>
                 </div>
               </div>

@@ -1,5 +1,6 @@
 package com.study.kakeibo.dto.Response;
 
+import com.study.kakeibo.entity.EntryType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -13,5 +14,6 @@ public class CategoryResponseDto {
     private Long categoryId;
     private Long userId;
     private String name;
+    private EntryType type;
     private LocalDateTime createdAt;
 }

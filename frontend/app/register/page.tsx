@@ -70,7 +70,7 @@ export default function RegisterPage() {
           setApiError(err.message);
         }
       } else {
-        setApiError('通信エラーが発生しました。もう一度お試しください。');
+        setApiError(`通信エラー: ${err instanceof Error ? err.message : String(err)}`);
       }
     } finally {
       setLoading(false);

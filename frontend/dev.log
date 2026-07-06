@@ -1,0 +1,16 @@
+
+> app@0.1.0 dev
+> next dev
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+   ▲ Next.js 16.0.6 (Turbopack)
+   - Local:         http://localhost:3000
+   - Network:       http://172.21.0.3:3000
+
+ ✓ Starting...
+ ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+ ✓ Ready in 3.7s
+ ○ Compiling /dashboard ...
+ GET /dashboard 200 in 4.1s (compile: 3.6s, proxy.ts: 130ms, render: 353ms)
+ GET /dashboard 200 in 87ms (compile: 27ms, proxy.ts: 7ms, render: 53ms)
+ GET /dashboard 200 in 85ms (compile: 24ms, proxy.ts: 5ms, render: 56ms)

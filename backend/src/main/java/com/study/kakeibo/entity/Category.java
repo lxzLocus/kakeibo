@@ -8,7 +8,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 @Data
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "user_id", "name" }))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "user_id", "name", "type" }))
 @NoArgsConstructor
 @AllArgsConstructor
 public class Category {
@@ -18,6 +18,11 @@ public class Category {
 
     @Column(nullable = false)
     private String name;
+
+    /** 収入用 / 支出用 のカテゴリ区分 */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 16)
+    private EntryType type;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

@@ -145,7 +145,7 @@ export default function AnalyticsPage() {
             <div className="analytics-mini-card">
               <div className="analytics-mini-card-label">取引件数</div>
               <div className="analytics-mini-card-value neutral">
-                {data.transactionCount}<span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'rgba(148,163,184,0.6)' }}> 件</span>
+                {data.transactionCount.toLocaleString()}<span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'rgba(148,163,184,0.6)' }}> 件</span>
               </div>
             </div>
             <div className="analytics-mini-card">

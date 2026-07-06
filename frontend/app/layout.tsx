@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@radix-ui/themes/styles.css";
 import "./globals.css";
-import { Theme } from "@radix-ui/themes";
+import { ThemeProvider } from "./theme-provider";
+
+// FOUC防止: ハイドレーション前に data-theme を確定させる
+const themeInitScript = `(function(){try{var t=localStorage.getItem('kakeibo-theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,16 +29,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <Theme
-          appearance="dark"
-          accentColor="jade"
-          grayColor="sage"
-          radius="large"
-          scaling="100%"
-        >
-          {children}
-        </Theme>
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

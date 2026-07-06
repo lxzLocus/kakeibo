@@ -1,6 +1,7 @@
 package com.study.kakeibo.service;
 
 import com.study.kakeibo.entity.Category;
+import com.study.kakeibo.entity.EntryType;
 import com.study.kakeibo.entity.User;
 import com.study.kakeibo.repository.CategoryRepository;
 import com.study.kakeibo.repository.UserRepository;
@@ -45,14 +46,14 @@ class CategoryServiceImplTest {
     @DisplayName("正常: カテゴリを追加できる")
     void addCategory_success() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(categoryRepository.existsByUserAndName(user, "食費")).thenReturn(false);
+        when(categoryRepository.existsByUserAndNameAndType(user, "食費", EntryType.EXPENSE)).thenReturn(false);
         when(categoryRepository.save(any(Category.class))).thenAnswer(inv -> {
             Category c = inv.getArgument(0);
             c.setId(10L);
             return c;
         });
 
-        Category result = categoryService.addCategory(1L, "食費");
+        Category result = categoryService.addCategory(1L, "食費", EntryType.EXPENSE);
 
         assertThat(result.getId()).isEqualTo(10L);
         assertThat(result.getName()).isEqualTo("食費");
@@ -63,9 +64,9 @@ class CategoryServiceImplTest {
     @DisplayName("異常: 重複カテゴリ名で例外")
     void addCategory_duplicateName() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(categoryRepository.existsByUserAndName(user, "食費")).thenReturn(true);
+        when(categoryRepository.existsByUserAndNameAndType(user, "食費", EntryType.EXPENSE)).thenReturn(true);
 
-        assertThatThrownBy(() -> categoryService.addCategory(1L, "食費"))
+        assertThatThrownBy(() -> categoryService.addCategory(1L, "食費", EntryType.EXPENSE))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("already exists");
     }
