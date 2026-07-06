@@ -5,7 +5,28 @@ import Link from 'next/link';
 import { getUser, removeUser } from '@/lib/auth';
 import { useEffect, useState } from 'react';
 import { UserResponse } from '@/types';
-import { useTheme } from '@/app/theme-provider';
+import { Icon } from '@/app/_components/Icon';
+
+type NavItem = { href: string; label: string; icon: string; exact?: boolean };
+
+// サイドバー主ナビ（design 準拠）
+const PRIMARY_NAV: NavItem[] = [
+  { href: '/dashboard', label: 'ホーム', icon: 'home', exact: true },
+  { href: '/dashboard/analytics', label: '分析', icon: 'monitoring' },
+  { href: '/dashboard/inventory', label: '在庫', icon: 'inventory_2' },
+  { href: '/dashboard/meals', label: '食事', icon: 'restaurant' },
+  { href: '/dashboard/import', label: 'データ取込', icon: 'upload_file' },
+];
+
+// 既存機能（design 対象外だが機能維持）
+const SECONDARY_NAV: NavItem[] = [
+  { href: '/dashboard/simulation', label: 'シミュレーション', icon: 'show_chart' },
+  { href: '/dashboard/chat', label: 'AI相談', icon: 'forum' },
+  { href: '/dashboard/settings', label: '設定', icon: 'settings' },
+];
+
+// モバイルボトムナビ（主要4項目）
+const BOTTOM_NAV = PRIMARY_NAV.slice(0, 4);
 
 export default function DashboardLayout({
   children,
@@ -14,9 +35,8 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { theme, toggle } = useTheme();
   const [user, setUserState] = useState<UserResponse | null>(null);
-  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
     const u = getUser();
@@ -27,22 +47,23 @@ export default function DashboardLayout({
     setUserState(u);
   }, [router]);
 
+  // 画面遷移時にシートを閉じる
+  useEffect(() => {
+    setSheetOpen(false);
+  }, [pathname]);
+
   function handleLogout() {
     removeUser();
     router.push('/login');
   }
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setShowUserMenu(false);
-    }
-    if (showUserMenu) document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [showUserMenu]);
+  function isActive(item: NavItem): boolean {
+    return item.exact ? pathname === item.href : pathname.startsWith(item.href);
+  }
 
   if (!user) {
     return (
-      <div className="dashboard-layout">
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="loading-state">
           <span className="loading-spinner" />
           読み込み中...
@@ -51,107 +72,94 @@ export default function DashboardLayout({
     );
   }
 
+  const initial = user.username.charAt(0);
+
   return (
-    <div className="dashboard-layout">
-      {/* ハンバーガートグル（DOM上でドロワーとオーバーレイの兄弟になるよう配置） */}
-      <input id="hamburger-toggle" className="hamburger-toggle" type="checkbox" />
-      {/* ヘッダー */}
-      <header className="dashboard-header">
-        <div className="dashboard-header-left">
-          <label htmlFor="hamburger-toggle" className="hamburger-btn" aria-hidden="true">☰</label>
-          <div className="dashboard-header-logo">💰</div>
-          <span className="dashboard-header-title">家計簿</span>
-        </div>
-
-        <div className="dashboard-header-right">
-          <button
-            className="theme-toggle-btn"
-            onClick={toggle}
-            aria-label={theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}
-            title={theme === 'dark' ? 'ライトモードに切替' : 'ダークモードに切替'}
-          >
-            {theme === 'dark' ? '☀️' : '🌙'}
-          </button>
-          <div className="dashboard-user-info">
-            <button
-              className="dashboard-user-avatar"
-              aria-haspopup="dialog"
-              aria-expanded={showUserMenu}
-              onClick={() => setShowUserMenu((s) => !s)}
-              title="ユーザーメニューを開く"
-            >
-              {user.username.charAt(0)}
-            </button>
-            <span>{user.username}</span>
+    <div className="app-shell">
+      {/* PC サイドバー */}
+      <aside className="sidebar" aria-label="サイドナビゲーション">
+        <div className="sidebar-logo">
+          <div className="sidebar-logo-badge">
+            <Icon name="account_balance" />
           </div>
+          <span className="sidebar-logo-text">家計簿</span>
         </div>
-      </header>
 
-      {/* PC固定サイドバー */}
-      <aside className="dashboard-nav-sidebar desktop-only" aria-label="サイドナビゲーション">
-        <Link href="/dashboard" className={`dashboard-nav-sidebar-link ${pathname === '/dashboard' ? 'active' : ''}`}>
-          <span className="nav-icon" aria-hidden="true">🏠</span>ホーム
-        </Link>
-        <Link href="/dashboard/analytics" className={`dashboard-nav-sidebar-link ${pathname === '/dashboard/analytics' ? 'active' : ''}`}>
-          <span className="nav-icon" aria-hidden="true">📊</span>分析
-        </Link>
-        <Link href="/dashboard/simulation" className={`dashboard-nav-sidebar-link ${pathname === '/dashboard/simulation' ? 'active' : ''}`}>
-          <span className="nav-icon" aria-hidden="true">📈</span>シミュレーション
-        </Link>
-        <Link href="/dashboard/chat" className={`dashboard-nav-sidebar-link ${pathname === '/dashboard/chat' ? 'active' : ''}`}>
-          <span className="nav-icon" aria-hidden="true">💬</span>AI相談
-        </Link>
-        <Link href="/dashboard/settings" className={`dashboard-nav-sidebar-link ${pathname.startsWith('/dashboard/settings') ? 'active' : ''}`}>
-          <span className="nav-icon" aria-hidden="true">⚙️</span>設定
-        </Link>
+        <nav className="nav">
+          {PRIMARY_NAV.map((item) => (
+            <Link key={item.href} href={item.href} className={`nav-link ${isActive(item) ? 'active' : ''}`}>
+              <Icon name={item.icon} />
+              {item.label}
+            </Link>
+          ))}
+          <div className="nav-divider" />
+          {SECONDARY_NAV.map((item) => (
+            <Link key={item.href} href={item.href} className={`nav-link ${isActive(item) ? 'active' : ''}`}>
+              <Icon name={item.icon} />
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="sidebar-user">
+          <div className="avatar">{initial}</div>
+          <span className="sidebar-user-name">{user.username}</span>
+          <button className="sidebar-logout" onClick={handleLogout} aria-label="ログアウト" title="ログアウト">
+            <Icon name="logout" />
+          </button>
+        </div>
       </aside>
 
-      {/* モバイルドロワー（チェックボックスで開閉） */}
-      <nav className="mobile-drawer" aria-label="モバイルメニュー">
-        <div className="drawer-section-title">メニュー</div>
-        <Link href="/dashboard" className="drawer-link"><span className="nav-icon" aria-hidden="true">🏠</span>ホーム</Link>
-        <Link href="/dashboard/analytics" className="drawer-link"><span className="nav-icon" aria-hidden="true">📊</span>分析</Link>
-        <Link href="/dashboard/simulation" className="drawer-link"><span className="nav-icon" aria-hidden="true">📈</span>シミュレーション</Link>
-        <Link href="/dashboard/chat" className="drawer-link"><span className="nav-icon" aria-hidden="true">💬</span>AI相談</Link>
-        <Link href="/dashboard/settings" className="drawer-link"><span className="nav-icon" aria-hidden="true">⚙️</span>設定</Link>
-        <hr style={{ margin: '12px 0', borderColor: 'rgba(148,163,184,0.06)' }} />
-        <button className="dashboard-logout-btn" onClick={handleLogout}>ログアウト</button>
+      {/* モバイルヘッダー */}
+      <header className="mobile-header">
+        <div className="mobile-header-logo">
+          <div className="mobile-header-badge">
+            <Icon name="account_balance" />
+          </div>
+          <span className="mobile-header-title">家計簿</span>
+        </div>
+        <button className="avatar" onClick={() => setSheetOpen(true)} aria-label="メニューを開く">
+          {initial}
+        </button>
+      </header>
+
+      {/* メイン */}
+      <main className="app-main">{children}</main>
+
+      {/* モバイルボトムナビ */}
+      <nav className="bottom-nav" aria-label="ボトムナビゲーション">
+        {BOTTOM_NAV.map((item) => (
+          <Link key={item.href} href={item.href} className={`bottom-nav-item ${isActive(item) ? 'active' : ''}`}>
+            <Icon name={item.icon} />
+            {item.label}
+          </Link>
+        ))}
+        <button className="bottom-nav-item" onClick={() => setSheetOpen(true)}>
+          <Icon name="menu" />
+          その他
+        </button>
       </nav>
 
-      {/* ドロワーを閉じるためのオーバーレイ（labelでcheckboxをオフにする） */}
-      <label htmlFor="hamburger-toggle" className="mobile-drawer-overlay" aria-hidden="true"></label>
-
-      {/* ユーザーメニュー（モーダル） */}
-      {showUserMenu && (
-        <div className="modal-overlay" onClick={() => setShowUserMenu(false)}>
-          <div
-            className="modal-container"
-            role="dialog"
-            aria-modal="true"
-            aria-label="ユーザーメニュー"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-header">
-              <div className="modal-title">ユーザー</div>
-              <button className="modal-close-btn" onClick={() => setShowUserMenu(false)} aria-label="閉じる">✕</button>
-            </div>
-            <div className="modal-body">
-              <div>ユーザー: {user.username}</div>
-            </div>
-            <div className="modal-footer">
-              <div className="modal-btn-group">
-                <button className="modal-btn primary" onClick={handleLogout}>ログアウト</button>
-              </div>
-            </div>
+      {/* モバイル その他シート */}
+      {sheetOpen && (
+        <div className="mobile-sheet-overlay" onClick={() => setSheetOpen(false)}>
+          <div className="mobile-sheet" onClick={(e) => e.stopPropagation()}>
+            <Link href="/dashboard/import" className="nav-link">
+              <Icon name="upload_file" />データ取込
+            </Link>
+            {SECONDARY_NAV.map((item) => (
+              <Link key={item.href} href={item.href} className="nav-link">
+                <Icon name={item.icon} />
+                {item.label}
+              </Link>
+            ))}
+            <div className="nav-divider" />
+            <button className="nav-link" onClick={handleLogout} style={{ color: 'var(--danger)' }}>
+              <Icon name="logout" />ログアウト
+            </button>
           </div>
         </div>
       )}
-
-      {/* メインコンテンツ */}
-      <main className="dashboard-main">
-        {children}
-      </main>
-
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { userApi, ApiError } from '@/lib/api';
 import { setUser } from '@/lib/auth';
-
+import { Icon } from '@/app/_components/Icon';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -58,7 +58,6 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await userApi.register(username.trim(), email, password);
-      // 登録成功したらそのまま自動ログイン
       const loggedInUser = await userApi.login(email, password);
       setUser(loggedInUser);
       router.push('/dashboard');
@@ -80,24 +79,26 @@ export default function RegisterPage() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        {/* ロゴ */}
         <div className="auth-logo">
-          <div className="auth-logo-icon">💰</div>
+          <div className="auth-logo-badge">
+            <Icon name="account_balance" />
+          </div>
           <span className="auth-logo-text">家計簿</span>
         </div>
 
         <p className="auth-subtitle">
-          無料アカウントを作成して、<br />家計管理を始めましょう。
+          無料アカウントを作成して、
+          <br />
+          家計管理を始めましょう。
         </p>
 
-        {/* APIエラー */}
         {apiError && (
-          <div className="auth-error-banner">
-            ⚠️ {apiError}
+          <div className="error-banner">
+            <Icon name="error" />
+            {apiError}
           </div>
         )}
 
-        {/* フォーム */}
         <form onSubmit={handleSubmit} noValidate>
           <div className="auth-field">
             <label htmlFor="register-username">ユーザー名</label>
@@ -156,13 +157,9 @@ export default function RegisterPage() {
             {errors.confirmPassword && <div className="field-error-text">{errors.confirmPassword}</div>}
           </div>
 
-          <button
-            type="submit"
-            className="auth-submit"
-            disabled={loading}
-          >
+          <button type="submit" className="auth-submit" disabled={loading}>
             {loading ? (
-              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                 <span className="loading-spinner" /> 登録中...
               </span>
             ) : (
@@ -171,7 +168,6 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        {/* フッター */}
         <div className="auth-footer">
           <span>すでにアカウントをお持ちの方は </span>
           <Link href="/login">ログイン</Link>

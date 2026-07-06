@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { userApi, ApiError } from '@/lib/api';
 import { setUser } from '@/lib/auth';
 import { UserResponse } from '@/types';
+import { Icon } from '@/app/_components/Icon';
 
 function LoginForm() {
   const router = useRouter();
@@ -59,31 +60,29 @@ function LoginForm() {
 
   return (
     <div className="auth-card">
-      {/* ロゴ */}
       <div className="auth-logo">
-        <div className="auth-logo-icon">💰</div>
+        <div className="auth-logo-badge">
+          <Icon name="account_balance" />
+        </div>
         <span className="auth-logo-text">家計簿</span>
       </div>
 
-      <p className="auth-subtitle">
-        あなたの家計を、もっとスマートに。
-      </p>
+      <p className="auth-subtitle">あなたの家計を、もっとスマートに。</p>
 
-      {/* 登録成功メッセージ */}
       {registered && (
-        <div className="auth-success-banner">
-          ✅ アカウント登録が完了しました。ログインしてください。
+        <div className="success-banner">
+          <Icon name="check_circle" />
+          アカウント登録が完了しました。ログインしてください。
         </div>
       )}
 
-      {/* APIエラー */}
       {apiError && (
-        <div className="auth-error-banner">
-          ⚠️ {apiError}
+        <div className="error-banner">
+          <Icon name="error" />
+          {apiError}
         </div>
       )}
 
-      {/* フォーム */}  
       <form onSubmit={handleSubmit} noValidate>
         <div className="auth-field">
           <label htmlFor="login-email">メールアドレス</label>
@@ -114,14 +113,9 @@ function LoginForm() {
           {errors.password && <div className="field-error-text">{errors.password}</div>}
         </div>
 
-        <button
-          type="submit"
-          className="auth-submit"
-          disabled={loading}
-          id="login-submit-btn"
-        >
+        <button type="submit" className="auth-submit" disabled={loading} id="login-submit-btn">
           {loading ? (
-            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
               <span className="loading-spinner" /> ログイン中...
             </span>
           ) : (
@@ -130,7 +124,6 @@ function LoginForm() {
         </button>
       </form>
 
-      {/* フッター */}
       <div className="auth-footer">
         <span>アカウントをお持ちでない方は </span>
         <Link href="/register">新規登録</Link>
@@ -142,13 +135,15 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <div className="auth-page">
-      <Suspense fallback={
-        <div className="auth-card">
-          <div className="loading-state">
-            <span className="loading-spinner" />
+      <Suspense
+        fallback={
+          <div className="auth-card">
+            <div className="loading-state">
+              <span className="loading-spinner" />
+            </div>
           </div>
-        </div>
-      }>
+        }
+      >
         <LoginForm />
       </Suspense>
     </div>

@@ -3,6 +3,23 @@
 import { useState, useEffect, useCallback } from 'react';
 import { mealApi, inventoryApi, ApiError } from '@/lib/api';
 import { MealResponse, MealRequest, InventoryResponse } from '@/types';
+import { Icon } from '@/app/_components/Icon';
+
+const MEAL_ICONS: Record<string, string> = {
+  BREAKFAST: 'wb_twilight',
+  LUNCH: 'light_mode',
+  DINNER: 'dark_mode',
+  SNACK: 'cookie',
+};
+
+const MEAL_LABELS: Record<string, string> = {
+  BREAKFAST: '朝食',
+  LUNCH: '昼食',
+  DINNER: '夕食',
+  SNACK: '間食',
+};
+
+const MEAL_TYPES: ('BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK')[] = ['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK'];
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
@@ -13,36 +30,21 @@ function formatDate(dateStr: string): string {
   return `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
-const MEAL_ICONS: Record<string, string> = {
-  BREAKFAST: '🌅',
-  LUNCH: '☀️',
-  DINNER: '🌙',
-  SNACK: '🍪',
-};
-
-const MEAL_LABELS: Record<string, string> = {
-  BREAKFAST: '朝食',
-  LUNCH: '昼食',
-  DINNER: '夕食',
-  SNACK: '間食',
-};
-
 export default function MealsPage() {
   const [meals, setMeals] = useState<MealResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
-  // モーダル用
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [inventories, setInventories] = useState<InventoryResponse[]>([]);
-  
+
   const [modalDatetime, setModalDatetime] = useState('');
-  const [modalType, setModalType] = useState<'BREAKFAST'|'LUNCH'|'DINNER'|'SNACK'>('DINNER');
+  const [modalType, setModalType] = useState<'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK'>('DINNER');
   const [modalTitle, setModalTitle] = useState('');
   const [modalServings, setModalServings] = useState('1');
   const [modalNote, setModalNote] = useState('');
-  const [modalItems, setModalItems] = useState<{inventoryId: string, quantity: string}[]>([]);
-  
+  const [modalItems, setModalItems] = useState<{ inventoryId: string; quantity: string }[]>([]);
+
   const [modalLoading, setModalLoading] = useState(false);
   const [formError, setFormError] = useState('');
 
@@ -52,15 +54,14 @@ export default function MealsPage() {
       const today = new Date();
       const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
       const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      
-      const since = `${firstDay.getFullYear()}-${String(firstDay.getMonth()+1).padStart(2,'0')}-01`;
-      const until = `${lastDay.getFullYear()}-${String(lastDay.getMonth()+1).padStart(2,'0')}-${String(lastDay.getDate()).padStart(2,'0')}`;
-      
+
+      const since = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-01`;
+      const until = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
+
       const data = await mealApi.getAll(since, until);
       setMeals(data);
     } catch (err) {
-      if (err instanceof ApiError) setError(err.message);
-      else setError('データの取得に失敗しました');
+      setError(err instanceof ApiError ? err.message : 'データの取得に失敗しました');
     } finally {
       setLoading(false);
     }
@@ -68,7 +69,7 @@ export default function MealsPage() {
 
   const fetchInventories = async () => {
     try {
-      const data = await inventoryApi.getAll(); // 未消費のみ
+      const data = await inventoryApi.getAll();
       setInventories(data);
     } catch (e) {
       console.error(e);
@@ -82,7 +83,7 @@ export default function MealsPage() {
 
   function openModal() {
     const today = new Date();
-    const dt = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}T${String(today.getHours()).padStart(2,'0')}:00`;
+    const dt = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}T${String(today.getHours()).padStart(2, '0')}:00`;
     setModalDatetime(dt);
     setModalType('DINNER');
     setModalTitle('');
@@ -116,30 +117,27 @@ export default function MealsPage() {
       setFormError('必須項目を入力してください');
       return;
     }
-    
-    // validate items
-    const validItems = modalItems.filter(i => i.inventoryId && parseFloat(i.quantity) > 0).map(i => ({
-      inventoryId: parseInt(i.inventoryId),
-      quantityUsed: parseFloat(i.quantity)
-    }));
+
+    const validItems = modalItems
+      .filter((i) => i.inventoryId && parseFloat(i.quantity) > 0)
+      .map((i) => ({ inventoryId: parseInt(i.inventoryId), quantityUsed: parseFloat(i.quantity) }));
 
     setModalLoading(true);
     try {
       const payload: MealRequest = {
-        mealDatetime: modalDatetime + ':00', // add seconds
+        mealDatetime: modalDatetime + ':00',
         mealType: modalType,
         title: modalTitle,
         servings: parseInt(modalServings),
         note: modalNote || undefined,
-        items: validItems
+        items: validItems,
       };
-      
+
       await mealApi.create(payload);
       await fetchMeals();
       setIsModalOpen(false);
     } catch (err) {
-      if (err instanceof ApiError) setFormError(err.message);
-      else setFormError('保存に失敗しました');
+      setFormError(err instanceof ApiError ? err.message : '保存に失敗しました');
     } finally {
       setModalLoading(false);
     }
@@ -150,106 +148,121 @@ export default function MealsPage() {
     try {
       await mealApi.delete(id);
       await fetchMeals();
-    } catch (err) {
+    } catch {
       alert('エラーが発生しました');
     }
   }
 
   return (
-    <div style={{ padding: '1.5rem 1rem' }}>
-      <div className="dashboard-section-header">
-        <h2 className="dashboard-section-title">🍽️ 食事ログ</h2>
+    <>
+      <div className="page-head tight">
+        <h1 className="page-title">食事ログ</h1>
+        <button className="btn-primary" onClick={openModal}>
+          <Icon name="add" />
+          食事を記録
+        </button>
       </div>
 
       {loading ? (
-        <div className="loading-state"><span className="loading-spinner" />読み込み中...</div>
+        <div className="loading-state">
+          <span className="loading-spinner" />
+          読み込み中...
+        </div>
       ) : error ? (
-        <div className="auth-error-banner">⚠️ {error}</div>
+        <div className="error-banner">
+          <Icon name="error" />
+          {error}
+        </div>
       ) : meals.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-state-icon">🍲</div>
+          <div className="empty-state-icon">
+            <Icon name="restaurant" />
+          </div>
           <div className="empty-state-text">食事の記録がありません</div>
-          <div className="empty-state-hint">右下の「＋」ボタンから登録しましょう</div>
+          <div className="empty-state-hint">「食事を記録」から登録しましょう</div>
         </div>
       ) : (
         <div className="meal-list">
           {meals.map((meal) => (
             <div key={meal.id} className="meal-card">
-              <div className="meal-header">
-                <div className="meal-title-group">
-                  <span className="meal-icon">{MEAL_ICONS[meal.mealType]}</span>
-                  <span className="meal-title">{meal.title}</span>
+              <div className="meal-head">
+                <div className="meal-left">
+                  <div className="meal-badge">
+                    <Icon name={MEAL_ICONS[meal.mealType] ?? 'restaurant'} />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div className="meal-title">{meal.title}</div>
+                    <div className="meal-meta">
+                      {formatDate(meal.mealDatetime)} · {MEAL_LABELS[meal.mealType]} · {meal.servings}人分
+                    </div>
+                  </div>
                 </div>
-                <button className="remove-btn" style={{ background: 'transparent', border: 'none', color: 'rgba(239,68,68,0.7)', cursor: 'pointer' }} onClick={() => handleDelete(meal.id)}>🗑️</button>
-              </div>
-              
-              <div className="meal-meta">
-                <span>📅 {formatDate(meal.mealDatetime)}</span>
-                <span>🏷️ {MEAL_LABELS[meal.mealType]}</span>
-                <span>👥 {meal.servings}人分</span>
-              </div>
-              
-              <div className="meal-cost-section">
-                <div className="meal-cost-item">
-                  <span className="meal-cost-label">総コスト</span>
-                  <span className="meal-cost-value">{formatCurrency(meal.estimatedTotalCost)}</span>
-                </div>
-                <div className="meal-cost-item" style={{ marginLeft: '2rem' }}>
-                  <span className="meal-cost-label">1人分</span>
-                  <span className="meal-cost-value highlight">{formatCurrency(meal.costPerServing)}</span>
+                <div className="meal-right">
+                  <div className="meal-cost">
+                    <div className="meal-cost-label">総コスト</div>
+                    <div className="meal-cost-value">{formatCurrency(meal.estimatedTotalCost)}</div>
+                  </div>
+                  <div className="meal-cost">
+                    <div className="meal-cost-label">1人分</div>
+                    <div className="meal-cost-value accent">{formatCurrency(meal.costPerServing)}</div>
+                  </div>
+                  <button className="meal-del" onClick={() => handleDelete(meal.id)} aria-label="削除">
+                    <Icon name="delete" />
+                  </button>
                 </div>
               </div>
 
               {meal.items.length > 0 && (
-                <div className="meal-ingredients">
-                  <div className="meal-ingredients-title">使用した食材</div>
-                  <div className="meal-ingredient-list">
-                    {meal.items.map((item) => (
-                      <div key={item.id} className="meal-ingredient-item">
-                        <span>・{item.itemName} <span style={{ color: 'rgba(148,163,184,0.5)', fontSize: '0.75rem' }}>x {item.quantityUsed}</span></span>
-                        <span className="ingredient-cost">{formatCurrency(item.estimatedCost)}</span>
-                      </div>
-                    ))}
-                  </div>
+                <div className="meal-items">
+                  {meal.items.map((item) => (
+                    <div key={item.id} className="meal-item">
+                      <span className="meal-item-name">
+                        {item.itemName} <span className="meal-item-qty">× {item.quantityUsed}</span>
+                      </span>
+                      <span className="meal-item-cost">{formatCurrency(item.estimatedCost)}</span>
+                    </div>
+                  ))}
                 </div>
               )}
-              
-              {meal.note && (
-                <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: 'rgba(148,163,184,0.6)' }}>
-                  📝 {meal.note}
-                </div>
-              )}
+
+              {meal.note && <div className="meal-note">{meal.note}</div>}
             </div>
           ))}
         </div>
       )}
 
-      <button className="fab-btn" onClick={openModal} aria-label="食事を記録">＋</button>
-
       {isModalOpen && (
         <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title">🍽️ 食事の記録</h3>
-              <button className="modal-close-btn" onClick={() => setIsModalOpen(false)}>×</button>
+              <h3 className="modal-title">食事の記録</h3>
+              <button className="modal-close-btn" onClick={() => setIsModalOpen(false)} aria-label="閉じる">
+                <Icon name="close" />
+              </button>
             </div>
-            
+
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
-                {formError && <div className="auth-error-banner" style={{ margin: 0 }}>⚠️ {formError}</div>}
-                
+                {formError && (
+                  <div className="error-banner" style={{ margin: 0 }}>
+                    <Icon name="error" />
+                    {formError}
+                  </div>
+                )}
+
                 <div className="modal-field">
                   <label>日時</label>
                   <input type="datetime-local" value={modalDatetime} onChange={(e) => setModalDatetime(e.target.value)} required />
                 </div>
-                
+
                 <div className="modal-field">
                   <label>食事タイプ</label>
-                  <div className="mobile-tabs" style={{ marginBottom: 0 }}>
-                    <button type="button" className={`mobile-tab-btn ${modalType === 'BREAKFAST' ? 'active' : ''}`} onClick={() => setModalType('BREAKFAST')}>🌅 朝食</button>
-                    <button type="button" className={`mobile-tab-btn ${modalType === 'LUNCH' ? 'active' : ''}`} onClick={() => setModalType('LUNCH')}>☀️ 昼食</button>
-                    <button type="button" className={`mobile-tab-btn ${modalType === 'DINNER' ? 'active' : ''}`} onClick={() => setModalType('DINNER')}>🌙 夕食</button>
-                    <button type="button" className={`mobile-tab-btn ${modalType === 'SNACK' ? 'active' : ''}`} onClick={() => setModalType('SNACK')}>🍪 間食</button>
+                  <div className="segment">
+                    {MEAL_TYPES.map((t) => (
+                      <button key={t} type="button" className={`segment-btn ${modalType === t ? 'active' : ''}`} onClick={() => setModalType(t)}>
+                        {MEAL_LABELS[t]}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -268,17 +281,31 @@ export default function MealsPage() {
                   <div className="ingredient-selector">
                     {modalItems.map((item, index) => (
                       <div key={index} className="ingredient-row">
-                        <select value={item.inventoryId} onChange={(e) => updateModalItem(index, 'inventoryId', e.target.value)}>
-                          <option value="">-- 食材を選択 --</option>
-                          {inventories.map(inv => (
-                            <option key={inv.id} value={inv.id}>{inv.itemName} (残り: {inv.quantity}{inv.unit})</option>
+                        <select className="select" value={item.inventoryId} onChange={(e) => updateModalItem(index, 'inventoryId', e.target.value)}>
+                          <option value="">食材を選択</option>
+                          {inventories.map((inv) => (
+                            <option key={inv.id} value={inv.id}>
+                              {inv.itemName}（残り {inv.quantity}{inv.unit}）
+                            </option>
                           ))}
                         </select>
-                        <input type="number" min="0.1" step="0.1" placeholder="使用量" value={item.quantity} onChange={(e) => updateModalItem(index, 'quantity', e.target.value)} style={{ flex: '0 0 80px' }} />
-                        <button type="button" className="remove-btn" onClick={() => removeModalItem(index)}>×</button>
+                        <input
+                          type="number"
+                          min="0.1"
+                          step="0.1"
+                          placeholder="使用量"
+                          value={item.quantity}
+                          onChange={(e) => updateModalItem(index, 'quantity', e.target.value)}
+                          style={{ flex: '0 0 84px' }}
+                        />
+                        <button type="button" className="remove-btn" onClick={() => removeModalItem(index)} aria-label="削除">
+                          <Icon name="close" size={16} />
+                        </button>
                       </div>
                     ))}
-                    <button type="button" className="add-ingredient-btn" onClick={addModalItem}>＋ 食材を追加</button>
+                    <button type="button" className="add-ingredient-btn" onClick={addModalItem}>
+                      ＋ 食材を追加
+                    </button>
                   </div>
                 </div>
 
@@ -289,14 +316,18 @@ export default function MealsPage() {
               </div>
               <div className="modal-footer">
                 <div className="modal-btn-group">
-                  <button type="button" className="modal-btn secondary" onClick={() => setIsModalOpen(false)}>キャンセル</button>
-                  <button type="submit" className="modal-btn primary" disabled={modalLoading}>{modalLoading ? '保存中...' : '記録する'}</button>
+                  <button type="button" className="modal-btn secondary" onClick={() => setIsModalOpen(false)}>
+                    キャンセル
+                  </button>
+                  <button type="submit" className="modal-btn primary" disabled={modalLoading}>
+                    {modalLoading ? '保存中...' : '記録する'}
+                  </button>
                 </div>
               </div>
             </form>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
