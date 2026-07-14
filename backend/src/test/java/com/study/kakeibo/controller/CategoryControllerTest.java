@@ -132,13 +132,13 @@ class CategoryControllerTest {
     @Test
     @DisplayName("DELETE /categories/{id} — 204 No Content")
     void delete_success() throws Exception {
-        doNothing().when(categoryService).deleteCategory(1L, 10L);
+        doNothing().when(categoryService).deleteCategory(1L, 10L, null);
 
         mockMvc.perform(delete("/categories/10")
                         .with(csrf())
                         .header("X-User-Id", "1"))
                 .andExpect(status().isNoContent());
 
-        verify(categoryService).deleteCategory(1L, 10L);
+        verify(categoryService).deleteCategory(1L, 10L, null);
     }
 }

@@ -4,6 +4,8 @@ import com.study.kakeibo.dto.Response.AnalyticsResponseDto;
 import com.study.kakeibo.dto.Response.AnalyticsResponseDto.CategorySummary;
 import com.study.kakeibo.dto.Response.AnalyticsResponseDto.StoreSummary;
 import com.study.kakeibo.dto.Response.AnalyticsResponseDto.DailySummary;
+import com.study.kakeibo.dto.Response.TrendResponseDto;
+import com.study.kakeibo.dto.Response.TrendResponseDto.CategoryTrend;
 import com.study.kakeibo.entity.Entry;
 import com.study.kakeibo.entity.EntryType;
 import com.study.kakeibo.entity.User;
@@ -85,6 +87,88 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .byStore(byStore)
                 .dailyTrend(dailyTrend)
                 .build();
+    }
+
+    @Override
+    public TrendResponseDto getTrend(Long userId, int year, int month, int months) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+
+        int span = Math.max(1, Math.min(24, months));
+        YearMonth anchor = YearMonth.of(year, month);
+        YearMonth first = anchor.minusMonths(span - 1L);
+
+        LocalDate startDate = first.atDay(1);
+        LocalDate endDate = anchor.atEndOfMonth();
+
+        List<Entry> entries = entryRepository.findByUserAndEntryDateBetween(user, startDate, endDate);
+
+        // 月ラベルと、月→インデックスの対応
+        List<String> monthLabels = new ArrayList<>(span);
+        Map<YearMonth, Integer> monthIndex = new HashMap<>();
+        for (int i = 0; i < span; i++) {
+            YearMonth ym = first.plusMonths(i);
+            monthLabels.add(ym.toString());   // "2026-02"
+            monthIndex.put(ym, i);
+        }
+
+        BigDecimal[] income = zeroArray(span);
+        BigDecimal[] expense = zeroArray(span);
+        Map<Long, BigDecimal[]> categoryMonthly = new HashMap<>();
+        Map<Long, String> categoryName = new HashMap<>();
+
+        for (Entry e : entries) {
+            Integer i = monthIndex.get(YearMonth.from(e.getEntryDate()));
+            if (i == null) continue;
+            BigDecimal amount = e.getAmount() != null ? e.getAmount() : BigDecimal.ZERO;
+
+            if (e.getType() == EntryType.INCOME) {
+                income[i] = income[i].add(amount);
+            } else if (e.getType() == EntryType.EXPENSE) {
+                expense[i] = expense[i].add(amount);
+                if (e.getCategory() != null) {
+                    Long cid = e.getCategory().getId();
+                    categoryName.putIfAbsent(cid, e.getCategory().getName());
+                    BigDecimal[] arr = categoryMonthly.computeIfAbsent(cid, k -> zeroArray(span));
+                    arr[i] = arr[i].add(amount);
+                }
+            }
+        }
+
+        List<BigDecimal> balance = new ArrayList<>(span);
+        for (int i = 0; i < span; i++) {
+            balance.add(income[i].subtract(expense[i]));
+        }
+
+        List<CategoryTrend> categories = new ArrayList<>();
+        for (Map.Entry<Long, BigDecimal[]> en : categoryMonthly.entrySet()) {
+            BigDecimal[] arr = en.getValue();
+            BigDecimal total = BigDecimal.ZERO;
+            for (BigDecimal v : arr) total = total.add(v);
+            categories.add(CategoryTrend.builder()
+                    .categoryId(en.getKey())
+                    .name(categoryName.get(en.getKey()))
+                    .monthly(Arrays.asList(arr))
+                    .total(total)
+                    .build());
+        }
+        // 期間合計の大きい順
+        categories.sort((a, b) -> b.getTotal().compareTo(a.getTotal()));
+
+        return TrendResponseDto.builder()
+                .months(monthLabels)
+                .monthlyIncome(Arrays.asList(income))
+                .monthlyExpense(Arrays.asList(expense))
+                .monthlyBalance(balance)
+                .categories(categories)
+                .build();
+    }
+
+    /** 長さ n の BigDecimal 配列を 0 で初期化して返す。 */
+    private BigDecimal[] zeroArray(int n) {
+        BigDecimal[] arr = new BigDecimal[n];
+        Arrays.fill(arr, BigDecimal.ZERO);
+        return arr;
     }
 
     /**

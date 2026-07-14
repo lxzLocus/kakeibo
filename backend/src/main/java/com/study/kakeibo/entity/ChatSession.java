@@ -27,6 +27,17 @@ public class ChatSession {
     @Column(nullable = false)
     private String title;
 
+    /**
+     * トークン肥大化対策の会話要約。summarizedUntilMessageId までのメッセージを要約したもの。
+     * LLMコンテキストにのみ注入し、フロントには返さない。
+     */
+    @Column(columnDefinition = "TEXT")
+    private String summary;
+
+    /** summary が対象とする最後の chat_message.id。null なら未要約。 */
+    @Column(name = "summarized_until_message_id")
+    private Long summarizedUntilMessageId;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

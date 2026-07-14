@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { entryApi, categoryApi, storeApi, receiptApi, ApiError } from '@/lib/api';
-import { EntryResponse, CategoryResponse, StoreResponse, ReceiptDraft } from '@/types';
+import { entryApi, categoryApi, storeApi, receiptApi, poolApi, ApiError } from '@/lib/api';
+import { EntryResponse, CategoryResponse, StoreResponse, ReceiptDraft, FundPoolResponse } from '@/types';
 import { Icon } from '@/app/_components/Icon';
+import { withCommas, toNumber } from '@/lib/format';
+import { AssetsSection } from './AssetsSection';
 
 /**
  * アップロード前に画像を縮小してJPEG化する（大きな写真によるアップロードエラー/低速を防ぐ）。
@@ -100,8 +102,12 @@ function aggregateByCategory(entries: EntryResponse[]) {
 // メインダッシュボードページ（ホーム）
 // ==========================================
 
+const RECENT_STEPS = [7, 31, 92, 366]; // 取引履歴の表示期間（日）。もっと見るで拡大
+
 export default function DashboardPage() {
   const [entries, setEntries] = useState<EntryResponse[]>([]);
+  const [recentEntries, setRecentEntries] = useState<EntryResponse[]>([]); // 履歴用（月に依存しない直近データ）
+  const [recentDays, setRecentDays] = useState(7); // 履歴の表示期間（直近N日）
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -111,6 +117,7 @@ export default function DashboardPage() {
 
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [stores, setStores] = useState<StoreResponse[]>([]);
+  const [pools, setPools] = useState<FundPoolResponse[]>([]);
 
   // モーダル
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -120,7 +127,9 @@ export default function DashboardPage() {
   const [modalAmount, setModalAmount] = useState('');
   const [modalCategoryId, setModalCategoryId] = useState('');
   const [modalStoreId, setModalStoreId] = useState('');
-  const [modalMemo, setModalMemo] = useState('');
+  const [modalMemo, setModalMemo] = useState(''); // 品名（購入した物・明細）
+  const [modalNote, setModalNote] = useState(''); // 自由記入のメモ
+  const [modalFundPoolId, setModalFundPoolId] = useState('');
 
   // レシートOCR
   const [receiptScanning, setReceiptScanning] = useState(false);
@@ -162,6 +171,19 @@ export default function DashboardPage() {
     }
   }, [year, month]);
 
+  // 履歴用: 月に依存せず直近1年分を読み込み（表示は recentDays でクライアント側に絞る）
+  const fetchRecent = useCallback(async () => {
+    try {
+      const from = new Date();
+      from.setDate(from.getDate() - 366);
+      const since = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, '0')}-${String(from.getDate()).padStart(2, '0')}`;
+      const data = (await entryApi.getAll(since, todayStr())) as EntryResponse[];
+      setRecentEntries(data);
+    } catch {
+      // 履歴取得失敗は致命的ではない（月次の表示は別途行う）
+    }
+  }, []);
+
   const fetchCategoriesAndStores = useCallback(async () => {
     try {
       const catData = (await categoryApi.getAll()) as CategoryResponse[];
@@ -173,10 +195,20 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const fetchPools = useCallback(async () => {
+    try {
+      setPools(await poolApi.getAll());
+    } catch (err) {
+      console.error('口座の取得に失敗しました', err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchEntries();
+    fetchRecent();
     fetchCategoriesAndStores();
-  }, [fetchEntries, fetchCategoriesAndStores]);
+    fetchPools();
+  }, [fetchEntries, fetchRecent, fetchCategoriesAndStores, fetchPools]);
 
   // --- モーダル操作 ---
   function lastCategoryFor(type: 'INCOME' | 'EXPENSE'): string {
@@ -205,6 +237,8 @@ export default function DashboardPage() {
     const lastStore = readLast(LAST_STORE_KEY);
     setModalStoreId(stores.some((s) => String(s.storeId) === lastStore) ? lastStore : '');
     setModalMemo('');
+    setModalNote('');
+    setModalFundPoolId(pools.find((p) => p.primary)?.id?.toString() ?? pools[0]?.id?.toString() ?? '');
     setFormErrors({});
     setModalSubmitError('');
     setIsAddingCategory(false);
@@ -216,10 +250,12 @@ export default function DashboardPage() {
     setEditingEntry(entry);
     setModalType(entry.type);
     setModalDate(entry.entryDate);
-    setModalAmount(String(entry.amount));
+    setModalAmount(withCommas(entry.amount));
     setModalCategoryId(String(entry.categoryId));
     setModalStoreId(entry.storeId ? String(entry.storeId) : '');
     setModalMemo(entry.memo || '');
+    setModalNote(entry.note || '');
+    setModalFundPoolId(entry.fundPoolId != null ? String(entry.fundPoolId) : (pools.find((p) => p.primary)?.id?.toString() ?? ''));
     setFormErrors({});
     setModalSubmitError('');
     setIsAddingCategory(false);
@@ -247,7 +283,7 @@ export default function DashboardPage() {
       const draft: ReceiptDraft = await receiptApi.scan(compressed);
 
       if (draft.entryDate) setModalDate(draft.entryDate);
-      if (draft.totalAmount != null) setModalAmount(String(draft.totalAmount));
+      if (draft.totalAmount != null) setModalAmount(withCommas(draft.totalAmount));
       if (draft.suggestedCategoryName) {
         const cat = categories.find((c) => c.name === draft.suggestedCategoryName && c.type === 'EXPENSE');
         if (cat) setModalCategoryId(String(cat.categoryId));
@@ -256,11 +292,13 @@ export default function DashboardPage() {
         const store = stores.find((s) => s.name === draft.storeName);
         if (store) setModalStoreId(String(store.storeId));
       }
-      const itemsMemo = (draft.items ?? [])
-        .map((i) => `${i.name}${i.price != null ? ` ¥${i.price.toLocaleString()}` : ''}`)
-        .join(', ');
-      const memo = [draft.storeName, itemsMemo].filter(Boolean).join(' / ');
-      if (memo) setModalMemo(memo);
+      // 品名は「店舗\n商品, 値段」形式（バックエンドで構築）。無ければ明細から簡易生成。
+      const fallbackMemo = [
+        draft.storeName,
+        ...(draft.items ?? []).map((i) => `${i.name}${i.price != null ? `, ${i.price}` : ''}`),
+      ].filter(Boolean).join('\n');
+      const itemMemo = draft.memo ?? fallbackMemo;
+      if (itemMemo) setModalMemo(itemMemo);
 
       setReceiptScanMsg('読み取りました。内容を確認して登録してください。');
     } catch (err) {
@@ -303,7 +341,7 @@ export default function DashboardPage() {
   function validateForm(): boolean {
     const errors: Record<string, string> = {};
     if (!modalDate) errors.date = '日付を入力してください';
-    if (!modalAmount || parseFloat(modalAmount) <= 0) errors.amount = '1円以上の金額を入力してください';
+    if (!modalAmount || toNumber(modalAmount) <= 0) errors.amount = '1円以上の金額を入力してください';
     if (!modalCategoryId) errors.categoryId = 'カテゴリを選択してください';
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -318,11 +356,13 @@ export default function DashboardPage() {
     try {
       const payload = {
         entryDate: modalDate,
-        amount: parseFloat(modalAmount),
+        amount: toNumber(modalAmount),
         categoryId: parseInt(modalCategoryId, 10),
         storeId: modalStoreId ? parseInt(modalStoreId, 10) : null,
         type: modalType,
         memo: modalMemo.trim() || null,
+        note: modalNote.trim() || null,
+        fundPoolId: modalFundPoolId ? parseInt(modalFundPoolId, 10) : null,
       };
 
       if (editingEntry) {
@@ -335,6 +375,8 @@ export default function DashboardPage() {
       if (modalType === 'EXPENSE' && modalStoreId) writeLast(LAST_STORE_KEY, modalStoreId);
 
       await fetchEntries();
+      fetchRecent();
+      fetchPools();
       closeModal();
     } catch (err) {
       setModalSubmitError(err instanceof ApiError ? err.message : '保存に失敗しました。入力内容を確認してください。');
@@ -351,6 +393,8 @@ export default function DashboardPage() {
     try {
       await entryApi.delete(editingEntry.id);
       await fetchEntries();
+      fetchRecent();
+      fetchPools();
       closeModal();
     } catch (err) {
       setModalSubmitError(err instanceof ApiError ? err.message : '削除に失敗しました。');
@@ -361,19 +405,25 @@ export default function DashboardPage() {
 
   async function handleQuickEntry(e: React.FormEvent) {
     e.preventDefault();
-    if (!quickDate || !quickAmount || !quickCategoryId) return;
+    if (!quickDate || !quickAmount || !quickCategoryId) {
+      alert('日付・金額・カテゴリを入力してください');
+      return;
+    }
     setQuickLoading(true);
     try {
       await entryApi.create({
         entryDate: quickDate,
-        amount: parseFloat(quickAmount),
+        amount: toNumber(quickAmount),
         categoryId: parseInt(quickCategoryId, 10),
         type: 'EXPENSE',
         memo: quickMemo.trim() || null,
+        fundPoolId: pools.find((p) => p.primary)?.id ?? null,
       });
       setQuickAmount('');
       setQuickMemo('');
       await fetchEntries();
+      fetchRecent();
+      fetchPools();
     } catch (err) {
       alert(err instanceof ApiError ? err.message : '登録に失敗しました');
     } finally {
@@ -386,7 +436,20 @@ export default function DashboardPage() {
   const totalExpense = entries.filter((e) => e.type === 'EXPENSE').reduce((s, e) => s + e.amount, 0);
   const balance = totalIncome - totalExpense;
   const categoryData = aggregateByCategory(entries).slice(0, 6);
-  const sortedEntries = [...entries].sort((a, b) => b.entryDate.localeCompare(a.entryDate));
+  // 取引履歴は月に依存せず「直近 recentDays 日」を新しい順に表示（もっと見るで拡大）
+  const recentCutoff = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - recentDays);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })();
+  const sortedEntries = [...recentEntries]
+    .filter((e) => e.entryDate >= recentCutoff)
+    .sort((a, b) => b.entryDate.localeCompare(a.entryDate));
+  const hasMoreRecent = recentDays < 366 && recentEntries.some((e) => e.entryDate < recentCutoff);
+  const recentLabel = recentDays <= 7 ? '直近1週間' : recentDays <= 31 ? '直近1ヶ月' : recentDays <= 92 ? '直近3ヶ月' : '直近1年';
+  function showMoreRecent() {
+    setRecentDays((d) => RECENT_STEPS.find((s) => s > d) ?? 366);
+  }
 
   // 今月のペース
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -442,7 +505,7 @@ export default function DashboardPage() {
   return (
     <>
       {/* ============ PC レイアウト ============ */}
-      <div className="desktop-only">
+      <div className="desktop-only screen">
         <div className="page-head">
           {monthPill}
           <button className="btn-primary" onClick={openAddModal}>
@@ -477,6 +540,11 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* 総資産・口座 */}
+        <div style={{ marginBottom: 28 }}>
+          <AssetsSection pools={pools} onReloadPools={fetchPools} />
+        </div>
+
         {loading ? (
           <div className="loading-state">
             <span className="loading-spinner" />
@@ -486,37 +554,42 @@ export default function DashboardPage() {
           <div className="home-grid">
             {/* 左: 取引履歴 */}
             <div>
-              <div className="section-label stack-label">取引履歴</div>
+              <div className="section-label stack-label">取引履歴（{recentLabel}）</div>
               {sortedEntries.length > 0 ? (
-                <div className="card flush">
-                  <table className="txn-table">
-                    <tbody>
-                      {txnRows.map(({ entry, line }) => (
-                        <tr
-                          key={entry.id}
-                          className={`txn-row ${entry.type === 'INCOME' ? 'income' : ''}`}
-                          onClick={() => openEditModal(entry)}
-                        >
-                          <td className="txn-date">{formatDate(entry.entryDate)}</td>
-                          <td className="txn-body">
-                            {line}
-                            {entry.memo && <span className="txn-memo"> {entry.memo}</span>}
-                          </td>
-                          <td className={`txn-amount ${entry.type === 'INCOME' ? 'income' : ''}`}>
-                            {formatSigned(entry.type, entry.amount)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <>
+                  <div className="card flush">
+                    <table className="txn-table">
+                      <tbody>
+                        {txnRows.map(({ entry, line }) => (
+                          <tr
+                            key={entry.id}
+                            className={`txn-row ${entry.type === 'INCOME' ? 'income' : ''}`}
+                            onClick={() => openEditModal(entry)}
+                          >
+                            <td className="txn-date">{formatDate(entry.entryDate)}</td>
+                            <td className="txn-body">
+                              {line}
+                              {entry.memo && <span className="txn-memo"> {entry.memo}</span>}
+                            </td>
+                            <td className={`txn-amount ${entry.type === 'INCOME' ? 'income' : ''}`}>
+                              {formatSigned(entry.type, entry.amount)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {hasMoreRecent && (
+                    <button className="load-more-btn" onClick={showMoreRecent}>もっと見る</button>
+                  )}
+                </>
               ) : (
                 <div className="card">
                   <div className="empty-state">
                     <div className="empty-state-icon">
                       <Icon name="receipt_long" />
                     </div>
-                    <div className="empty-state-text">この月の取引はまだありません</div>
+                    <div className="empty-state-text">{recentLabel}の取引はまだありません</div>
                     <div className="empty-state-hint">「収支を追加」から最初の収支を登録しましょう</div>
                   </div>
                 </div>
@@ -570,11 +643,11 @@ export default function DashboardPage() {
                     />
                     <input
                       className="input"
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       placeholder="金額"
-                      min="1"
                       value={quickAmount}
-                      onChange={(e) => setQuickAmount(e.target.value)}
+                      onChange={(e) => setQuickAmount(withCommas(e.target.value))}
                       required
                     />
                   </div>
@@ -611,7 +684,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ============ モバイル レイアウト ============ */}
-      <div className="mobile-only">
+      <div className="mobile-only screen">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <button className="month-pill-btn" onClick={prevMonth} aria-label="前月">
             <Icon name="chevron_left" />
@@ -673,36 +746,46 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="section-label stack-label">取引履歴</div>
+            {/* 総資産・口座 */}
+            <div style={{ marginBottom: 20 }}>
+              <AssetsSection pools={pools} onReloadPools={fetchPools} />
+            </div>
+
+            <div className="section-label stack-label">取引履歴（{recentLabel}）</div>
             {sortedEntries.length > 0 ? (
-              <div className="card flush">
-                {txnRows.map(({ entry, line }) => (
-                  <div
-                    key={entry.id}
-                    onClick={() => openEditModal(entry)}
-                    className={entry.type === 'INCOME' ? 'txn-row income' : 'txn-row'}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 14px', borderBottom: '1px solid var(--hairline-row)' }}
-                  >
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: '13.5px', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{line}</div>
-                      <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: 2 }}>
-                        {formatDate(entry.entryDate)}
-                        {entry.memo ? ` ${entry.memo}` : ''}
+              <>
+                <div className="card flush">
+                  {txnRows.map(({ entry, line }) => (
+                    <div
+                      key={entry.id}
+                      onClick={() => openEditModal(entry)}
+                      className={entry.type === 'INCOME' ? 'txn-row income' : 'txn-row'}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 14px', borderBottom: '1px solid var(--hairline-row)' }}
+                    >
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: '13.5px', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{line}</div>
+                        <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: 2 }}>
+                          {formatDate(entry.entryDate)}
+                          {entry.memo ? ` ${entry.memo}` : ''}
+                        </div>
                       </div>
+                      <span className={`txn-amount ${entry.type === 'INCOME' ? 'income' : ''}`} style={{ marginLeft: 12 }}>
+                        {formatSigned(entry.type, entry.amount)}
+                      </span>
                     </div>
-                    <span className={`txn-amount ${entry.type === 'INCOME' ? 'income' : ''}`} style={{ marginLeft: 12 }}>
-                      {formatSigned(entry.type, entry.amount)}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+                {hasMoreRecent && (
+                  <button className="load-more-btn" onClick={showMoreRecent}>もっと見る</button>
+                )}
+              </>
             ) : (
               <div className="card">
                 <div className="empty-state">
                   <div className="empty-state-icon">
                     <Icon name="receipt_long" />
                   </div>
-                  <div className="empty-state-text">この月の取引はまだありません</div>
+                  <div className="empty-state-text">{recentLabel}の取引はまだありません</div>
                   <div className="empty-state-hint">下の「＋」ボタンから収支を登録しましょう</div>
                 </div>
               </div>
@@ -801,11 +884,11 @@ export default function DashboardPage() {
                     <label htmlFor="modal-amount">金額 (円)</label>
                     <input
                       id="modal-amount"
-                      type="number"
-                      min="1"
-                      placeholder="1000"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="1,000"
                       value={modalAmount}
-                      onChange={(e) => setModalAmount(e.target.value)}
+                      onChange={(e) => setModalAmount(withCommas(e.target.value))}
                       className={formErrors.amount ? 'field-error' : ''}
                       required
                     />
@@ -936,17 +1019,49 @@ export default function DashboardPage() {
                   </div>
                 )}
 
-                {/* メモ */}
+                {/* 品名（購入した物・明細） */}
                 <div className="modal-field">
-                  <label htmlFor="modal-memo">メモ (任意)</label>
+                  <label htmlFor="modal-memo">品名 (任意)</label>
                   <textarea
                     id="modal-memo"
                     rows={2}
-                    placeholder="購入したものや詳細など"
+                    placeholder="購入した物・明細（例: 牛乳, 220 / 卵, 250）"
                     value={modalMemo}
                     onChange={(e) => setModalMemo(e.target.value)}
                   />
                 </div>
+
+                {/* メモ（自由記入） */}
+                <div className="modal-field">
+                  <label htmlFor="modal-note">メモ (任意)</label>
+                  <textarea
+                    id="modal-note"
+                    rows={2}
+                    placeholder="補足・メモなど"
+                    value={modalNote}
+                    onChange={(e) => setModalNote(e.target.value)}
+                  />
+                </div>
+
+                {/* 口座（資金プール） */}
+                {pools.length > 0 && (
+                  <div className="modal-field">
+                    <label htmlFor="modal-pool">口座</label>
+                    <select
+                      id="modal-pool"
+                      className="select"
+                      value={modalFundPoolId}
+                      onChange={(e) => setModalFundPoolId(e.target.value)}
+                    >
+                      {pools.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                          {p.primary ? '（主口座）' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div className="modal-footer">

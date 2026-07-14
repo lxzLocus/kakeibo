@@ -24,6 +24,13 @@ public class EntryRequestDto {
     
     @NotNull(message = "Entry type must not be null")
     private EntryType type;
-    
+
+    /** 品名（購入した物・明細）。 */
     private String memo;
+
+    /** 自由記入のメモ。 */
+    private String note;
+
+    /** 収支を紐づける資金プール（口座）ID。null は主口座扱い。 */
+    private Long fundPoolId;
 }

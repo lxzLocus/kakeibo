@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS entry (
     store_id BIGINT,
     type ENUM('INCOME', 'EXPENSE') NOT NULL,
     memo TEXT,
+    fund_pool_id BIGINT NULL,            -- 収支を紐づける資金プール（口座）。null は主口座扱い
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
@@ -119,6 +120,8 @@ CREATE TABLE IF NOT EXISTS chat_session (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
     title VARCHAR(255) NOT NULL,
+    summary TEXT NULL,                                  -- トークン肥大化対策の会話要約（FEには非公開）
+    summarized_until_message_id BIGINT NULL,            -- summary が対象とする最後の chat_message.id
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
@@ -136,6 +139,48 @@ CREATE TABLE IF NOT EXISTS chat_message (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (session_id) REFERENCES chat_session(id) ON DELETE CASCADE,
     INDEX idx_message_session (session_id, created_at)
+);
+
+-- 買い物リスト（todo）。品名からLLMが数量・価格の目安を推定して保存する
+CREATE TABLE IF NOT EXISTS shopping_item (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    quantity VARCHAR(100) NULL,             -- LLM推定の数量・容量の目安（例: 12ロール）
+    estimated_price INT NULL,               -- LLM推定のおおよその価格（円）
+    checked BOOLEAN NOT NULL DEFAULT FALSE, -- 購入済みチェック
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+    INDEX idx_shopping_user (user_id, created_at)
+);
+
+-- 資金プール（口座）。ユーザーが名前を付けて複数持てる（メイン/投資用 など）
+CREATE TABLE IF NOT EXISTS fund_pool (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    initial_balance DECIMAL(15, 2) NOT NULL DEFAULT 0,  -- 開始残高（手動入力の起点）
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,          -- 主口座（収支の既定紐づけ先。1ユーザ1件）
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+    INDEX idx_pool_user (user_id, sort_order)
+);
+
+-- 資金プール間の振替（総資産は変化しない net-zero 操作）
+CREATE TABLE IF NOT EXISTS fund_transfer (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    from_pool_id BIGINT NOT NULL,
+    to_pool_id BIGINT NOT NULL,
+    amount DECIMAL(15, 2) NOT NULL,
+    transfer_date DATE NOT NULL,
+    memo VARCHAR(255) NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
+    INDEX idx_transfer_user (user_id, transfer_date)
 );
 
 -- 貯蓄目標（シミュレーション用。1ユーザ1件）

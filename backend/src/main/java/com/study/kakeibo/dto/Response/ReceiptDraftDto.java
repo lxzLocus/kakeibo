@@ -14,10 +14,11 @@ import java.util.List;
 @AllArgsConstructor
 public class ReceiptDraftDto {
     private String entryDate;              // yyyy-MM-dd（読み取れなければ null）
-    private Long totalAmount;              // 合計金額（読み取れなければ null）
+    private Long totalAmount;              // 合計金額（税込・読み取れなければ null）
     private String storeName;
     private String suggestedCategoryName;
     private List<ReceiptItem> items;
+    private String memo;                    // 品名（「店舗\n商品, 値段」形式・バックエンドで構築）
 
     @Data
     @NoArgsConstructor

@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 public class StoreRequestDto {
     @NotBlank(message = "Name must not be blank")
     private String name;
-    
-    @NotBlank(message = "Type must not be blank")
+
+    // 種別（コンビニ/スーパー等）は任意
     private String type;
 }

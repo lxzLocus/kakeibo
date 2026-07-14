@@ -38,7 +38,7 @@ public class LlmConfigController {
             @RequestBody LlmConfigRequestDto request) {
         LlmPurpose p = parse(purpose);
         llmConfigService.upsert(userId, p, request.getBaseUrl(), request.getModel(), request.getApiKey(),
-                request.isSupportsVision());
+                request.isSupportsVision(), request.isDirectOcr());
         return ResponseEntity.ok(toDto(userId, p));
     }
 
@@ -53,8 +53,8 @@ public class LlmConfigController {
 
     private LlmConfigResponseDto toDto(Long userId, LlmPurpose purpose) {
         return llmConfigService.getMasked(userId, purpose)
-                .map(m -> new LlmConfigResponseDto(true, m.baseUrl(), m.model(), m.hasKey(), m.maskedKey(), m.supportsVision()))
-                .orElseGet(() -> new LlmConfigResponseDto(false, null, null, false, null, false));
+                .map(m -> new LlmConfigResponseDto(true, m.baseUrl(), m.model(), m.hasKey(), m.maskedKey(), m.supportsVision(), m.directOcr()))
+                .orElseGet(() -> new LlmConfigResponseDto(false, null, null, false, null, false, false));
     }
 
     private LlmPurpose parse(String purpose) {

@@ -50,12 +50,27 @@ public class SimulationService {
     }
 
     /**
-     * 目標が設定されていれば、収支実績から学習してシミュレーションを実行する。
-     *
-     * @param age 任意の現在年齢（病気リスク用）。null ならデフォルト30歳。
+     * FEから調整可能なシミュレーション変数（what-if）。null のフィールドは既定（学習値/デフォルト）を使う。
+     * @param age                  現在年齢（病気リスク用）。null→30歳
+     * @param insuranceCoverageRate 医療保険カバー率 0.0〜1.0。null→0.3
+     * @param monthlyIncome        月収の上書き。null→収入実績の平均
+     * @param variableExpense      月次変動費の上書き。null→支出実績の平均
+     * @param currentSavings       現在の貯蓄額の上書き（総資産連動など）。null→目標の現在貯蓄額
+     */
+    public record SimOverrides(Integer age, Double insuranceCoverageRate,
+                               Double monthlyIncome, Double variableExpense, Double currentSavings,
+                               Double illnessRiskMultiplier, Double seasonalIntensity, Double impulseIntensity) {
+    }
+
+    /**
+     * 目標が設定されていれば、収支実績から学習しつつ、指定された what-if 変数で上書きして
+     * シミュレーションを実行する。
      */
     @Transactional(readOnly = true)
-    public SimulationResultDto runForUser(Long userId, Integer age) {
+    public SimulationResultDto runForUser(Long userId, SimOverrides overrides) {
+        SimOverrides o = overrides != null ? overrides
+                : new SimOverrides(null, null, null, null, null, null, null, null);
+
         Goal goal = goalRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("貯蓄目標が未設定です。先に目標を登録してください。"));
 
@@ -77,17 +92,33 @@ public class SimulationService {
                 .mapToDouble(BigDecimal::doubleValue)
                 .sum();
 
+        int age = o.age() != null ? o.age() : DEFAULT_AGE;
+        double insurance = o.insuranceCoverageRate() != null
+                ? Math.max(0.0, Math.min(1.0, o.insuranceCoverageRate()))
+                : DEFAULT_INSURANCE_COVERAGE_RATE;
+        double monthlyIncome = o.monthlyIncome() != null ? Math.max(0, o.monthlyIncome()) : incomeStats.mean();
+        double variableExpense = o.variableExpense() != null ? Math.max(0, o.variableExpense()) : expenseStats.mean();
+        double currentSavings = o.currentSavings() != null
+                ? Math.max(0, o.currentSavings())
+                : goal.getCurrentSavings().doubleValue();
+        double illnessMult = o.illnessRiskMultiplier() != null ? Math.max(0, o.illnessRiskMultiplier()) : 1.0;
+        double seasonalMult = o.seasonalIntensity() != null ? Math.max(0, o.seasonalIntensity()) : 1.0;
+        double impulseMult = o.impulseIntensity() != null ? Math.max(0, o.impulseIntensity()) : 1.0;
+
         MonteCarloSimulationService.SimulationInput input = new MonteCarloSimulationService.SimulationInput(
                 today,
                 goal.getTargetDate(),
-                age != null ? age : DEFAULT_AGE,
-                goal.getCurrentSavings().doubleValue(),
+                age,
+                currentSavings,
                 goal.getTargetAmount().doubleValue(),
-                incomeStats.mean(),
+                monthlyIncome,
                 fixedExpense,
-                expenseStats.mean(),
+                variableExpense,
                 expenseStats.std(),
-                DEFAULT_INSURANCE_COVERAGE_RATE);
+                insurance,
+                illnessMult,
+                seasonalMult,
+                impulseMult);
 
         return monteCarlo.simulate(input);
     }

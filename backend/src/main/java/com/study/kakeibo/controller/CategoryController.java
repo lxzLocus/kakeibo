@@ -63,13 +63,22 @@ public class CategoryController {
         return ResponseEntity.ok(toDto(updatedCategory));
     }
 
-    // カテゴリ削除
+    // カテゴリ削除（reassignTo 指定時は紐づく取引をそのカテゴリへ付け替えてから削除）
     @DeleteMapping("/{categoryId}")
     public ResponseEntity<Void> deleteCategory(
             @RequestHeader("X-User-Id") Long userId,
-            @PathVariable Long categoryId
+            @PathVariable Long categoryId,
+            @RequestParam(required = false) Long reassignTo
     ) {
-        categoryService.deleteCategory(userId, categoryId);
+        categoryService.deleteCategory(userId, categoryId, reassignTo);
         return ResponseEntity.noContent().build();  // 204 No Content
+    }
+
+    // カテゴリID → 取引件数
+    @GetMapping("/usage")
+    public ResponseEntity<java.util.Map<Long, Long>> getUsage(
+            @RequestHeader("X-User-Id") Long userId
+    ) {
+        return ResponseEntity.ok(categoryService.getCategoryUsage(userId));
     }
 }

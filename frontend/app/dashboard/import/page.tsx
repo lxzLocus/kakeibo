@@ -50,12 +50,12 @@ export default function ImportPage() {
   }
 
   return (
-    <div className="import-card">
+    <div className="import-card screen">
       <h1 className="page-title" style={{ marginBottom: 20 }}>データ取込</h1>
 
       <div className="card pad-lg">
         {/* フォーマット選択 */}
-        <div className="segment" style={{ maxWidth: 280, marginBottom: 18 }}>
+        <div className="segment" style={{ marginBottom: 18 }}>
           <button className={`segment-btn ${format === 'csv' ? 'active' : ''}`} onClick={() => setFormat('csv')}>
             CSV
           </button>
@@ -82,7 +82,7 @@ export default function ImportPage() {
         {/* アクション */}
         <div className="import-actions">
           <button
-            className="btn-outline"
+            className="btn-outline import-clear"
             onClick={() => {
               setContent('');
               setResult(null);
@@ -90,7 +90,7 @@ export default function ImportPage() {
           >
             クリア
           </button>
-          <button className="btn-primary" onClick={handleImport} disabled={!content.trim() || loading}>
+          <button className="btn-primary import-run" onClick={handleImport} disabled={!content.trim() || loading}>
             {loading ? 'インポート中...' : 'インポート実行'}
           </button>
         </div>

@@ -12,4 +12,7 @@ public class LlmConfigRequestDto {
     private String apiKey;
     /** このモデルが画像入力に対応するか（チャットの画像送信可否）。 */
     private boolean supportsVision;
+
+    /** レシート読取モード: true=画像を直接LLMへ / false=Tesseract OCR→テキストLLM */
+    private boolean directOcr;
 }

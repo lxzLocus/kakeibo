@@ -36,6 +36,8 @@ public class EntryController {
         }
         dto.setType(entry.getType());
         dto.setMemo(entry.getMemo());
+        dto.setNote(entry.getNote());
+        dto.setFundPoolId(entry.getFundPoolId());
         return dto;
     }
 
@@ -52,7 +54,9 @@ public class EntryController {
                 request.getCategoryId(),
                 request.getStoreId(),
                 request.getType(),
-                request.getMemo()
+                request.getMemo(),
+                request.getNote(),
+                request.getFundPoolId()
         );
         return ResponseEntity.ok(toDto(newEntry));
     }
@@ -103,7 +107,9 @@ public class EntryController {
                 request.getCategoryId(),
                 request.getStoreId(),
                 request.getType(),
-                request.getMemo()
+                request.getMemo(),
+                request.getNote(),
+                request.getFundPoolId()
         );
         return ResponseEntity.ok(toDto(updatedEntry));
     }

@@ -47,6 +47,7 @@ public class MonteCarloSimulationService {
 
     /**
      * シミュレーション入力。
+     * 末尾3つは確率的ショックの強度倍率（FEから調整可能。1.0=既定挙動、0.0で無効化）。
      */
     public record SimulationInput(
             LocalDate startDate,
@@ -58,7 +59,10 @@ public class MonteCarloSimulationService {
             double fixedExpense,
             double variableExpense,
             double expenseVolatility,
-            double insuranceCoverageRate) {
+            double insuranceCoverageRate,
+            double illnessRiskMultiplier,
+            double seasonalIntensity,
+            double impulseIntensity) {
     }
 
     public SimulationResultDto simulate(SimulationInput in) {
@@ -71,8 +75,9 @@ public class MonteCarloSimulationService {
                 ? in.expenseVolatility() : in.variableExpense() * 0.35;
 
         double avgMonthlySeasonalDrag = in.variableExpense()
-                * SEASONAL_EXPENSE_RATE_ANNUAL_SUM / 12.0 * VARIANCE_ADJ;
-        double avgMonthlyImpulseDrag = 0.4 * IMPULSE_PROB * IMPULSE_SIZE_ADJ * in.variableExpense();
+                * SEASONAL_EXPENSE_RATE_ANNUAL_SUM / 12.0 * VARIANCE_ADJ * in.seasonalIntensity();
+        double avgMonthlyImpulseDrag = 0.4 * IMPULSE_PROB * in.impulseIntensity()
+                * IMPULSE_SIZE_ADJ * in.variableExpense();
 
         int snapshotInterval = Math.max(1, (int) Math.ceil(totalMonths / 48.0));
         List<Integer> snapshotOffsets = buildSnapshotOffsets(totalMonths, snapshotInterval);
@@ -96,20 +101,21 @@ public class MonteCarloSimulationService {
                 double monthlySurplus = in.monthlyIncome() - in.fixedExpense() - in.variableExpense();
                 double plannedMonthlySaving = monthlySurplus * SAVING_RATE_ADJ;
                 double volatilityNoise = (RANDOM.nextDouble() * 2 - 1) * monthlyVolatility * VARIANCE_ADJ;
-                double impulseSpending = RANDOM.nextDouble() < IMPULSE_PROB
+                double impulseSpending = RANDOM.nextDouble() < IMPULSE_PROB * in.impulseIntensity()
                         ? -(RANDOM.nextDouble() * in.variableExpense() * 0.8 * IMPULSE_SIZE_ADJ) : 0;
 
                 int calendarMonth = in.startDate().plusMonths(month - 1).getMonthValue();
                 double seasonalAddRate = SEASONAL_EXPENSE_RATE.getOrDefault(calendarMonth, 0.0);
                 double seasonalExpense = seasonalAddRate > 0
-                        ? in.variableExpense() * seasonalAddRate * (0.7 + RANDOM.nextDouble() * 0.6) * VARIANCE_ADJ
+                        ? in.variableExpense() * seasonalAddRate * (0.7 + RANDOM.nextDouble() * 0.6)
+                          * VARIANCE_ADJ * in.seasonalIntensity()
                         : 0;
 
                 balance += plannedMonthlySaving
                         + avgMonthlySeasonalDrag + avgMonthlyImpulseDrag
                         - volatilityNoise + impulseSpending - seasonalExpense;
 
-                if (RANDOM.nextDouble() < AGE_ANNUAL_PROB[riskBandIndex] / 12.0) {
+                if (RANDOM.nextDouble() < AGE_ANNUAL_PROB[riskBandIndex] / 12.0 * in.illnessRiskMultiplier()) {
                     double minCost = AGE_RISK[riskBandIndex][ILLNESS_COST_MIN_COLUMN];
                     double maxCost = AGE_RISK[riskBandIndex][ILLNESS_COST_MAX_COLUMN];
                     double grossIllnessCost = (minCost + RANDOM.nextDouble() * (maxCost - minCost)) * ILLNESS_COST_ADJ;

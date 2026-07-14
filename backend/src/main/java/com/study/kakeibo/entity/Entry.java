@@ -41,8 +41,17 @@ public class Entry {
     @Column(nullable = false)
     private EntryType type;
 
+    /** 品名（購入した物・明細）。OCRは「店舗\n商品, 値段…」形式を入れる。 */
     @Column
     private String memo;
+
+    /** 自由記入のメモ欄。 */
+    @Column
+    private String note;
+
+    /** どの資金プール（口座）の収支か。null は主口座(primary)扱い。 */
+    @Column(name = "fund_pool_id")
+    private Long fundPoolId;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

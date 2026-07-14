@@ -22,5 +22,7 @@ public class EntryResponseDto {
     private Long storeId;
     private String storeName;
     private EntryType type;
-    private String memo;
+    private String memo;   // 品名（購入した物・明細）
+    private String note;   // 自由記入のメモ
+    private Long fundPoolId;
 }

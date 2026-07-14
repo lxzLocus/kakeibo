@@ -31,7 +31,7 @@ public class LlmConfigService {
      */
     @Transactional
     public void upsert(Long userId, LlmPurpose purpose, String baseUrl, String model, String rawApiKey,
-                       boolean supportsVision) {
+                       boolean supportsVision, boolean directOcr) {
         if (baseUrl == null || baseUrl.isBlank()) {
             throw new IllegalArgumentException("ベースURLを入力してください。");
         }
@@ -45,6 +45,7 @@ public class LlmConfigService {
         config.setBaseUrl(baseUrl.trim());
         config.setModel(model.trim());
         config.setSupportsVision(supportsVision);
+        config.setDirectOcr(directOcr);
 
         // APIキーが空の場合（既存更新時）は既存キーを維持する
         if (rawApiKey != null && !rawApiKey.isBlank()) {
@@ -64,7 +65,7 @@ public class LlmConfigService {
         UserLlmConfig config = repository.findByUserIdAndPurpose(userId, purpose)
                 .orElseThrow(() -> new IllegalArgumentException(notConfiguredMessage(purpose)));
         String rawKey = textEncryptor.decrypt(config.getApiKeyEnc());
-        return new LlmConfig(config.getBaseUrl(), config.getModel(), rawKey, config.isSupportsVision());
+        return new LlmConfig(config.getBaseUrl(), config.getModel(), rawKey, config.isSupportsVision(), config.isDirectOcr());
     }
 
     /**
@@ -74,7 +75,8 @@ public class LlmConfigService {
     public Optional<MaskedConfig> getMasked(Long userId, LlmPurpose purpose) {
         return repository.findByUserIdAndPurpose(userId, purpose).map(config -> {
             String rawKey = textEncryptor.decrypt(config.getApiKeyEnc());
-            return new MaskedConfig(config.getBaseUrl(), config.getModel(), true, mask(rawKey), config.isSupportsVision());
+            return new MaskedConfig(config.getBaseUrl(), config.getModel(), true, mask(rawKey),
+                    config.isSupportsVision(), config.isDirectOcr());
         });
     }
 
@@ -96,6 +98,7 @@ public class LlmConfigService {
     }
 
     /** 画面表示用のマスク済み設定 */
-    public record MaskedConfig(String baseUrl, String model, boolean hasKey, String maskedKey, boolean supportsVision) {
+    public record MaskedConfig(String baseUrl, String model, boolean hasKey, String maskedKey,
+                               boolean supportsVision, boolean directOcr) {
     }
 }

@@ -104,7 +104,7 @@ public class ChatController {
             @RequestParam(value = "file", required = false) MultipartFile file) {
         ChatService.SendResult result = chatService.sendMessage(userId, sessionId, content, file);
         return ResponseEntity.ok(new SendMessageResponseDto(
-                toDto(result.userMessage()), toDto(result.aiMessage())));
+                toDto(result.userMessage()), toDto(result.aiMessage()), result.relatedQuestions()));
     }
 
     // メッセージ送信（ストリーミング / SSE）。events: user → chunk* → done / error
@@ -129,9 +129,14 @@ public class ChatController {
                     }
                 });
 
-                ChatMessage aiMessage = chatService.finalizeStream(
+                ChatService.FinalizeResult fin = chatService.finalizeStream(
                         userId, sessionId, prep.llmConfig(), reply, prep.firstText());
-                emitter.send(SseEmitter.event().name("done").data(toDto(aiMessage)));
+                emitter.send(SseEmitter.event().name("done").data(toDto(fin.aiMessage())));
+                // 最初の数ターンのみ関連質問を送る（画面下部に表示）
+                if (fin.relatedQuestions() != null && !fin.relatedQuestions().isEmpty()) {
+                    emitter.send(SseEmitter.event().name("related")
+                            .data(Map.of("questions", fin.relatedQuestions())));
+                }
                 emitter.complete();
             } catch (ClientGoneException gone) {
                 emitter.complete();

@@ -18,7 +18,9 @@ public interface EntryService {
         Long categoryId,
         Long storeId,
         EntryType type,
-        String memo
+        String memo,
+        String note,
+        Long fundPoolId
     );
 
 
@@ -41,7 +43,9 @@ public interface EntryService {
         Long categoryId,
         Long storeId,
         EntryType type,
-        String memo
+        String memo,
+        String note,
+        Long fundPoolId
     );
 
     // エントリーの削除

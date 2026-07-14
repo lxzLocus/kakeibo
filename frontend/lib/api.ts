@@ -1,8 +1,9 @@
 import {
-  ErrorResponse, UserResponse, MonthlySummary, ImportResult, InventoryResponse, InventoryRequest,
+  ErrorResponse, UserResponse, MonthlySummary, TrendSummary, ImportResult, InventoryResponse, InventoryRequest,
   MealResponse, MealRequest, LlmConfigResponse, LlmConfigRequest, LlmConfigsResponse, LlmPurpose, ChatSessionResponse,
   ChatMessageResponse, SendMessageResponse, GoalResponse, GoalRequest, FixedCostResponse,
-  FixedCostRequest, SimulationResult, ReceiptDraft,
+  FixedCostRequest, SimulationResult, ReceiptDraft, ShoppingItemResponse,
+  FundPoolResponse, TransferResponse,
 } from '@/types';
 import { getUserId } from './auth';
 
@@ -132,7 +133,9 @@ export const entryApi = {
     categoryId: number;
     storeId?: number | null;
     type: 'INCOME' | 'EXPENSE';
-    memo?: string | null;
+    memo?: string | null;   // 品名
+    note?: string | null;   // メモ
+    fundPoolId?: number | null;
   }) =>
     fetchApi('/entries', {
       method: 'POST',
@@ -145,7 +148,9 @@ export const entryApi = {
     categoryId: number;
     storeId?: number | null;
     type: 'INCOME' | 'EXPENSE';
-    memo?: string | null;
+    memo?: string | null;   // 品名
+    note?: string | null;   // メモ
+    fundPoolId?: number | null;
   }) =>
     fetchApi(`/entries/${entryId}`, {
       method: 'PUT',
@@ -169,8 +174,11 @@ export const categoryApi = {
       method: 'PUT',
       body: JSON.stringify({ name }),
     }),
-  delete: (categoryId: number) =>
-    fetchApi(`/categories/${categoryId}`, { method: 'DELETE' }),
+  // reassignTo 指定時は、紐づく取引をそのカテゴリへ付け替えてから削除する
+  delete: (categoryId: number, reassignTo?: number) =>
+    fetchApi(`/categories/${categoryId}${reassignTo != null ? `?reassignTo=${reassignTo}` : ''}`, { method: 'DELETE' }),
+  // カテゴリID → 取引件数
+  usage: () => fetchApi<Record<string, number>>('/categories/usage'),
 };
 
 // --- Store API ---
@@ -194,6 +202,9 @@ export const storeApi = {
 export const analyticsApi = {
   getMonthlySummary: (year: number, month: number) =>
     fetchApi<MonthlySummary>(`/analytics/monthly?year=${year}&month=${month}`),
+  // year/month を最新月として直近 months ヶ月分の推移を取得
+  getTrend: (year: number, month: number, months: number) =>
+    fetchApi<TrendSummary>(`/analytics/trend?year=${year}&month=${month}&months=${months}`),
 };
 
 // --- Import API ---
@@ -307,6 +318,7 @@ export async function sendMessageStream(
     onUser?: (m: ChatMessageResponse) => void;
     onChunk?: (text: string) => void;
     onDone?: (m: ChatMessageResponse) => void;
+    onRelated?: (questions: string[]) => void;
     onError?: (message: string) => void;
   }
 ): Promise<void> {
@@ -358,6 +370,7 @@ export async function sendMessageStream(
       if (event === 'user') handlers.onUser?.(parsed);
       else if (event === 'chunk') handlers.onChunk?.(parsed.text ?? '');
       else if (event === 'done') handlers.onDone?.(parsed);
+      else if (event === 'related') handlers.onRelated?.(parsed.questions ?? []);
       else if (event === 'error') handlers.onError?.(parsed.message ?? 'エラーが発生しました');
     } catch {
       /* 壊れたフレームはスキップ */
@@ -408,9 +421,69 @@ export const fixedCostApi = {
 };
 
 // --- シミュレーション ---
+export interface SimulationOptions {
+  age?: number;
+  insuranceCoverageRate?: number; // 0.0〜1.0
+  monthlyIncome?: number;
+  variableExpense?: number;
+  currentSavings?: number;
+  illnessRiskMultiplier?: number;  // 病気リスク倍率（1.0=既定）
+  seasonalIntensity?: number;      // 季節支出の強度（1.0=既定）
+  impulseIntensity?: number;       // 衝動買いの強度（1.0=既定）
+}
+
 export const simulationApi = {
-  run: (age?: number) =>
-    fetchApi<SimulationResult>(`/simulation${age ? `?age=${age}` : ''}`),
+  run: (opts: SimulationOptions = {}) => {
+    const p = new URLSearchParams();
+    const set = (k: keyof SimulationOptions) => {
+      if (opts[k] != null) p.set(k, String(opts[k]));
+    };
+    (['age', 'insuranceCoverageRate', 'monthlyIncome', 'variableExpense', 'currentSavings',
+      'illnessRiskMultiplier', 'seasonalIntensity', 'impulseIntensity'] as (keyof SimulationOptions)[]).forEach(set);
+    const q = p.toString();
+    return fetchApi<SimulationResult>(`/simulation${q ? `?${q}` : ''}`);
+  },
+};
+
+// --- 買い物リスト ---
+export const shoppingApi = {
+  getAll: () => fetchApi<ShoppingItemResponse[]>('/shopping'),
+  create: (name: string) =>
+    fetchApi<ShoppingItemResponse>('/shopping', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    }),
+  update: (
+    id: number,
+    data: Partial<{ name: string; quantity: string; estimatedPrice: number; checked: boolean }>
+  ) =>
+    fetchApi<ShoppingItemResponse>(`/shopping/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+  reestimate: (id: number) =>
+    fetchApi<ShoppingItemResponse>(`/shopping/${id}/reestimate`, { method: 'POST' }),
+  // 未見積りのアイテムを1回のLLM呼び出しでまとめて推定する
+  estimatePending: () =>
+    fetchApi<ShoppingItemResponse[]>('/shopping/estimate-pending', { method: 'POST' }),
+  delete: (id: number) => fetchApi<void>(`/shopping/${id}`, { method: 'DELETE' }),
+};
+
+// --- 資金プール（口座）・振替 ---
+export const poolApi = {
+  getAll: () => fetchApi<FundPoolResponse[]>('/pools'),
+  create: (data: { name: string; initialBalance?: number; primary?: boolean }) =>
+    fetchApi<FundPoolResponse>('/pools', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: number, data: Partial<{ name: string; initialBalance: number; primary: boolean }>) =>
+    fetchApi<FundPoolResponse>(`/pools/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  delete: (id: number) => fetchApi<void>(`/pools/${id}`, { method: 'DELETE' }),
+};
+
+export const transferApi = {
+  getAll: () => fetchApi<TransferResponse[]>('/pools/transfers'),
+  create: (data: { fromPoolId: number; toPoolId: number; amount: number; transferDate: string; memo?: string | null }) =>
+    fetchApi<TransferResponse>('/pools/transfers', { method: 'POST', body: JSON.stringify(data) }),
+  delete: (id: number) => fetchApi<void>(`/pools/transfers/${id}`, { method: 'DELETE' }),
 };
 
 // --- レシートOCR ---

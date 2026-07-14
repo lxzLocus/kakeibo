@@ -1,0 +1,49 @@
+package com.study.kakeibo.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+/**
+ * 資金プール（口座）。ユーザーが名前を付けて複数作成できる（メイン/投資用 など）。
+ * 現在残高は initialBalance + そのプールの収支 + 振替 から動的に計算する（保存しない）。
+ */
+@Data
+@Entity
+@Table(name = "fund_pool")
+@NoArgsConstructor
+@AllArgsConstructor
+public class FundPool {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
+    @Column(nullable = false)
+    private String name;
+
+    /** 開始残高（この口座の起点となる手動入力の金額）。 */
+    @Column(name = "initial_balance", nullable = false, precision = 15, scale = 2)
+    private BigDecimal initialBalance = BigDecimal.ZERO;
+
+    /** 主口座（収支の既定の紐づけ先。1ユーザ1件）。 */
+    @Column(name = "is_primary", nullable = false)
+    private boolean primary = false;
+
+    @Column(name = "sort_order", nullable = false)
+    private Integer sortOrder = 0;
+
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
+}

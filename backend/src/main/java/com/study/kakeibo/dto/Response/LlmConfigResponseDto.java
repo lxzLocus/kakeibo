@@ -12,4 +12,5 @@ public class LlmConfigResponseDto {
     private boolean hasKey;
     private String maskedKey;
     private boolean supportsVision;
+    private boolean directOcr;
 }

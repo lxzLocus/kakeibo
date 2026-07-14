@@ -24,6 +24,15 @@ public class ChatService {
 
     private static final String DEFAULT_TITLE = "新しいチャット";
 
+    /** 逐語で常に残す直近メッセージ数（要約対象から除外）。 */
+    private static final int KEEP_RECENT_MESSAGES = 6;
+    /** 逐語履歴の合計文字数がこれを超えたら古い部分を要約する（おおよそのトークン肥大化対策）。 */
+    private static final int SUMMARY_TRIGGER_CHARS = 4000;
+    /** 関連質問を生成するのは最初の何ターン（assistant返信）までか。 */
+    private static final int RELATED_MAX_TURNS = 2;
+    /** 生成する関連質問の数。 */
+    private static final int RELATED_QUESTION_COUNT = 3;
+
     private final ChatSessionRepository sessionRepository;
     private final ChatMessageRepository messageRepository;
     private final LlmConfigService llmConfigService;
@@ -99,13 +108,17 @@ public class ChatService {
         return messageRepository.save(message);
     }
 
-    /** メッセージを削除する（所有チェックあり）。 */
+    /**
+     * メッセージを削除する（所有チェックあり）。
+     * このメッセージ以降（それを含む）をまとめて削除する。
+     * 例: ユーザーメッセージを消すと、それへのAI返信や以降の履歴も消える。
+     */
     @Transactional
     public void deleteMessage(Long userId, Long sessionId, Long messageId) {
         ChatSession session = getSession(userId, sessionId); // 所有確認
         ChatMessage message = messageRepository.findByIdAndSessionId(messageId, session.getId())
                 .orElseThrow(() -> new IllegalArgumentException("メッセージが見つかりません: " + messageId));
-        messageRepository.delete(message);
+        messageRepository.deleteBySessionIdAndIdGreaterThanEqual(session.getId(), message.getId());
     }
 
     public long countMessages(Long sessionId) {
@@ -139,9 +152,9 @@ public class ChatService {
         String contentType = hasImage ? image.getContentType() : null;
         ChatMessage userMessage = saveMessage(session.getId(), "user", text, savedName, contentType);
 
-        // 2. 履歴を組み立て（systemプロンプト + 過去ログ。最新メッセージに画像があればマルチモーダル）
+        // 2. 履歴を組み立て（systemプロンプト + 要約 + 過去ログ。肥大化時は古い部分を要約）
         List<ChatMessage> history = messageRepository.findBySessionIdOrderByCreatedAtAscIdAsc(session.getId());
-        List<LlmClient.Message> apiMessages = buildApiMessages(userId, history);
+        List<LlmClient.Message> apiMessages = buildApiMessages(userId, session, history, llmConfig);
 
         // 3. LLM呼び出し
         String reply = llmClient.chat(llmConfig, apiMessages, 2048);
@@ -157,7 +170,10 @@ public class ChatService {
         // updatedAt を更新
         sessionRepository.save(session);
 
-        return new SendResult(userMessage, aiMessage);
+        // 6. 最初の数ターンのみ関連質問を生成
+        List<String> related = maybeGenerateRelated(session.getId(), llmConfig);
+
+        return new SendResult(userMessage, aiMessage, related);
     }
 
     // ---- ストリーミング（SSE）用 ----
@@ -184,7 +200,7 @@ public class ChatService {
         ChatMessage userMessage = saveMessage(session.getId(), "user", text, savedName, contentType);
 
         List<ChatMessage> history = messageRepository.findBySessionIdOrderByCreatedAtAscIdAsc(session.getId());
-        List<LlmClient.Message> apiMessages = buildApiMessages(userId, history);
+        List<LlmClient.Message> apiMessages = buildApiMessages(userId, session, history, llmConfig);
         String firstText = text.isEmpty() ? "画像の相談" : text;
         return new StreamPrep(userMessage, apiMessages, llmConfig, firstText);
     }
@@ -194,20 +210,24 @@ public class ChatService {
         return llmClient.chatStream(prep.llmConfig(), prep.apiMessages(), 2048, onChunk);
     }
 
-    /** ストリーミング完了後: assistantメッセージ保存＋タイトル生成。 */
+    /** ストリーミング完了後: assistantメッセージ保存＋タイトル生成＋（最初の数ターンのみ）関連質問生成。 */
     @Transactional
-    public ChatMessage finalizeStream(Long userId, Long sessionId, LlmConfig llmConfig, String replyText, String firstText) {
+    public FinalizeResult finalizeStream(Long userId, Long sessionId, LlmConfig llmConfig, String replyText, String firstText) {
         ChatSession session = getSession(userId, sessionId);
         ChatMessage aiMessage = saveMessage(session.getId(), "assistant", replyText.trim(), null, null);
         if (DEFAULT_TITLE.equals(session.getTitle())) {
             generateTitleSafely(session, llmConfig, firstText);
         }
         sessionRepository.save(session);
-        return aiMessage;
+        List<String> related = maybeGenerateRelated(session.getId(), llmConfig);
+        return new FinalizeResult(aiMessage, related);
     }
 
     public record StreamPrep(ChatMessage userMessage, List<LlmClient.Message> apiMessages,
                              LlmConfig llmConfig, String firstText) {
+    }
+
+    public record FinalizeResult(ChatMessage aiMessage, List<String> relatedQuestions) {
     }
 
     /** アップロード画像を ./chat-uploads/ に保存し、保存ファイル名を返す。 */
@@ -243,15 +263,34 @@ public class ChatService {
         return messageRepository.save(message);
     }
 
-    private List<LlmClient.Message> buildApiMessages(Long userId, List<ChatMessage> history) {
-        List<LlmClient.Message> apiMessages = new ArrayList<>();
+    /**
+     * LLMへ送るメッセージ列を組み立てる。
+     * 逐語履歴が肥大化していたら古い部分を要約してセッションに保存し、要約は system プロンプトに注入する
+     * （要約はフロントには返さない）。要約済み以降のメッセージのみ逐語で送る。
+     */
+    private List<LlmClient.Message> buildApiMessages(Long userId, ChatSession session,
+                                                     List<ChatMessage> history, LlmConfig llmConfig) {
+        // 1. 必要なら古い履歴を要約（session.summary / summarizedUntilMessageId を更新）
+        maybeSummarize(session, history, llmConfig);
+
+        // 2. systemプロンプト（家計コンテキスト + これまでの会話要約を内包）
         String systemPrompt = promptLoader.load("prompts/chat/system.md",
                 Map.of("financialContext", buildFinancialContext(userId)));
+        if (session.getSummary() != null && !session.getSummary().isBlank()) {
+            systemPrompt = systemPrompt
+                    + "\n\n# これまでの会話の要約（参考。ユーザーには表示されていません）\n"
+                    + session.getSummary();
+        }
+
+        List<LlmClient.Message> apiMessages = new ArrayList<>();
         apiMessages.add(new LlmClient.Message("system", systemPrompt));
 
-        int lastIndex = history.size() - 1;
-        for (int i = 0; i < history.size(); i++) {
-            ChatMessage m = history.get(i);
+        // 3. 要約済み境界より後のメッセージのみ逐語で追加
+        long until = session.getSummarizedUntilMessageId() == null ? 0L : session.getSummarizedUntilMessageId();
+        List<ChatMessage> verbatim = history.stream().filter(m -> m.getId() > until).toList();
+        int lastIndex = verbatim.size() - 1;
+        for (int i = 0; i < verbatim.size(); i++) {
+            ChatMessage m = verbatim.get(i);
             // 最新メッセージに画像があればマルチモーダル(text + image)にする
             if (i == lastIndex && m.getImagePath() != null) {
                 Object multimodal = buildImageContent(m);
@@ -263,6 +302,100 @@ public class ChatService {
             apiMessages.add(new LlmClient.Message(m.getRole(), m.getContent()));
         }
         return apiMessages;
+    }
+
+    /**
+     * 逐語履歴（要約済み以降）が大きくなったら、直近 {@link #KEEP_RECENT_MESSAGES} 件を残して
+     * それ以前をLLMで要約し、session.summary / summarizedUntilMessageId を更新する。
+     * 失敗時は要約せず逐語のまま続行（境界は進めないので履歴は失われない）。
+     */
+    private void maybeSummarize(ChatSession session, List<ChatMessage> history, LlmConfig llmConfig) {
+        long until = session.getSummarizedUntilMessageId() == null ? 0L : session.getSummarizedUntilMessageId();
+        List<ChatMessage> verbatim = history.stream().filter(m -> m.getId() > until).toList();
+        if (verbatim.size() <= KEEP_RECENT_MESSAGES) {
+            return;
+        }
+        int chars = verbatim.stream().mapToInt(m -> m.getContent() == null ? 0 : m.getContent().length()).sum();
+        if (chars <= SUMMARY_TRIGGER_CHARS) {
+            return;
+        }
+        List<ChatMessage> toSummarize = verbatim.subList(0, verbatim.size() - KEEP_RECENT_MESSAGES);
+        if (toSummarize.isEmpty()) {
+            return;
+        }
+        try {
+            String newSummary = summarizeConversation(session.getSummary(), toSummarize, llmConfig);
+            if (newSummary != null && !newSummary.isBlank()) {
+                session.setSummary(newSummary.trim());
+                session.setSummarizedUntilMessageId(toSummarize.get(toSummarize.size() - 1).getId());
+                sessionRepository.save(session);
+            }
+        } catch (Exception e) {
+            // 要約はベストエフォート。失敗しても会話は継続する。
+        }
+    }
+
+    /** これまでの要約と追加の会話を、後続の文脈保持に使える短い要約にまとめる。 */
+    private String summarizeConversation(String existingSummary, List<ChatMessage> messages, LlmConfig llmConfig) {
+        StringBuilder convo = new StringBuilder();
+        for (ChatMessage m : messages) {
+            convo.append("user".equals(m.getRole()) ? "ユーザー: " : "アシスタント: ")
+                    .append(m.getContent() == null ? "" : m.getContent()).append("\n");
+        }
+        String prompt = "あなたは家計相談チャットの会話を要約するアシスタントです。\n"
+                + "後続の応答で文脈を保てるよう、会話の要点（ユーザーの家計状況・相談内容・アシスタントの助言や結論）を"
+                + "日本語で簡潔にまとめてください。箇条書き可、全体で300文字程度。挨拶や相づちは省きます。\n\n"
+                + "[これまでの要約（無ければ空）]\n" + (existingSummary == null ? "" : existingSummary) + "\n\n"
+                + "[追加の会話]\n" + convo + "\n"
+                + "[更新後の要約のみを出力]";
+        return llmClient.chat(llmConfig, List.of(new LlmClient.Message("user", prompt)), 512);
+    }
+
+    /** 最初の {@link #RELATED_MAX_TURNS} ターンまでのみ、関連質問を生成する。失敗時は空リスト。 */
+    private List<String> maybeGenerateRelated(Long sessionId, LlmConfig llmConfig) {
+        long assistantCount = messageRepository.countBySessionIdAndRole(sessionId, "assistant");
+        if (assistantCount > RELATED_MAX_TURNS) {
+            return List.of();
+        }
+        try {
+            List<ChatMessage> history = messageRepository.findBySessionIdOrderByCreatedAtAscIdAsc(sessionId);
+            int from = Math.max(0, history.size() - 6);
+            StringBuilder convo = new StringBuilder();
+            for (ChatMessage m : history.subList(from, history.size())) {
+                convo.append("user".equals(m.getRole()) ? "ユーザー: " : "アシスタント: ")
+                        .append(m.getContent() == null ? "" : m.getContent()).append("\n");
+            }
+            String prompt = "次は家計相談チャットの会話です。この流れでユーザーが次に尋ねそうな短い質問を"
+                    + RELATED_QUESTION_COUNT + "つ提案してください。\n"
+                    + "各質問は日本語で15〜30文字程度、1行に1つ、番号・記号・引用符なしで出力してください。\n\n"
+                    + convo + "\n質問(" + RELATED_QUESTION_COUNT + "つ):";
+            String raw = llmClient.chat(llmConfig, List.of(new LlmClient.Message("user", prompt)), 256);
+            return parseQuestions(raw);
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
+    /** LLMの複数行出力を、番号や記号を除いた質問リスト（最大 RELATED_QUESTION_COUNT 件）にする。 */
+    private List<String> parseQuestions(String raw) {
+        if (raw == null) {
+            return List.of();
+        }
+        List<String> out = new ArrayList<>();
+        for (String line : raw.split("\\r?\\n")) {
+            String q = line.trim()
+                    .replaceAll("^[0-9０-９]+[.．)）、:：\\-\\s]*", "")
+                    .replaceAll("^[「『\"'・\\-*\\s]+", "")
+                    .replaceAll("[」』\"']+$", "")
+                    .trim();
+            if (!q.isBlank()) {
+                out.add(q);
+            }
+            if (out.size() >= RELATED_QUESTION_COUNT) {
+                break;
+            }
+        }
+        return out;
     }
 
     /** 画像付きメッセージを [テキスト, 画像(dataURL)] のマルチモーダル content にする。失敗時 null。 */
@@ -323,6 +456,6 @@ public class ChatService {
         }
     }
 
-    public record SendResult(ChatMessage userMessage, ChatMessage aiMessage) {
+    public record SendResult(ChatMessage userMessage, ChatMessage aiMessage, List<String> relatedQuestions) {
     }
 }

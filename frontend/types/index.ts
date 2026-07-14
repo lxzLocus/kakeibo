@@ -56,7 +56,8 @@ export interface EntryRequest {
   categoryId: number;
   storeId?: number | null;
   type: EntryType;
-  memo?: string | null;
+  memo?: string | null;   // 品名（購入した物・明細）
+  note?: string | null;   // 自由記入のメモ
 }
 
 export interface EntryResponse {
@@ -70,6 +71,29 @@ export interface EntryResponse {
   storeId: number | null;
   storeName: string | null;
   type: EntryType;
+  memo: string | null;   // 品名（購入した物・明細）
+  note: string | null;   // 自由記入のメモ
+  fundPoolId: number | null;
+}
+
+// --- 資金プール（口座）・振替 ---
+export interface FundPoolResponse {
+  id: number;
+  name: string;
+  initialBalance: number;
+  balance: number;          // 開始残高 + 収支 + 振替 の現在残高
+  primary: boolean;
+  sortOrder: number;
+}
+
+export interface TransferResponse {
+  id: number;
+  fromPoolId: number;
+  fromPoolName: string;
+  toPoolId: number;
+  toPoolName: string;
+  amount: number;
+  transferDate: string;     // yyyy-MM-dd
   memo: string | null;
 }
 
@@ -116,6 +140,22 @@ export interface MonthlySummary {
   byCategory: CategorySummary[];
   byStore: StoreSummary[];
   dailyTrend: DailySummary[];
+}
+
+// 複数月にわたる収支・カテゴリ別支出の推移
+export interface CategoryTrend {
+  categoryId: number;
+  name: string;
+  monthly: number[];       // months と同順の月次支出
+  total: number;           // 期間合計
+}
+
+export interface TrendSummary {
+  months: string[];        // ["2026-02", ...]（古い→新しい）
+  monthlyIncome: number[];
+  monthlyExpense: number[];
+  monthlyBalance: number[];
+  categories: CategoryTrend[];
 }
 
 // --- Import ---
@@ -195,6 +235,7 @@ export interface LlmConfigResponse {
   hasKey: boolean;
   maskedKey: string | null;
   supportsVision: boolean;
+  directOcr: boolean;    // レシート読取: true=画像を直接LLM / false=OCR→LLM（vision用）
 }
 
 export interface LlmConfigRequest {
@@ -202,6 +243,7 @@ export interface LlmConfigRequest {
   model: string;
   apiKey?: string;       // 空なら既存キーを維持
   supportsVision: boolean;
+  directOcr: boolean;
 }
 
 // チャット用・画像(OCR)用の2系統
@@ -233,6 +275,7 @@ export interface ChatMessageResponse {
 export interface SendMessageResponse {
   userMessage: ChatMessageResponse;
   aiMessage: ChatMessageResponse;
+  relatedQuestions?: string[];
 }
 
 // --- 貯蓄目標・固定費 ---
@@ -300,6 +343,15 @@ export interface SimulationResult {
   goalAchievementDates: GoalAchievementDates;
 }
 
+// --- 買い物リスト ---
+export interface ShoppingItemResponse {
+  id: number;
+  name: string;
+  quantity: string | null;
+  estimatedPrice: number | null;
+  checked: boolean;
+}
+
 // --- レシートOCR ---
 export interface ReceiptItem {
   name: string;
@@ -312,4 +364,5 @@ export interface ReceiptDraft {
   storeName: string | null;
   suggestedCategoryName: string | null;
   items: ReceiptItem[] | null;
+  memo: string | null;        // 品名（「店舗\n商品, 値段」形式・バックエンドで構築）
 }

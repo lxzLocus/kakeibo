@@ -1,15 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { analyticsApi, ApiError } from '@/lib/api';
-import { MonthlySummary } from '@/types';
+import { analyticsApi, entryApi, ApiError } from '@/lib/api';
+import { MonthlySummary, EntryResponse } from '@/types';
 import { Icon } from '@/app/_components/Icon';
-
-// データ可視化はブルー単色の不透明度違いで表現（design 準拠）
-const BLUE_OPACITIES = [1, 0.75, 0.58, 0.44, 0.32, 0.22];
-function catColor(i: number): string {
-  return `rgba(168, 199, 250, ${BLUE_OPACITIES[i % BLUE_OPACITIES.length]})`;
-}
+import { SimulationPanel } from './SimulationPanel';
+import { TrendPanel } from './TrendPanel';
+import { categoryColor } from '@/lib/colors';
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('ja-JP', {
@@ -32,9 +29,11 @@ function formatCompact(amount: number): string {
 
 export default function AnalyticsPage() {
   const now = new Date();
+  const [view, setView] = useState<'report' | 'trend' | 'simulation'>('report');
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [data, setData] = useState<MonthlySummary | null>(null);
+  const [monthEntries, setMonthEntries] = useState<EntryResponse[]>([]); // 選択月の全取引
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -42,8 +41,15 @@ export default function AnalyticsPage() {
     setLoading(true);
     setError('');
     try {
-      const result = await analyticsApi.getMonthlySummary(year, month);
+      const since = `${year}-${String(month).padStart(2, '0')}-01`;
+      const lastDay = new Date(year, month, 0).getDate();
+      const until = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      const [result, ents] = await Promise.all([
+        analyticsApi.getMonthlySummary(year, month),
+        entryApi.getAll(since, until),
+      ]);
       setData(result);
+      setMonthEntries(ents as EntryResponse[]);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : '分析データの取得に失敗しました');
     } finally {
@@ -76,7 +82,7 @@ export default function AnalyticsPage() {
     let currentDeg = 0;
     data.byCategory.forEach((cat, i) => {
       const deg = (cat.percentage / 100) * 360;
-      segments.push(`${catColor(i)} ${currentDeg}deg ${currentDeg + deg}deg`);
+      segments.push(`${categoryColor(i)} ${currentDeg}deg ${currentDeg + deg}deg`);
       currentDeg += deg;
     });
     if (currentDeg < 360) segments.push(`var(--surface-3) ${currentDeg}deg 360deg`);
@@ -93,9 +99,31 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <>
+    <div className="screen">
+      {/* ヘッダーとタブはタブ切替で不変（月セレクタは下のレポート内に配置し、切替でガタつかせない） */}
       <div className="page-head">
-        <h1 className="page-title">月次分析レポート</h1>
+        <h1 className="page-title">分析</h1>
+      </div>
+
+      <div className="segment" style={{ maxWidth: 520, marginBottom: 24 }}>
+        <button className={`segment-btn ${view === 'report' ? 'active' : ''}`} onClick={() => setView('report')}>
+          月次レポート
+        </button>
+        <button className={`segment-btn ${view === 'trend' ? 'active' : ''}`} onClick={() => setView('trend')}>
+          推移
+        </button>
+        <button className={`segment-btn ${view === 'simulation' ? 'active' : ''}`} onClick={() => setView('simulation')}>
+          シミュレーション
+        </button>
+      </div>
+
+      {view === 'simulation' ? (
+        <SimulationPanel />
+      ) : view === 'trend' ? (
+        <TrendPanel />
+      ) : (
+        <>
+      <div className="analytics-toolbar">
         <div className="month-pill">
           <button className="month-pill-btn" onClick={prevMonth} aria-label="前月">
             <Icon name="chevron_left" />
@@ -162,7 +190,7 @@ export default function AnalyticsPage() {
                   <div className="legend">
                     {data.byCategory.map((cat, i) => (
                       <div key={cat.categoryId} className="legend-item">
-                        <div className="legend-chip" style={{ background: catColor(i) }} />
+                        <div className="legend-chip" style={{ background: categoryColor(i) }} />
                         <span className="legend-name">{cat.name}</span>
                         <span className="legend-pct">{cat.percentage.toFixed(1)}%</span>
                       </div>
@@ -195,7 +223,7 @@ export default function AnalyticsPage() {
                             <span>{store.name}</span>
                           </span>
                           <span className="rank-amount">
-                            {formatCurrency(store.amount)} ({store.percentage.toFixed(1)}%)
+                            {formatCurrency(store.amount)}<span className="rank-pct"> ({store.percentage.toFixed(1)}%)</span>
                           </span>
                         </div>
                         <div className="bar-track">
@@ -216,7 +244,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* 日別推移 */}
-            <div className="card pad-lg grid-full">
+            <div className="card pad-lg grid-full analytics-daily">
               <div className="card-head">
                 <div className="section-label">日別推移</div>
                 <div className="daily-legend">
@@ -249,8 +277,39 @@ export default function AnalyticsPage() {
               </div>
             </div>
           </div>
+
+          {/* この月の全取引 */}
+          <div className="card pad-lg" style={{ marginTop: 16 }}>
+            <div className="section-label" style={{ display: 'block', marginBottom: 12 }}>
+              この月の取引（{monthEntries.length}件）
+            </div>
+            {monthEntries.length > 0 ? (
+              <div className="analytics-txn-list">
+                {[...monthEntries]
+                  .sort((a, b) => b.entryDate.localeCompare(a.entryDate))
+                  .map((e) => (
+                    <div key={e.id} className="analytics-txn-row">
+                      <span className="analytics-txn-date">{e.entryDate.slice(5).replace('-', '/')}</span>
+                      <span className="analytics-txn-body">
+                        {e.categoryName}{e.storeName ? ` · ${e.storeName}` : ''}
+                        {e.memo ? <span className="analytics-txn-memo"> {e.memo}</span> : null}
+                      </span>
+                      <span className={`analytics-txn-amount ${e.type === 'INCOME' ? 'inc' : ''}`}>
+                        {e.type === 'INCOME' ? '+' : '-'}{formatCurrency(e.amount)}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <div className="empty-state-text">この月の取引はありません</div>
+              </div>
+            )}
+          </div>
         </>
       ) : null}
-    </>
+        </>
+      )}
+    </div>
   );
 }

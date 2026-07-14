@@ -45,6 +45,10 @@ public class UserLlmConfig {
     @Column(name = "supports_vision", nullable = false)
     private boolean supportsVision = false;
 
+    /** レシート読取モード（VISION用）。true=画像を直接LLMへ / false=Tesseract OCR→テキストLLM。 */
+    @Column(name = "direct_ocr", nullable = false)
+    private boolean directOcr = false;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

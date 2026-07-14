@@ -15,5 +15,10 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
 
     long countBySessionId(Long sessionId);
 
+    long countBySessionIdAndRole(Long sessionId, String role);
+
     void deleteBySessionId(Long sessionId);
+
+    /** 指定メッセージ以降（それを含む）をまとめて削除する（id は作成順に増加）。 */
+    void deleteBySessionIdAndIdGreaterThanEqual(Long sessionId, Long id);
 }

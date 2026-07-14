@@ -46,7 +46,9 @@ public class EntryServiceImpl implements EntryService {
         Long categoryId,
         Long storeId,
         EntryType type,
-        String memo
+        String memo,
+        String note,
+        Long fundPoolId
     ) {
         // ユーザーの存在確認
         User user = userRepository.findById(userId)
@@ -77,6 +79,8 @@ public class EntryServiceImpl implements EntryService {
         newEntry.setStore(store);
         newEntry.setType(type);
         newEntry.setMemo(memo);
+        newEntry.setNote(note);
+        newEntry.setFundPoolId(fundPoolId);
 
         return entryRepository.save(newEntry);
     }
@@ -107,7 +111,9 @@ public class EntryServiceImpl implements EntryService {
         Long categoryId,
         Long storeId,
         EntryType type,
-        String memo
+        String memo,
+        String note,
+        Long fundPoolId
     ) {
         Entry existingEntry = entryRepository.findById(entryId)
             .orElseThrow(() -> new IllegalArgumentException("Entry not found with id: " + entryId));
@@ -137,6 +143,8 @@ public class EntryServiceImpl implements EntryService {
         existingEntry.setStore(store);
         existingEntry.setType(type);
         existingEntry.setMemo(memo);
+        existingEntry.setNote(note);
+        existingEntry.setFundPoolId(fundPoolId);
 
         return entryRepository.save(existingEntry);
     }

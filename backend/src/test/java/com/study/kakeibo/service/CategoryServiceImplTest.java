@@ -4,6 +4,7 @@ import com.study.kakeibo.entity.Category;
 import com.study.kakeibo.entity.EntryType;
 import com.study.kakeibo.entity.User;
 import com.study.kakeibo.repository.CategoryRepository;
+import com.study.kakeibo.repository.EntryRepository;
 import com.study.kakeibo.repository.UserRepository;
 import com.study.kakeibo.service.impl.CategoryServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +27,7 @@ class CategoryServiceImplTest {
 
     @Mock private CategoryRepository categoryRepository;
     @Mock private UserRepository userRepository;
+    @Mock private EntryRepository entryRepository;
 
     @InjectMocks private CategoryServiceImpl categoryService;
 
@@ -122,10 +124,12 @@ class CategoryServiceImplTest {
         existing.setId(10L);
         existing.setUser(user);
 
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(categoryRepository.findById(10L)).thenReturn(Optional.of(existing));
+        when(entryRepository.countByUserAndCategory(user, existing)).thenReturn(0L);
 
-        categoryService.deleteCategory(1L, 10L);
-        verify(categoryRepository).deleteById(10L);
+        categoryService.deleteCategory(1L, 10L, null);
+        verify(categoryRepository).delete(existing);
     }
 
     @Test
@@ -135,9 +139,10 @@ class CategoryServiceImplTest {
         existing.setId(10L);
         existing.setUser(otherUser);
 
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(categoryRepository.findById(10L)).thenReturn(Optional.of(existing));
 
-        assertThatThrownBy(() -> categoryService.deleteCategory(1L, 10L))
+        assertThatThrownBy(() -> categoryService.deleteCategory(1L, 10L, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("permission");
     }
