@@ -1,5 +1,7 @@
 package com.study.kakeibo.service.impl;
 
+import com.study.kakeibo.dto.Response.AnalysisResponseDto;
+import com.study.kakeibo.dto.Response.AnalysisResponseDto.CategoryComparison;
 import com.study.kakeibo.dto.Response.AnalyticsResponseDto;
 import com.study.kakeibo.dto.Response.AnalyticsResponseDto.CategorySummary;
 import com.study.kakeibo.dto.Response.AnalyticsResponseDto.StoreSummary;
@@ -86,6 +88,105 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .byCategory(byCategory)
                 .byStore(byStore)
                 .dailyTrend(dailyTrend)
+                .build();
+    }
+
+    @Override
+    public AnalysisResponseDto analyze(Long userId, int year, int month) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+
+        YearMonth target = YearMonth.of(year, month);
+        List<Entry> all = entryRepository.findByUser(user);
+
+        // 月ごとの支出合計 と カテゴリ別合計を集計
+        Map<YearMonth, Long> monthlyExpense = new HashMap<>();
+        Map<YearMonth, Map<String, Long>> monthlyCat = new HashMap<>();
+        for (Entry e : all) {
+            if (e.getType() != EntryType.EXPENSE || e.getAmount() == null) {
+                continue;
+            }
+            YearMonth ym = YearMonth.from(e.getEntryDate());
+            long amt = e.getAmount().longValue();
+            monthlyExpense.merge(ym, amt, Long::sum);
+            String cat = e.getCategory() != null ? e.getCategory().getName() : "その他";
+            monthlyCat.computeIfAbsent(ym, k -> new HashMap<>()).merge(cat, amt, Long::sum);
+        }
+
+        long targetTotal = monthlyExpense.getOrDefault(target, 0L);
+
+        // baseline = 対象月以外の月次支出
+        List<Long> baseline = monthlyExpense.entrySet().stream()
+                .filter(en -> !en.getKey().equals(target))
+                .map(Map.Entry::getValue)
+                .sorted()
+                .collect(Collectors.toList());
+        int monthsAnalyzed = baseline.size();
+        long avg = monthsAnalyzed > 0
+                ? Math.round(baseline.stream().mapToLong(Long::longValue).average().orElse(0)) : 0;
+        long median = monthsAnalyzed > 0 ? baseline.get(monthsAnalyzed / 2) : 0;
+        Double totalVsAvgPct = (monthsAnalyzed > 0 && avg > 0)
+                ? (targetTotal - avg) * 100.0 / avg : null;
+
+        // カテゴリ別: 対象月 vs 過去平均（そのカテゴリが出た月の平均）
+        Map<String, List<Long>> catHistory = new HashMap<>();
+        for (Map.Entry<YearMonth, Map<String, Long>> en : monthlyCat.entrySet()) {
+            if (en.getKey().equals(target)) {
+                continue;
+            }
+            for (Map.Entry<String, Long> c : en.getValue().entrySet()) {
+                catHistory.computeIfAbsent(c.getKey(), k -> new ArrayList<>()).add(c.getValue());
+            }
+        }
+        List<CategoryComparison> categories = new ArrayList<>();
+        for (Map.Entry<String, Long> c : monthlyCat.getOrDefault(target, Map.of()).entrySet()) {
+            long amt = c.getValue();
+            List<Long> hist = catHistory.getOrDefault(c.getKey(), List.of());
+            long catAvg = hist.isEmpty() ? 0
+                    : Math.round(hist.stream().mapToLong(Long::longValue).average().orElse(0));
+            Double diffPct = catAvg > 0 ? (amt - catAvg) * 100.0 / catAvg : null;
+            String dir = hist.isEmpty() ? "new"
+                    : diffPct == null ? "flat"
+                    : diffPct > 10 ? "up"
+                    : diffPct < -10 ? "down" : "flat";
+            categories.add(CategoryComparison.builder()
+                    .name(c.getKey()).amount(amt).avgAmount(catAvg).diffPct(diffPct).direction(dir).build());
+        }
+        categories.sort((a, b) -> Long.compare(b.getAmount(), a.getAmount()));
+
+        // 所見（テンプレ・LLM不使用）
+        List<String> highlights = new ArrayList<>();
+        if (monthsAnalyzed == 0) {
+            highlights.add("比較できる過去データがまだありません。数ヶ月記録すると平均・中央値との比較ができます。");
+        } else {
+            if (totalVsAvgPct != null) {
+                String w = totalVsAvgPct >= 5 ? "高め"
+                        : totalVsAvgPct <= -5 ? "低め（抑えられています）" : "平均並み";
+                highlights.add(String.format("この月の支出は平均より %+.0f%%（%s）。", totalVsAvgPct, w));
+            }
+            categories.stream()
+                    .filter(c -> "up".equals(c.getDirection()) && c.getDiffPct() != null)
+                    .sorted((a, b) -> Double.compare(b.getDiffPct(), a.getDiffPct()))
+                    .limit(2)
+                    .forEach(c -> highlights.add(
+                            String.format("%s が平均より %+.0f%% 増えています。", c.getName(), c.getDiffPct())));
+            categories.stream()
+                    .filter(c -> "down".equals(c.getDirection()) && c.getDiffPct() != null)
+                    .sorted((a, b) -> Double.compare(a.getDiffPct(), b.getDiffPct()))
+                    .limit(2)
+                    .forEach(c -> highlights.add(
+                            String.format("%s は平均より %+.0f%% 抑えられています。", c.getName(), c.getDiffPct())));
+        }
+
+        return AnalysisResponseDto.builder()
+                .month(String.format("%d-%02d", year, month))
+                .monthsAnalyzed(monthsAnalyzed)
+                .totalExpense(targetTotal)
+                .avgMonthlyExpense(avg)
+                .medianMonthlyExpense(median)
+                .totalVsAvgPct(totalVsAvgPct)
+                .categories(categories)
+                .highlights(highlights)
                 .build();
     }
 

@@ -46,15 +46,37 @@ public class CategoryServiceImpl implements CategoryService {
         newCategory.setUser(user);
         newCategory.setName(name);
         newCategory.setType(categoryType);
+        // 末尾に追加（既存の最大 sortOrder + 1）
+        int maxOrder = categoryRepository.findByUser(user).stream()
+            .mapToInt(Category::getSortOrder).max().orElse(-1);
+        newCategory.setSortOrder(maxOrder + 1);
 
         return categoryRepository.save(newCategory);
     }
 
-    // ユーザーのカテゴリ一覧取得
+    // ユーザーのカテゴリ一覧取得（表示順）
     public List<Category> getCategoriesByUserId(Long userId) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
-        return categoryRepository.findByUser(user);
+        return categoryRepository.findByUserOrderBySortOrderAscIdAsc(user);
+    }
+
+    // カテゴリの並び替え（指定ID順に sortOrder を振り直す）
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void reorderCategories(Long userId, java.util.List<Long> orderedIds) {
+        if (orderedIds == null) {
+            return;
+        }
+        int order = 0;
+        for (Long id : orderedIds) {
+            Category c = categoryRepository.findById(id).orElse(null);
+            if (c == null || !c.getUser().getId().equals(userId)) {
+                continue; // 他人のカテゴリ・存在しないIDはスキップ
+            }
+            c.setSortOrder(order++);
+            categoryRepository.save(c);
+        }
     }
 
     // カテゴリIDで取得

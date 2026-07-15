@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { shoppingApi, ApiError } from '@/lib/api';
 import { ShoppingItemResponse } from '@/types';
 import { Icon } from '@/app/_components/Icon';
+import { useToast, useConfirm } from '@/app/_components/ui';
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('ja-JP', {
@@ -15,6 +16,8 @@ function formatCurrency(amount: number): string {
 }
 
 export default function ShoppingPage() {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [items, setItems] = useState<ShoppingItemResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -112,12 +115,12 @@ export default function ShoppingPage() {
   }
 
   async function remove(it: ShoppingItemResponse) {
-    if (!confirm(`「${it.name}」を削除しますか？`)) return;
+    if (!(await confirm({ title: 'アイテムを削除', message: `「${it.name}」を削除しますか？`, confirmText: '削除する', danger: true }))) return;
     try {
       await shoppingApi.delete(it.id);
       setItems((prev) => prev.filter((x) => x.id !== it.id));
     } catch {
-      alert('削除に失敗しました');
+      toast('削除に失敗しました', 'error');
     }
   }
 

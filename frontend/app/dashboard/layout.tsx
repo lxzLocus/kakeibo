@@ -6,6 +6,7 @@ import { getUser, removeUser } from '@/lib/auth';
 import { useEffect, useRef, useState } from 'react';
 import { UserResponse } from '@/types';
 import { Icon } from '@/app/_components/Icon';
+import { UiProvider } from '@/app/_components/ui';
 
 type NavItem = { href: string; label: string; icon: string; exact?: boolean };
 
@@ -115,6 +116,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isChat = pathname.startsWith('/dashboard/chat');
 
   return (
+    <UiProvider>
     <div className="app-shell" data-nav-hidden={navHidden ? 'true' : undefined} data-chat={isChat ? 'true' : undefined}>
       {/* PC サイドバー */}
       <aside className="sidebar" aria-label="サイドナビゲーション">
@@ -224,5 +226,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       )}
     </div>
+    </UiProvider>
   );
 }

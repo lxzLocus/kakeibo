@@ -1,9 +1,15 @@
 package com.study.kakeibo.service;
 
+import com.study.kakeibo.dto.Response.AnalysisResponseDto;
 import com.study.kakeibo.dto.Response.AnalyticsResponseDto;
 import com.study.kakeibo.dto.Response.TrendResponseDto;
 
 public interface AnalyticsService {
+
+    /**
+     * 選択月の支出を、ユーザー自身の過去の平均・中央値と比較する（コードベース・LLM不使用）。
+     */
+    AnalysisResponseDto analyze(Long userId, int year, int month);
 
     /**
      * 指定されたユーザーの月次サマリーを取得する。

@@ -158,6 +158,34 @@ export interface TrendSummary {
   categories: CategoryTrend[];
 }
 
+// 「分析する」: 平均・中央値との比較（コードベース）
+export interface AnalysisCategoryComparison {
+  name: string;
+  amount: number;
+  avgAmount: number;
+  diffPct: number | null;
+  direction: 'up' | 'down' | 'flat' | 'new';
+}
+
+export interface AnalysisResult {
+  month: string;
+  monthsAnalyzed: number;
+  totalExpense: number;
+  avgMonthlyExpense: number;
+  medianMonthlyExpense: number;
+  totalVsAvgPct: number | null;
+  categories: AnalysisCategoryComparison[];
+  highlights: string[];
+}
+
+// 評価バッチの設定・状態
+export type EvaluationFrequency = 'OFF' | 'DAILY' | 'WEEKLY' | 'MONTHLY';
+export interface EvaluationResponse {
+  frequency: EvaluationFrequency;
+  lastRunAt: string | null;
+  summary: string | null;
+}
+
 // --- Import ---
 export interface ImportResult {
   totalRows: number;

@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { analyticsApi, entryApi, ApiError } from '@/lib/api';
-import { MonthlySummary, EntryResponse } from '@/types';
+import { MonthlySummary, EntryResponse, AnalysisResult } from '@/types';
+
+const ANALYSIS_ENABLED_KEY = 'kakeibo.analysisEnabled';
 import { Icon } from '@/app/_components/Icon';
 import { SimulationPanel } from './SimulationPanel';
 import { TrendPanel } from './TrendPanel';
@@ -36,10 +38,32 @@ export default function AnalyticsPage() {
   const [monthEntries, setMonthEntries] = useState<EntryResponse[]>([]); // 選択月の全取引
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // 「分析する」（コードベースの平均・中央値比較。設定でオン/オフ）
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisEnabled, setAnalysisEnabled] = useState(true);
+
+  useEffect(() => {
+    try {
+      setAnalysisEnabled(localStorage.getItem(ANALYSIS_ENABLED_KEY) !== 'false');
+    } catch { /* 既定=有効 */ }
+  }, []);
+
+  async function runAnalyze() {
+    setAnalyzing(true);
+    try {
+      setAnalysis(await analyticsApi.analyze(year, month));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : '分析に失敗しました');
+    } finally {
+      setAnalyzing(false);
+    }
+  }
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError('');
+    setAnalysis(null); // 月を切り替えたら前月の分析結果はクリア
     try {
       const since = `${year}-${String(month).padStart(2, '0')}-01`;
       const lastDay = new Date(year, month, 0).getDate();
@@ -174,6 +198,51 @@ export default function AnalyticsPage() {
               </div>
             </div>
           </div>
+
+          {/* 分析する（コードベースの平均・中央値比較。LLM不使用。設定でオン/オフ） */}
+          {analysisEnabled && (
+            <div className="card pad-lg" style={{ marginBottom: 16 }}>
+              <div className="card-head">
+                <div className="section-label">分析</div>
+                <button className="btn btn--outline" onClick={runAnalyze} disabled={analyzing}>
+                  {analyzing ? <><span className="loading-spinner" />分析中…</> : <><Icon name="insights" size={16} />分析する</>}
+                </button>
+              </div>
+              {analysis ? (
+                analysis.monthsAnalyzed === 0 ? (
+                  <p className="goal-summary__note" style={{ marginTop: 10 }}>{analysis.highlights[0]}</p>
+                ) : (
+                  <>
+                    <div className="analysis-stat-row">
+                      <div className="sim-stat"><div className="sim-stat-label">今月の支出</div><div className="sim-stat-value">{formatCurrency(analysis.totalExpense)}</div></div>
+                      <div className="sim-stat"><div className="sim-stat-label">あなたの平均</div><div className="sim-stat-value">{formatCurrency(analysis.avgMonthlyExpense)}</div></div>
+                      <div className="sim-stat"><div className="sim-stat-label">中央値</div><div className="sim-stat-value">{formatCurrency(analysis.medianMonthlyExpense)}</div></div>
+                    </div>
+                    <ul className="analysis-highlights">
+                      {analysis.highlights.map((h, i) => <li key={i}>{h}</li>)}
+                    </ul>
+                    {analysis.categories.length > 0 && (
+                      <div className="analysis-cat-list">
+                        {analysis.categories.slice(0, 6).map((c) => (
+                          <div key={c.name} className="analysis-cat-row">
+                            <span className="analysis-cat-name">{c.name}</span>
+                            <span className="analysis-cat-amount tnum">{formatCurrency(c.amount)}</span>
+                            <span className={`analysis-cat-diff ${c.direction}`}>
+                              {c.diffPct == null ? '新規' : `${c.diffPct >= 0 ? '+' : ''}${Math.round(c.diffPct)}% vs平均`}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )
+              ) : (
+                <p className="goal-summary__note" style={{ marginTop: 10 }}>
+                  「分析する」で、この月の支出をあなたの過去の平均・中央値と比較します（LLMは使いません）。
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="analytics-grid">
             {/* カテゴリ別ドーナツ */}

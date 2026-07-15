@@ -47,6 +47,11 @@ public interface EntryRepository extends JpaRepository<Entry, Long> {
     @Query("SELECT e.category.id, COUNT(e) FROM Entry e WHERE e.user = :user GROUP BY e.category.id")
     List<Object[]> countPerCategory(@Param("user") User user);
 
+    /** ユーザーの全取引を削除する（データリセット用）。 */
+    @Modifying
+    @Query("DELETE FROM Entry e WHERE e.user = :user")
+    void deleteAllByUser(@Param("user") User user);
+
     // ユーザーと店舗で絞り込む
     List<Entry> findByUserAndStore(User user, Store store);
 

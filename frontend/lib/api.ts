@@ -1,5 +1,5 @@
 import {
-  ErrorResponse, UserResponse, MonthlySummary, TrendSummary, ImportResult, InventoryResponse, InventoryRequest,
+  ErrorResponse, UserResponse, MonthlySummary, TrendSummary, AnalysisResult, EvaluationResponse, ImportResult, InventoryResponse, InventoryRequest,
   MealResponse, MealRequest, LlmConfigResponse, LlmConfigRequest, LlmConfigsResponse, LlmPurpose, ChatSessionResponse,
   ChatMessageResponse, SendMessageResponse, GoalResponse, GoalRequest, FixedCostResponse,
   FixedCostRequest, SimulationResult, ReceiptDraft, ShoppingItemResponse,
@@ -159,6 +159,8 @@ export const entryApi = {
 
   delete: (entryId: number) =>
     fetchApi(`/entries/${entryId}`, { method: 'DELETE' }),
+  // 全取引を削除（データリセット）
+  deleteAll: () => fetchApi<void>('/entries', { method: 'DELETE' }),
 };
 
 // --- Category API ---
@@ -179,6 +181,9 @@ export const categoryApi = {
     fetchApi(`/categories/${categoryId}${reassignTo != null ? `?reassignTo=${reassignTo}` : ''}`, { method: 'DELETE' }),
   // カテゴリID → 取引件数
   usage: () => fetchApi<Record<string, number>>('/categories/usage'),
+  // 並び替え（表示したい順のカテゴリID配列を送る）
+  reorder: (ids: number[]) =>
+    fetchApi<void>('/categories/order', { method: 'PUT', body: JSON.stringify(ids) }),
 };
 
 // --- Store API ---
@@ -205,6 +210,17 @@ export const analyticsApi = {
   // year/month を最新月として直近 months ヶ月分の推移を取得
   getTrend: (year: number, month: number, months: number) =>
     fetchApi<TrendSummary>(`/analytics/trend?year=${year}&month=${month}&months=${months}`),
+  // 「分析する」: 選択月を自分の過去平均・中央値と比較（コードベース）
+  analyze: (year: number, month: number) =>
+    fetchApi<AnalysisResult>(`/analytics/analyze?year=${year}&month=${month}`),
+};
+
+// --- 評価バッチ（設定の頻度で分析を定期実行） ---
+export const evaluationApi = {
+  get: () => fetchApi<EvaluationResponse>('/evaluation'),
+  setFrequency: (frequency: string) =>
+    fetchApi<EvaluationResponse>(`/evaluation/frequency?frequency=${frequency}`, { method: 'PUT' }),
+  runNow: () => fetchApi<EvaluationResponse>('/evaluation/run', { method: 'POST' }),
 };
 
 // --- Import API ---

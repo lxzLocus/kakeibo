@@ -1,5 +1,6 @@
 package com.study.kakeibo.controller;
 
+import com.study.kakeibo.dto.Response.AnalysisResponseDto;
 import com.study.kakeibo.dto.Response.AnalyticsResponseDto;
 import com.study.kakeibo.dto.Response.TrendResponseDto;
 import com.study.kakeibo.service.AnalyticsService;
@@ -47,5 +48,18 @@ public class AnalyticsController {
     ) {
         TrendResponseDto trend = analyticsService.getTrend(userId, year, month, months);
         return ResponseEntity.ok(trend);
+    }
+
+    /**
+     * 「分析する」: 選択月の支出を自分の過去平均・中央値と比較する（コードベース・LLM不使用）。
+     * GET /analytics/analyze?year=2026&month=7
+     */
+    @GetMapping("/analyze")
+    public ResponseEntity<AnalysisResponseDto> analyze(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam int year,
+            @RequestParam int month
+    ) {
+        return ResponseEntity.ok(analyticsService.analyze(userId, year, month));
     }
 }

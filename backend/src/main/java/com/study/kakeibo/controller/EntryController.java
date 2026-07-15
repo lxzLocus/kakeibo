@@ -123,4 +123,13 @@ public class EntryController {
         entryService.deleteEntry(userId, entryId);
         return ResponseEntity.noContent().build();  // 204 No Content
     }
+
+    // 全取引を削除（データリセット）
+    @DeleteMapping
+    public ResponseEntity<Void> deleteAll(
+            @RequestHeader("X-User-Id") Long userId
+    ) {
+        entryService.deleteAllEntries(userId);
+        return ResponseEntity.noContent().build();
+    }
 }

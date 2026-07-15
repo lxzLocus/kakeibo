@@ -6,6 +6,7 @@ import { chatApi, llmConfigApi, sendMessageStream, ApiError } from '@/lib/api';
 import { ChatSessionResponse, ChatMessageResponse } from '@/types';
 import { Icon } from '@/app/_components/Icon';
 import { Markdown } from './Markdown';
+import { useConfirm } from '@/app/_components/ui';
 
 const SUGGESTIONS = [
   '今月は使いすぎ？',
@@ -34,6 +35,7 @@ async function downscaleImage(file: File, maxDim = 1280, quality = 0.8): Promise
 }
 
 export default function ChatPage() {
+  const confirm = useConfirm();
   const [sessions, setSessions] = useState<ChatSessionResponse[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [messages, setMessages] = useState<ChatMessageResponse[]>([]);
@@ -92,7 +94,7 @@ export default function ChatPage() {
   async function handleDeleteMessage(m: ChatMessageResponse) {
     if (activeId === null) return;
     // このメッセージ以降（AI返信や以降の履歴を含む）をまとめて削除する
-    if (!confirm('このメッセージ以降の履歴を削除しますか？')) return;
+    if (!(await confirm({ title: '履歴を削除', message: 'このメッセージ以降の履歴を削除しますか？', confirmText: '削除する', danger: true }))) return;
     try {
       await chatApi.deleteMessage(activeId, m.id);
       const idx = messages.findIndex((x) => x.id === m.id);
@@ -150,7 +152,7 @@ export default function ChatPage() {
   }
 
   async function handleDelete(id: number) {
-    if (!confirm('このチャットを削除しますか？')) return;
+    if (!(await confirm({ title: 'チャットを削除', message: 'このチャットを削除しますか？', confirmText: '削除する', danger: true }))) return;
     try {
       await chatApi.deleteSession(id);
       const remaining = sessions.filter((s) => s.id !== id);

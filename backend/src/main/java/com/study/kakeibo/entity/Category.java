@@ -28,6 +28,10 @@ public class Category {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    /** 表示順（小さいほど先頭）。名前順・カスタム並べ替えで更新する。 */
+    @Column(name = "sort_order", nullable = false)
+    private int sortOrder = 0;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -6,6 +6,7 @@ import { EntryResponse, CategoryResponse, StoreResponse, ReceiptDraft, FundPoolR
 import { Icon } from '@/app/_components/Icon';
 import { withCommas, toNumber } from '@/lib/format';
 import { AssetsSection } from './AssetsSection';
+import { useToast, useConfirm } from '@/app/_components/ui';
 
 /**
  * アップロード前に画像を縮小してJPEG化する（大きな写真によるアップロードエラー/低速を防ぐ）。
@@ -105,6 +106,8 @@ function aggregateByCategory(entries: EntryResponse[]) {
 const RECENT_STEPS = [7, 31, 92, 366]; // 取引履歴の表示期間（日）。もっと見るで拡大
 
 export default function DashboardPage() {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [entries, setEntries] = useState<EntryResponse[]>([]);
   const [recentEntries, setRecentEntries] = useState<EntryResponse[]>([]); // 履歴用（月に依存しない直近データ）
   const [recentDays, setRecentDays] = useState(7); // 履歴の表示期間（直近N日）
@@ -317,7 +320,7 @@ export default function DashboardPage() {
       setNewCategoryName('');
       setIsAddingCategory(false);
     } catch (err) {
-      alert(err instanceof ApiError ? err.message : 'カテゴリの追加に失敗しました');
+      toast(err instanceof ApiError ? err.message : 'カテゴリの追加に失敗しました', 'error');
     }
   }
 
@@ -334,7 +337,7 @@ export default function DashboardPage() {
       setNewStoreType('');
       setIsAddingStore(false);
     } catch (err) {
-      alert(err instanceof ApiError ? err.message : '店舗の追加に失敗しました');
+      toast(err instanceof ApiError ? err.message : '店舗の追加に失敗しました', 'error');
     }
   }
 
@@ -387,7 +390,7 @@ export default function DashboardPage() {
 
   async function handleDeleteEntry() {
     if (!editingEntry) return;
-    if (!confirm('この取引レコードを削除してよろしいですか？')) return;
+    if (!(await confirm({ title: '取引を削除', message: 'この取引レコードを削除してよろしいですか？', confirmText: '削除する', danger: true }))) return;
 
     setModalLoading(true);
     try {
@@ -406,7 +409,7 @@ export default function DashboardPage() {
   async function handleQuickEntry(e: React.FormEvent) {
     e.preventDefault();
     if (!quickDate || !quickAmount || !quickCategoryId) {
-      alert('日付・金額・カテゴリを入力してください');
+      toast('日付・金額・カテゴリを入力してください', 'error');
       return;
     }
     setQuickLoading(true);
@@ -425,7 +428,7 @@ export default function DashboardPage() {
       fetchRecent();
       fetchPools();
     } catch (err) {
-      alert(err instanceof ApiError ? err.message : '登録に失敗しました');
+      toast(err instanceof ApiError ? err.message : '登録に失敗しました', 'error');
     } finally {
       setQuickLoading(false);
     }

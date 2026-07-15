@@ -50,4 +50,7 @@ public interface EntryService {
 
     // エントリーの削除
     void deleteEntry(Long userId, Long entryId);
+
+    // ユーザーの全取引を削除（データリセット）
+    void deleteAllEntries(Long userId);
 }

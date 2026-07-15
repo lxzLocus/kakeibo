@@ -5,6 +5,7 @@ import { poolApi, transferApi, ApiError } from '@/lib/api';
 import { FundPoolResponse, TransferResponse } from '@/types';
 import { Icon } from '@/app/_components/Icon';
 import { withCommas, toNumber } from '@/lib/format';
+import { useToast, useConfirm } from '@/app/_components/ui';
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('ja-JP', {
@@ -32,6 +33,8 @@ export function AssetsSection({
   pools: FundPoolResponse[];
   onReloadPools: () => void | Promise<void>;
 }) {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [transfers, setTransfers] = useState<TransferResponse[]>([]);
   const [error, setError] = useState('');
   const [open, setOpen] = useState(false); // モバイルのプルタブ（既定は閉じ）
@@ -108,13 +111,13 @@ export function AssetsSection({
   }
 
   async function handleDeletePool(p: FundPoolResponse) {
-    if (!confirm(`口座「${p.name}」を削除しますか？（この口座の収支は主口座に移ります）`)) return;
+    if (!(await confirm({ title: '口座を削除', message: `口座「${p.name}」を削除しますか？（この口座の収支は主口座に移ります）`, confirmText: '削除する', danger: true }))) return;
     try {
       await poolApi.delete(p.id);
       await onReloadPools();
       fetchTransfers();
     } catch (err) {
-      alert(err instanceof ApiError ? err.message : '削除に失敗しました');
+      toast(err instanceof ApiError ? err.message : '削除に失敗しました', 'error');
     }
   }
 
@@ -153,13 +156,13 @@ export function AssetsSection({
   }
 
   async function handleDeleteTransfer(t: TransferResponse) {
-    if (!confirm('この振替を取り消しますか？')) return;
+    if (!(await confirm({ title: '振替を取り消し', message: 'この振替を取り消しますか？', confirmText: '取り消す', danger: true }))) return;
     try {
       await transferApi.delete(t.id);
       await onReloadPools();
       await fetchTransfers();
     } catch {
-      alert('取り消しに失敗しました');
+      toast('取り消しに失敗しました', 'error');
     }
   }
 

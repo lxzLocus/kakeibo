@@ -81,4 +81,14 @@ public class CategoryController {
     ) {
         return ResponseEntity.ok(categoryService.getCategoryUsage(userId));
     }
+
+    // カテゴリの並び替え（body = 表示したい順のカテゴリID配列）
+    @PutMapping("/order")
+    public ResponseEntity<Void> reorder(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestBody List<Long> orderedIds
+    ) {
+        categoryService.reorderCategories(userId, orderedIds);
+        return ResponseEntity.noContent().build();
+    }
 }

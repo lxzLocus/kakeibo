@@ -160,4 +160,12 @@ public class EntryServiceImpl implements EntryService {
         entryRepository.deleteById(entryId);
     }
 
+    // ユーザーの全取引を削除（データリセット）
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteAllEntries(Long userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+        entryRepository.deleteAllByUser(user);
+    }
+
 }

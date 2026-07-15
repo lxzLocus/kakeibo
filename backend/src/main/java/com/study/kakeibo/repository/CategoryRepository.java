@@ -30,4 +30,7 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
 
     // ユーザーの全カテゴリを取得
     List<Category> findByUser(User user);
+
+    /** 表示順（sortOrder 昇順・同順は id 昇順）で取得する。 */
+    List<Category> findByUserOrderBySortOrderAscIdAsc(User user);
 }

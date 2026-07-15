@@ -25,6 +25,9 @@ public interface CategoryService {
     // カテゴリID → 取引件数
     Map<Long, Long> getCategoryUsage(Long userId);
 
+    // カテゴリの並び替え（指定ID順に表示順を振り直す）
+    void reorderCategories(Long userId, List<Long> orderedIds);
+
     // カテゴリ名で存在確認（ユーザースコープ）
     boolean existsUserCategory(Long userId, String name);
 }
