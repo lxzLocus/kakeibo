@@ -69,7 +69,7 @@ class EntryServiceImplTest {
         });
 
         Entry result = entryService.addEntry(1L, LocalDate.of(2026, 5, 1),
-                new BigDecimal("1500"), 10L, 20L, EntryType.EXPENSE, "テストメモ", null, null);
+                new BigDecimal("1500"), 10L, 20L, EntryType.EXPENSE, "テストメモ", null, null, false);
 
         assertThat(result.getId()).isEqualTo(100L);
         assertThat(result.getAmount()).isEqualByComparingTo("1500");
@@ -86,7 +86,7 @@ class EntryServiceImplTest {
         when(entryRepository.save(any(Entry.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Entry result = entryService.addEntry(1L, LocalDate.of(2026, 5, 1),
-                new BigDecimal("500"), 10L, null, EntryType.INCOME, null, null, null);
+                new BigDecimal("500"), 10L, null, EntryType.INCOME, null, null, null, false);
 
         assertThat(result.getStore()).isNull();
         assertThat(result.getType()).isEqualTo(EntryType.INCOME);
@@ -98,7 +98,7 @@ class EntryServiceImplTest {
         when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
-                entryService.addEntry(999L, LocalDate.now(), BigDecimal.TEN, 10L, null, EntryType.EXPENSE, null, null, null))
+                entryService.addEntry(999L, LocalDate.now(), BigDecimal.TEN, 10L, null, EntryType.EXPENSE, null, null, null, false))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("User not found");
     }
@@ -114,7 +114,7 @@ class EntryServiceImplTest {
         when(categoryRepository.findById(10L)).thenReturn(Optional.of(otherCategory));
 
         assertThatThrownBy(() ->
-                entryService.addEntry(1L, LocalDate.now(), BigDecimal.TEN, 10L, null, EntryType.EXPENSE, null, null, null))
+                entryService.addEntry(1L, LocalDate.now(), BigDecimal.TEN, 10L, null, EntryType.EXPENSE, null, null, null, false))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Category does not belong");
     }
@@ -131,7 +131,7 @@ class EntryServiceImplTest {
         when(storeRepository.findById(20L)).thenReturn(Optional.of(otherStore));
 
         assertThatThrownBy(() ->
-                entryService.addEntry(1L, LocalDate.now(), BigDecimal.TEN, 10L, 20L, EntryType.EXPENSE, null, null, null))
+                entryService.addEntry(1L, LocalDate.now(), BigDecimal.TEN, 10L, 20L, EntryType.EXPENSE, null, null, null, false))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Store does not belong");
     }
@@ -162,7 +162,7 @@ class EntryServiceImplTest {
         when(entryRepository.save(any(Entry.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Entry result = entryService.updateEntry(1L, 100L, LocalDate.of(2026, 6, 1),
-                new BigDecimal("2000"), 10L, null, EntryType.EXPENSE, "更新メモ", null, null);
+                new BigDecimal("2000"), 10L, null, EntryType.EXPENSE, "更新メモ", null, null, false);
 
         assertThat(result.getAmount()).isEqualByComparingTo("2000");
         assertThat(result.getMemo()).isEqualTo("更新メモ");
@@ -178,7 +178,7 @@ class EntryServiceImplTest {
         when(entryRepository.findById(100L)).thenReturn(Optional.of(existing));
 
         assertThatThrownBy(() ->
-                entryService.updateEntry(1L, 100L, LocalDate.now(), BigDecimal.TEN, 10L, null, EntryType.EXPENSE, null, null, null))
+                entryService.updateEntry(1L, 100L, LocalDate.now(), BigDecimal.TEN, 10L, null, EntryType.EXPENSE, null, null, null, false))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("permission");
     }

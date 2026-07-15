@@ -22,6 +22,7 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -67,7 +68,7 @@ class EntryControllerTest {
     @Test
     @DisplayName("POST /entries — 正常に作成できる")
     void createEntry_success() throws Exception {
-        when(entryService.addEntry(eq(1L), any(), any(), eq(10L), any(), any(), any(), any(), any()))
+        when(entryService.addEntry(eq(1L), any(), any(), eq(10L), any(), any(), any(), any(), any(), anyBoolean()))
                 .thenReturn(sampleEntry);
 
         String body = """
@@ -141,7 +142,7 @@ class EntryControllerTest {
     @DisplayName("PUT /entries/{id} — 正常に更新")
     void updateEntry_success() throws Exception {
         sampleEntry.setMemo("更新済み");
-        when(entryService.updateEntry(eq(1L), eq(100L), any(), any(), eq(10L), any(), any(), any(), any(), any()))
+        when(entryService.updateEntry(eq(1L), eq(100L), any(), any(), eq(10L), any(), any(), any(), any(), any(), anyBoolean()))
                 .thenReturn(sampleEntry);
 
         String body = """
@@ -179,7 +180,7 @@ class EntryControllerTest {
     @Test
     @DisplayName("POST /entries — ビジネスロジックエラーで 400")
     void createEntry_businessError() throws Exception {
-        when(entryService.addEntry(eq(1L), any(), any(), eq(999L), any(), any(), any(), any(), any()))
+        when(entryService.addEntry(eq(1L), any(), any(), eq(999L), any(), any(), any(), any(), any(), anyBoolean()))
                 .thenThrow(new IllegalArgumentException("Category not found with id: 999"));
 
         String body = """

@@ -136,6 +136,7 @@ export const entryApi = {
     memo?: string | null;   // 品名
     note?: string | null;   // メモ
     fundPoolId?: number | null;
+    excludeFromSimulation?: boolean; // シミュレーション学習から除外
   }) =>
     fetchApi('/entries', {
       method: 'POST',
@@ -151,6 +152,7 @@ export const entryApi = {
     memo?: string | null;   // 品名
     note?: string | null;   // メモ
     fundPoolId?: number | null;
+    excludeFromSimulation?: boolean; // シミュレーション学習から除外
   }) =>
     fetchApi(`/entries/${entryId}`, {
       method: 'PUT',

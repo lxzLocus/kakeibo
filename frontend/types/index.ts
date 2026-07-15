@@ -58,6 +58,8 @@ export interface EntryRequest {
   type: EntryType;
   memo?: string | null;   // 品名（購入した物・明細）
   note?: string | null;   // 自由記入のメモ
+  fundPoolId?: number | null;      // 紐づける口座（null は主口座）
+  excludeFromSimulation?: boolean; // シミュレーション学習から除外（手持ち調整用など）
 }
 
 export interface EntryResponse {
@@ -74,6 +76,7 @@ export interface EntryResponse {
   memo: string | null;   // 品名（購入した物・明細）
   note: string | null;   // 自由記入のメモ
   fundPoolId: number | null;
+  excludeFromSimulation: boolean; // シミュレーション学習から除外
 }
 
 // --- 資金プール（口座）・振替 ---

@@ -53,6 +53,14 @@ public class Entry {
     @Column(name = "fund_pool_id")
     private Long fundPoolId;
 
+    /**
+     * シミュレーションの学習（月次収支の平均・振れ幅）から除外するか。
+     * 手持ち残高を実額に合わせるための調整用エントリーなどに使う。
+     * true でも口座残高・総資産には通常どおり反映される。
+     */
+    @Column(name = "exclude_from_simulation", nullable = false)
+    private boolean excludeFromSimulation = false;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -48,7 +48,8 @@ public class EntryServiceImpl implements EntryService {
         EntryType type,
         String memo,
         String note,
-        Long fundPoolId
+        Long fundPoolId,
+        boolean excludeFromSimulation
     ) {
         // ユーザーの存在確認
         User user = userRepository.findById(userId)
@@ -81,6 +82,7 @@ public class EntryServiceImpl implements EntryService {
         newEntry.setMemo(memo);
         newEntry.setNote(note);
         newEntry.setFundPoolId(fundPoolId);
+        newEntry.setExcludeFromSimulation(excludeFromSimulation);
 
         return entryRepository.save(newEntry);
     }
@@ -113,7 +115,8 @@ public class EntryServiceImpl implements EntryService {
         EntryType type,
         String memo,
         String note,
-        Long fundPoolId
+        Long fundPoolId,
+        boolean excludeFromSimulation
     ) {
         Entry existingEntry = entryRepository.findById(entryId)
             .orElseThrow(() -> new IllegalArgumentException("Entry not found with id: " + entryId));
@@ -145,6 +148,7 @@ public class EntryServiceImpl implements EntryService {
         existingEntry.setMemo(memo);
         existingEntry.setNote(note);
         existingEntry.setFundPoolId(fundPoolId);
+        existingEntry.setExcludeFromSimulation(excludeFromSimulation);
 
         return entryRepository.save(existingEntry);
     }

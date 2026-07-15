@@ -133,6 +133,7 @@ export default function DashboardPage() {
   const [modalMemo, setModalMemo] = useState(''); // 品名（購入した物・明細）
   const [modalNote, setModalNote] = useState(''); // 自由記入のメモ
   const [modalFundPoolId, setModalFundPoolId] = useState('');
+  const [modalExcludeFromSim, setModalExcludeFromSim] = useState(false); // シミュレーション学習から除外
 
   // レシートOCR
   const [receiptScanning, setReceiptScanning] = useState(false);
@@ -242,6 +243,7 @@ export default function DashboardPage() {
     setModalMemo('');
     setModalNote('');
     setModalFundPoolId(pools.find((p) => p.primary)?.id?.toString() ?? pools[0]?.id?.toString() ?? '');
+    setModalExcludeFromSim(false);
     setFormErrors({});
     setModalSubmitError('');
     setIsAddingCategory(false);
@@ -259,6 +261,7 @@ export default function DashboardPage() {
     setModalMemo(entry.memo || '');
     setModalNote(entry.note || '');
     setModalFundPoolId(entry.fundPoolId != null ? String(entry.fundPoolId) : (pools.find((p) => p.primary)?.id?.toString() ?? ''));
+    setModalExcludeFromSim(entry.excludeFromSimulation ?? false);
     setFormErrors({});
     setModalSubmitError('');
     setIsAddingCategory(false);
@@ -366,6 +369,7 @@ export default function DashboardPage() {
         memo: modalMemo.trim() || null,
         note: modalNote.trim() || null,
         fundPoolId: modalFundPoolId ? parseInt(modalFundPoolId, 10) : null,
+        excludeFromSimulation: modalExcludeFromSim,
       };
 
       if (editingEntry) {
@@ -1065,6 +1069,23 @@ export default function DashboardPage() {
                     </select>
                   </div>
                 )}
+
+                {/* シミュレーション除外（手持ち残高の調整用など） */}
+                <div className="modal-field">
+                  <label className="modal-check">
+                    <input
+                      type="checkbox"
+                      checked={modalExcludeFromSim}
+                      onChange={(e) => setModalExcludeFromSim(e.target.checked)}
+                    />
+                    <span>
+                      シミュレーションに反映しない
+                      <small>
+                        手持ちを実額に合わせるための調整などに。口座残高・総資産には反映されますが、貯蓄予測の収支学習からは除外されます。
+                      </small>
+                    </span>
+                  </label>
+                </div>
               </div>
 
               <div className="modal-footer">

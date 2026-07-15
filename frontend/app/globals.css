@@ -2448,6 +2448,32 @@ a {
   cursor: pointer;
 }
 
+/* モーダル内のチェックボックス行（説明文つき）。checkbox は全幅入力ルールを上書きして素の見た目にする。 */
+.modal-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.modal-check input[type="checkbox"] {
+  width: auto;
+  flex: 0 0 auto;
+  margin-top: 2px;
+  padding: 0;
+  accent-color: var(--accent);
+}
+
+.modal-check small {
+  display: block;
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
 .transfer-row {
   display: flex;
   align-items: center;

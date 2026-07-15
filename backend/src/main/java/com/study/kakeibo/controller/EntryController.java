@@ -38,6 +38,7 @@ public class EntryController {
         dto.setMemo(entry.getMemo());
         dto.setNote(entry.getNote());
         dto.setFundPoolId(entry.getFundPoolId());
+        dto.setExcludeFromSimulation(entry.isExcludeFromSimulation());
         return dto;
     }
 
@@ -56,7 +57,8 @@ public class EntryController {
                 request.getType(),
                 request.getMemo(),
                 request.getNote(),
-                request.getFundPoolId()
+                request.getFundPoolId(),
+                request.isExcludeFromSimulation()
         );
         return ResponseEntity.ok(toDto(newEntry));
     }
@@ -109,7 +111,8 @@ public class EntryController {
                 request.getType(),
                 request.getMemo(),
                 request.getNote(),
-                request.getFundPoolId()
+                request.getFundPoolId(),
+                request.isExcludeFromSimulation()
         );
         return ResponseEntity.ok(toDto(updatedEntry));
     }

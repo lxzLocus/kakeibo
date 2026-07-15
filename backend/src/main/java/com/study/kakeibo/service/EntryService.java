@@ -20,7 +20,8 @@ public interface EntryService {
         EntryType type,
         String memo,
         String note,
-        Long fundPoolId
+        Long fundPoolId,
+        boolean excludeFromSimulation
     );
 
 
@@ -45,7 +46,8 @@ public interface EntryService {
         EntryType type,
         String memo,
         String note,
-        Long fundPoolId
+        Long fundPoolId,
+        boolean excludeFromSimulation
     );
 
     // エントリーの削除

@@ -33,4 +33,7 @@ public class EntryRequestDto {
 
     /** 収支を紐づける資金プール（口座）ID。null は主口座扱い。 */
     private Long fundPoolId;
+
+    /** シミュレーションの学習から除外するか（手持ち残高の調整用など）。未指定は false。 */
+    private boolean excludeFromSimulation;
 }

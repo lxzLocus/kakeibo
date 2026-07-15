@@ -130,6 +130,7 @@ public class SimulationService {
         Map<YearMonth, Double> monthlyTotals = new HashMap<>();
         for (Entry e : entries) {
             if (e.getType() != type || e.getAmount() == null) continue;
+            if (e.isExcludeFromSimulation()) continue; // 手持ち調整などの除外指定エントリーは学習に含めない
             YearMonth ym = YearMonth.from(e.getEntryDate());
             monthlyTotals.merge(ym, e.getAmount().doubleValue(), Double::sum);
         }
