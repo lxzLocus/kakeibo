@@ -1,0 +1,54 @@
+# 本番/検証用: combined image（フロント+バック 1 つ）+ MySQL。
+#   ローカルでビルドして起動:   docker compose -f docker-compose.prod.yml up --build
+#   CI 済みイメージを使う場合 :   IMAGE=ghcr.io/lxzlocus/kakeibo:latest docker compose -f docker-compose.prod.yml up -d
+# 事前に .env（.env.example を参照）で APP_ENCRYPTION_* を設定しておくこと。
+
+services:
+  kakeibo-app:
+    # CI(GHCR) のイメージを使うなら IMAGE を指定。未指定ならローカルビルド。
+    image: ${IMAGE:-kakeibo:local}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kakeibo-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"        # フロント（アプリ本体）
+      # - "8081:8080"      # バックエンドを直接叩きたい場合のみ公開
+    environment:
+      # フロント → 同一コンテナ内のバックエンド
+      BACKEND_URL: http://127.0.0.1:8080
+      # バックエンド → DB（サービス名で解決）
+      SPRING_DATASOURCE_URL: "jdbc:mysql://kakeibo-database:3306/kakeibo?serverTimezone=Asia/Tokyo"
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-password}
+      # 保存済み API キーの暗号化キー。変更すると復号できなくなるため固定必須（.env で指定）。
+      APP_ENCRYPTION_PASSWORD: ${APP_ENCRYPTION_PASSWORD:?set APP_ENCRYPTION_PASSWORD in .env}
+      APP_ENCRYPTION_SALT: ${APP_ENCRYPTION_SALT:?set APP_ENCRYPTION_SALT in .env}
+      JAVA_OPTS: -Xmx512m -Xms256m
+    depends_on:
+      kakeibo-database:
+        condition: service_healthy
+
+  kakeibo-database:
+    image: mysql:8.4
+    container_name: kakeibo-database
+    restart: unless-stopped
+    command:
+      - --innodb-flush-log-at-trx-commit=2
+      - --sync-binlog=0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
+      MYSQL_DATABASE: kakeibo
+    volumes:
+      - kakeibo-db-data:/var/lib/mysql
+      - ./database/init/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${DB_PASSWORD:-password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+volumes:
+  kakeibo-db-data:

@@ -1,0 +1,36 @@
+# combined image のビルドコンテキストからは、再生成される成果物・別プロジェクトを除外する。
+# （docker/ と各 package.json / pom.xml / ソースは残す）
+
+# --- VCS / IDE ---
+.git
+.gitignore
+.vscode
+.idea
+
+# --- 別プロジェクト・非ビルド資産 ---
+osaifu
+design
+docs
+
+# --- frontend（イメージ内で npm ci / build し直す） ---
+frontend/node_modules
+frontend/.next
+frontend/out
+frontend/npm-debug.log*
+frontend/.env*.local
+
+# --- backend（イメージ内で mvn package し直す） ---
+backend/target
+
+# --- CI / compose / Dockerfile 自体（イメージには不要） ---
+.github
+docker-compose*.yml
+Dockerfile
+.dockerignore
+
+# --- 各種一時ファイル ---
+**/*.log
+**/.DS_Store
+.env
+.env.*
+!.env.example
