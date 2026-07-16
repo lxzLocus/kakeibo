@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { entryApi, categoryApi, storeApi, receiptApi, poolApi, fixedCostApi, ApiError } from '@/lib/api';
+import { CalendarModal } from './CalendarModal';
 import { EntryResponse, CategoryResponse, StoreResponse, ReceiptDraft, FundPoolResponse } from '@/types';
 import { Icon } from '@/app/_components/Icon';
 import { withCommas, toNumber } from '@/lib/format';
@@ -121,6 +122,9 @@ export default function DashboardPage() {
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [stores, setStores] = useState<StoreResponse[]>([]);
   const [pools, setPools] = useState<FundPoolResponse[]>([]);
+
+  // カレンダー（月ラベルのタップで開く。1日ごとのビューもこの中）
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   // モーダル
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -252,10 +256,11 @@ export default function DashboardPage() {
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   }
 
-  function openAddModal() {
+  /** dateStr を渡すとその日付で開く（カレンダーの「この日に追加」用）。既定は今日。 */
+  function openAddModal(dateStr?: string) {
     setEditingEntry(null);
     setModalType('EXPENSE');
-    setModalDate(todayStr());
+    setModalDate(dateStr ?? todayStr());
     setModalAmount('');
     setModalCategoryId(lastCategoryFor('EXPENSE'));
     const lastStore = readLast(LAST_STORE_KEY);
@@ -515,9 +520,15 @@ export default function DashboardPage() {
       <button className="month-pill-btn" onClick={prevMonth} aria-label="前月" id="prev-month-btn">
         <Icon name="chevron_left" />
       </button>
-      <span className="month-pill-label">
+      <button
+        className="month-pill-label"
+        onClick={() => setCalendarOpen(true)}
+        aria-label="カレンダーを開く"
+        title="カレンダーを開く"
+      >
         {year}年 {month}月
-      </span>
+        <Icon name="calendar_month" size={16} />
+      </button>
       <button className="month-pill-btn" onClick={nextMonth} aria-label="翌月" id="next-month-btn">
         <Icon name="chevron_right" />
       </button>
@@ -535,7 +546,7 @@ export default function DashboardPage() {
       <div className="desktop-only screen">
         <div className="page-head">
           {monthPill}
-          <button className="btn-primary" onClick={openAddModal}>
+          <button className="btn-primary" onClick={() => openAddModal()}>
             <Icon name="add" />
             収支を追加
           </button>
@@ -716,9 +727,15 @@ export default function DashboardPage() {
           <button className="month-pill-btn" onClick={prevMonth} aria-label="前月">
             <Icon name="chevron_left" />
           </button>
-          <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>
+          <button
+            className="month-pill-label"
+            style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}
+            onClick={() => setCalendarOpen(true)}
+            aria-label="カレンダーを開く"
+          >
             {year}年 {month}月
-          </span>
+            <Icon name="calendar_month" size={16} />
+          </button>
           <button className="month-pill-btn" onClick={nextMonth} aria-label="翌月">
             <Icon name="chevron_right" />
           </button>
@@ -822,9 +839,30 @@ export default function DashboardPage() {
       </div>
 
       {/* FAB (モバイル) */}
-      <button className="fab-btn" onClick={openAddModal} aria-label="収支を追加">
+      <button className="fab-btn" onClick={() => openAddModal()} aria-label="収支を追加">
         <Icon name="add" />
       </button>
+
+      {/* ============ カレンダー（記録のある日にドット / 1日ごとのビュー） ============ */}
+      {calendarOpen && (
+        <CalendarModal
+          year={year}
+          month={month}
+          entries={entries}
+          loading={loading}
+          onPrevMonth={prevMonth}
+          onNextMonth={nextMonth}
+          onEditEntry={(entry) => {
+            setCalendarOpen(false);
+            openEditModal(entry);
+          }}
+          onAddOnDay={(dateStr) => {
+            setCalendarOpen(false);
+            openAddModal(dateStr);
+          }}
+          onClose={() => setCalendarOpen(false)}
+        />
+      )}
 
       {/* ============ 取引モーダル ============ */}
       {isModalOpen && (

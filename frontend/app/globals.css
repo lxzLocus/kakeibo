@@ -917,8 +917,15 @@ a {
   border-radius: 99px;
 }
 
-.month-pill-btn:hover {
+.month-pill-btn:hover:not(:disabled) {
   color: var(--text);
+}
+
+/* カレンダーの前日/翌日ボタンは月末・月初で無効化されるため、
+   無効時は見た目でも分かるようにする（:hover は無効ボタンにも当たるので上で除外している）。 */
+.month-pill-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .month-pill-label {
@@ -2190,6 +2197,185 @@ a {
   color: var(--danger);
   font-size: 12.5px;
   line-height: 1.7;
+}
+
+/* ============================================================
+   カレンダー（月ラベルのタップで開くモーダル）と1日ごとのビュー
+   ============================================================ */
+
+.cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cal-nav__label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-grid.is-loading {
+  opacity: 0.5;
+}
+
+.cal-wd {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-faint);
+  padding-bottom: 2px;
+}
+
+.cal-wd.sun { color: var(--danger); }
+.cal-wd.sat { color: var(--accent); }
+
+/* 日付セル。記録がある日だけ下にドットが出る */
+.cal-cell {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.cal-cell:hover {
+  background: var(--hairline-row);
+}
+
+.cal-cell--empty {
+  cursor: default;
+  pointer-events: none;
+}
+
+/* 記録がある日は少し強調（ドットだけだと拾いにくいため） */
+.cal-cell--has {
+  color: var(--text);
+  background: var(--hairline-faint);
+}
+
+.cal-cell--today {
+  border-color: var(--accent);
+}
+
+.cal-cell.sun .cal-daynum { color: var(--danger); }
+.cal-cell.sat .cal-daynum { color: var(--accent); }
+
+.cal-daynum {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.cal-dots {
+  display: flex;
+  gap: 3px;
+  height: 5px;
+  align-items: center;
+}
+
+.cal-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.cal-dot.inc { background: var(--accent); }
+.cal-dot.exp { background: var(--text-secondary); }
+
+.cal-legend {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+.cal-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* 1日ごとのビューの明細行（タップで編集モーダルへ） */
+.cal-day-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  border-bottom: 1px solid var(--hairline-row);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cal-day-row:last-child { border-bottom: none; }
+.cal-day-row:hover { background: var(--hairline-row); }
+
+.cal-day-row__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cal-day-row__cat {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.cal-day-row__memo {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cal-day-row__amount {
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cal-day-row__amount.inc { color: var(--accent); }
+.cal-day-row__amount.exp { color: var(--text); }
+
+/* 月ラベルをタップでカレンダーを開くボタンにする（見た目は従来のラベルのまま）。
+   分析画面のラベルは今も非クリックの <span> なので、button のときだけに限定する。 */
+button.month-pill-label {
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+button.month-pill-label:hover {
+  color: var(--accent);
 }
 
 /* --- 固定費の管理（設定 > 固定費） --- */
