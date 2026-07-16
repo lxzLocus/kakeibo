@@ -77,6 +77,8 @@ function CategoryLineChart({
   const ticks = 4;
   const plotW = Math.max(1, w - padL - padR);
   const maxV = niceMax(Math.max(1, ...cats.flatMap((c) => c.monthly)), ticks);
+  // 横軸ラベルは1つ約42px必要。幅に対して多すぎる場合は間引いて重なりを防ぐ（12ヶ月×狭幅で潰れる対策）
+  const labelStep = Math.max(1, Math.ceil(n / Math.max(1, Math.floor(plotW / 42))));
 
   const x = (i: number) => padL + (n <= 1 ? plotW / 2 : (i / (n - 1)) * plotW);
   const y = (v: number) => padT + (1 - v / maxV) * (height - padT - padB);
@@ -153,11 +155,17 @@ function CategoryLineChart({
           );
         })}
 
-        {months.map((m, i) => (
-          <text key={m} x={x(i)} y={height - 10} textAnchor="middle" fontSize="11" fill="var(--text-faint)">
-            {monthLabel(m)}
-          </text>
-        ))}
+        {months.map((m, i) => {
+          // 間引き対象はスキップ（最初と最後は必ず出す）
+          if (i % labelStep !== 0 && i !== n - 1) return null;
+          // 端のラベルが viewBox からはみ出して切れないよう、両端だけ寄せる
+          const anchor = i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle';
+          return (
+            <text key={m} x={x(i)} y={height - 10} textAnchor={anchor} fontSize="11" fill="var(--text-faint)">
+              {monthLabel(m)}
+            </text>
+          );
+        })}
       </svg>
 
       {/* ホバー時のツールチップ（金額表示・PCのみ） */}
@@ -289,6 +297,7 @@ export function TrendPanel() {
                 <span><span className="legend-dot exp" />支出</span>
               </div>
             </div>
+            <div className="trend-bars-wrap">
             <div className="trend-bars" style={{ height: CHART_H }}>
               {data.months.map((m, i) => {
                 const inc = data.monthlyIncome[i];
@@ -305,6 +314,7 @@ export function TrendPanel() {
                   </div>
                 );
               })}
+            </div>
             </div>
           </div>
 

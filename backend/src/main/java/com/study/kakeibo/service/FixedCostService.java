@@ -23,24 +23,30 @@ public class FixedCostService {
     }
 
     @Transactional
-    public FixedCost create(Long userId, String name, BigDecimal amount, Integer paymentDay) {
+    public FixedCost create(Long userId, String name, BigDecimal amount, Integer paymentDay,
+                            boolean autoPost, Long categoryId) {
         validate(name, amount, paymentDay);
         FixedCost fc = new FixedCost();
         fc.setUserId(userId);
         fc.setName(name.trim());
         fc.setAmount(amount);
         fc.setPaymentDay(paymentDay);
+        fc.setAutoPost(autoPost);
+        fc.setCategoryId(categoryId);
         return fixedCostRepository.save(fc);
     }
 
     @Transactional
-    public FixedCost update(Long userId, Long id, String name, BigDecimal amount, Integer paymentDay) {
+    public FixedCost update(Long userId, Long id, String name, BigDecimal amount, Integer paymentDay,
+                            boolean autoPost, Long categoryId) {
         validate(name, amount, paymentDay);
         FixedCost fc = fixedCostRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new IllegalArgumentException("固定費が見つかりません: " + id));
         fc.setName(name.trim());
         fc.setAmount(amount);
         fc.setPaymentDay(paymentDay);
+        fc.setAutoPost(autoPost);
+        fc.setCategoryId(categoryId);
         return fixedCostRepository.save(fc);
     }
 

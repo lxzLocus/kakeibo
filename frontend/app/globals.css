@@ -1432,15 +1432,22 @@ a {
    推移（複数月）チャート & テーブル
    ============================================================ */
 
+/* 12ヶ月表示だと列が潰れて横軸ラベルが重なるため、列に最小幅を与え
+   入りきらない場合は横スクロールさせる（ラベルの可読性を優先）。 */
+.trend-bars-wrap {
+  overflow-x: auto;
+}
+
 .trend-bars {
   display: flex;
   align-items: flex-end;
   gap: 10px;
+  min-width: 100%;
 }
 
 .trend-col {
-  flex: 1;
-  min-width: 0;
+  flex: 1 0 auto;
+  min-width: 44px;   /* 「26/04」「-24.6万」が重ならずに収まる幅 */
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -2183,6 +2190,78 @@ a {
   color: var(--danger);
   font-size: 12.5px;
   line-height: 1.7;
+}
+
+/* --- 固定費の管理（設定 > 固定費） --- */
+.fc-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+
+.fc-summary__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13.5px;
+  color: var(--text);
+}
+
+.fc-summary__label {
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+.fc-summary .btn {
+  margin-left: auto;
+}
+
+.fc-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--hairline-row);
+}
+
+.fc-row:last-child {
+  border-bottom: none;
+}
+
+.fc-row__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.fc-row__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  color: var(--text);
+}
+
+.fc-row__meta {
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+.fc-row__amount {
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fc-badge {
+  padding: 1px 7px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--accent-container);
+  color: var(--on-accent-container);
 }
 
 /* --- 取込プレビュー --- */
@@ -3507,6 +3586,27 @@ a {
 
 .field__input::placeholder {
   color: var(--text-faint);
+}
+
+/* month/date は内部UI（日付テキスト＋ピッカーアイコン）が固有幅を持つため、
+   グリッドの狭い列やモバイルの16px指定で枠からはみ出す。内部を縮小可能にして枠内へ収める。 */
+.field__input[type="month"],
+.field__input[type="date"] {
+  min-width: 0;
+  max-width: 100%;
+  padding-right: 8px;
+}
+
+.field__input[type="month"]::-webkit-datetime-edit,
+.field__input[type="date"]::-webkit-datetime-edit {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.field__input[type="month"]::-webkit-calendar-picker-indicator,
+.field__input[type="date"]::-webkit-calendar-picker-indicator {
+  flex-shrink: 0;
+  margin-left: 2px;
 }
 
 /* --- ステータスピル --- */

@@ -31,9 +31,21 @@ public class FixedCost {
     @Column(nullable = false)
     private BigDecimal amount;
 
-    /** 毎月の支払日（1-31）。未指定可。 */
+    /** 毎月の支払日（1-31）。未指定可（未指定なら月初に記帳）。 */
     @Column
     private Integer paymentDay;
+
+    /**
+     * 毎月この固定費を収支（Entry）へ自動記帳するか。
+     * 自動記帳したエントリは exclude_from_simulation=true で作る
+     * （シミュレーションは固定費を別枠で加算するため、二重計上を避ける）。
+     */
+    @Column(name = "auto_post", nullable = false)
+    private boolean autoPost = false;
+
+    /** 自動記帳先のカテゴリID。null なら「固定費」カテゴリを自動作成して使う。 */
+    @Column(name = "category_id")
+    private Long categoryId;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

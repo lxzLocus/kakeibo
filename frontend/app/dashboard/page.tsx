@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { entryApi, categoryApi, storeApi, receiptApi, poolApi, ApiError } from '@/lib/api';
+import { entryApi, categoryApi, storeApi, receiptApi, poolApi, fixedCostApi, ApiError } from '@/lib/api';
 import { EntryResponse, CategoryResponse, StoreResponse, ReceiptDraft, FundPoolResponse } from '@/types';
 import { Icon } from '@/app/_components/Icon';
 import { withCommas, toNumber } from '@/lib/format';
@@ -213,6 +213,26 @@ export default function DashboardPage() {
     fetchCategoriesAndStores();
     fetchPools();
   }, [fetchEntries, fetchRecent, fetchCategoriesAndStores, fetchPools]);
+
+  // 自動記帳が有効な固定費のうち、未記帳の月ぶんを反映してから表示を更新する（冪等）。
+  // 常駐ジョブに頼らず「アプリを開いたときに追いつく」方式。初回マウント時のみ実行。
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fixedCostApi.apply();
+        if (!cancelled && res.created > 0) {
+          fetchEntries();
+          fetchRecent();
+          fetchPools();
+        }
+      } catch {
+        // 反映に失敗しても通常表示は続行する
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // --- モーダル操作 ---
   function lastCategoryFor(type: 'INCOME' | 'EXPENSE'): string {

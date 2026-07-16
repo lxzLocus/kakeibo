@@ -8,5 +8,10 @@ import java.math.BigDecimal;
 public class FixedCostRequestDto {
     private String name;
     private BigDecimal amount;
+    /** 毎月の支払日（1-31）。未指定なら月初に記帳する。 */
     private Integer paymentDay;
+    /** 毎月この固定費を収支へ自動記帳するか。 */
+    private boolean autoPost;
+    /** 自動記帳先のカテゴリID。未指定なら「固定費」カテゴリを使う。 */
+    private Long categoryId;
 }

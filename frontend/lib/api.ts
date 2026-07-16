@@ -441,6 +441,8 @@ export const fixedCostApi = {
     }),
   delete: (id: number) =>
     fetchApi<void>(`/fixed-costs/${id}`, { method: 'DELETE' }),
+  /** 自動記帳が有効な固定費の未記帳ぶんを収支へ反映する（冪等） */
+  apply: () => fetchApi<{ created: number }>('/fixed-costs/apply', { method: 'POST' }),
 };
 
 // --- シミュレーション ---

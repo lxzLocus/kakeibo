@@ -12,4 +12,6 @@ public class FixedCostResponseDto {
     private String name;
     private BigDecimal amount;
     private Integer paymentDay;
+    private boolean autoPost;
+    private Long categoryId;
 }

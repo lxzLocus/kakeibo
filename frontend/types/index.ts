@@ -355,6 +355,10 @@ export interface FixedCostRequest {
   name: string;
   amount: number;
   paymentDay?: number | null;
+  /** 毎月この固定費を収支へ自動記帳するか */
+  autoPost?: boolean;
+  /** 自動記帳先カテゴリ。未指定なら「固定費」カテゴリ */
+  categoryId?: number | null;
 }
 
 export interface FixedCostResponse {
@@ -362,6 +366,8 @@ export interface FixedCostResponse {
   name: string;
   amount: number;
   paymentDay: number | null;
+  autoPost: boolean;
+  categoryId: number | null;
 }
 
 // --- シミュレーション ---

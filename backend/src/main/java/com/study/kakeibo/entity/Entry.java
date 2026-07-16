@@ -61,6 +61,13 @@ public class Entry {
     @Column(name = "exclude_from_simulation", nullable = false)
     private boolean excludeFromSimulation = false;
 
+    /**
+     * 自動記帳の元になった固定費のID（手動作成なら null）。
+     * 「同じ固定費を同じ月に二重記帳しない」判定に使う。
+     */
+    @Column(name = "fixed_cost_id")
+    private Long fixedCostId;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -29,6 +29,9 @@ public interface EntryRepository extends JpaRepository<Entry, Long> {
     // ユーザーに紐づくエントリー一覧を取得
     List<Entry> findByUser(User user);
 
+    /** 指定の固定費が、その月に既に自動記帳されているか（二重記帳の防止）。 */
+    boolean existsByFixedCostIdAndEntryDateBetween(Long fixedCostId, LocalDate from, LocalDate to);
+
     // ユーザーと期間で絞り込んだエントリー一覧を取得
     List<Entry> findByUserAndEntryDateBetween(User user, LocalDate startDate, LocalDate endDate);
 

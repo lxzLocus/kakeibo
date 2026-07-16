@@ -8,6 +8,7 @@ import { LlmConfigResponse, LlmConfigsResponse, LlmPurpose, UserResponse, Catego
 import { getUser, removeUser } from '@/lib/auth';
 import { Icon } from '@/app/_components/Icon';
 import { useConfirm } from '@/app/_components/ui';
+import { FixedCostSettings } from './FixedCostSettings';
 
 /** プロバイダのクイックプリセット */
 const PROVIDER_PRESETS = [
@@ -776,6 +777,7 @@ function CategorySettings() {
 
 const TABS = [
   { key: 'ai', label: 'AI設定', icon: 'smart_toy' },
+  { key: 'fixed', label: '固定費', icon: 'home' },
   { key: 'categories', label: 'カテゴリ', icon: 'category' },
   { key: 'account', label: 'アカウント', icon: 'person' },
 ] as const;
@@ -817,6 +819,7 @@ export default function SettingsPage() {
 
         <div className="settings__content">
           {tab === 'ai' && <AiSettings />}
+          {tab === 'fixed' && <FixedCostSettings />}
           {tab === 'categories' && <CategorySettings />}
           {tab === 'account' && <AccountSettings />}
         </div>

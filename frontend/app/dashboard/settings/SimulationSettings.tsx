@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { goalApi, fixedCostApi, poolApi, ApiError } from '@/lib/api';
 import { GoalResponse, FixedCostResponse, FundPoolResponse } from '@/types';
 import { Icon } from '@/app/_components/Icon';
@@ -43,9 +44,6 @@ export function SimulationSettings({ onGoalChange }: { onGoalChange?: () => void
   const [currentSavings, setCurrentSavings] = useState('');
   const [savingsSource, setSavingsSource] = useState('total'); // 'total' | pool id
   const [savingGoal, setSavingGoal] = useState(false);
-
-  const [fcName, setFcName] = useState('');
-  const [fcAmount, setFcAmount] = useState('');
 
   async function loadAll() {
     setLoading(true);
@@ -107,32 +105,6 @@ export function SimulationSettings({ onGoalChange }: { onGoalChange?: () => void
       setError(err instanceof ApiError ? err.message : '目標の保存に失敗しました');
     } finally {
       setSavingGoal(false);
-    }
-  }
-
-  async function handleAddFixedCost(e: React.FormEvent) {
-    e.preventDefault();
-    setMessage('');
-    setError('');
-    if (!fcName.trim() || !fcAmount) return;
-    try {
-      await fixedCostApi.create({ name: fcName.trim(), amount: toNumber(fcAmount) });
-      // サーバーの最新一覧で置き換え（追加後の表示を確実にする）
-      setFixedCosts(await fixedCostApi.getAll());
-      setFcName('');
-      setFcAmount('');
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : '固定費の追加に失敗しました');
-    }
-  }
-
-  async function handleDeleteFixedCost(id: number) {
-    setError('');
-    try {
-      await fixedCostApi.delete(id);
-      setFixedCosts(await fixedCostApi.getAll());
-    } catch {
-      setError('固定費の削除に失敗しました');
     }
   }
 
@@ -258,42 +230,22 @@ export function SimulationSettings({ onGoalChange }: { onGoalChange?: () => void
           ) : (
             fixedCosts.map((f) => (
               <div className="fixed-cost-row" key={f.id}>
-                <span className="fixed-cost-row__name">{f.name}</span>
+                <span className="fixed-cost-row__name">
+                  {f.name}
+                  {f.autoPost && <span className="fc-badge" style={{ marginLeft: 6 }}>自動</span>}
+                </span>
                 <div className="fixed-cost-row__meta">
                   <span className="fixed-cost-row__amount">{yen(f.amount)}</span>
-                  <button className="fixed-cost-row__delete" onClick={() => handleDeleteFixedCost(f.id)} aria-label="削除">
-                    <Icon name="delete" />
-                  </button>
                 </div>
               </div>
             ))
           )}
         </div>
 
-        <form onSubmit={handleAddFixedCost} className="fixed-cost-add">
-          <div className="field">
-            <label className="field__label">項目名</label>
-            <input
-              className="field__input"
-              type="text"
-              value={fcName}
-              onChange={(e) => setFcName(e.target.value)}
-              placeholder="例: 家賃 / サブスク"
-            />
-          </div>
-          <div className="field">
-            <label className="field__label">金額 (円/月)</label>
-            <input
-              className="field__input"
-              type="text"
-              inputMode="numeric"
-              value={fcAmount}
-              onChange={(e) => setFcAmount(withCommas(e.target.value))}
-              placeholder="80,000"
-            />
-          </div>
-          <button type="submit" className="btn btn--outline-accent">＋ 追加</button>
-        </form>
+        {/* 追加・編集は「設定 > 固定費」に一本化（支払日・カテゴリ・自動記帳まで設定できる） */}
+        <p className="goal-summary__note" style={{ padding: '0 16px 16px' }}>
+          固定費の追加・編集は <Link href="/dashboard/settings">設定 &gt; 固定費</Link> で行えます。
+        </p>
       </div>
     </>
   );
