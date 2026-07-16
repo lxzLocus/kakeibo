@@ -117,6 +117,18 @@
 			<artifactId>mysql-connector-j</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		<!-- DBスキーマ・マイグレーション（唯一の正）。バージョンは Spring Boot BOM 管理。
+		     Spring Boot 4 は autoconfig がモジュール分割されており、Flyway を起動時に
+		     自動実行させるには spring-boot-flyway（連携モジュール）が必要。
+		     flyway-core は spring-boot-flyway が推移的に取り込む。MySQL 対応は flyway-mysql。 -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-flyway</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-mysql</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>

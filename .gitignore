@@ -4,3 +4,6 @@ target/
 docs/
 osaifu/
 design/
+# 本番/検証の MySQL データ永続ディレクトリ（docker-compose.prod.yml の ./data/mysql）
+/data/
+.env

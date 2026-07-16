@@ -25,6 +25,10 @@ services:
       # 保存済み API キーの暗号化キー。変更すると復号できなくなるため固定必須（.env で指定）。
       APP_ENCRYPTION_PASSWORD: ${APP_ENCRYPTION_PASSWORD:?set APP_ENCRYPTION_PASSWORD in .env}
       APP_ENCRYPTION_SALT: ${APP_ENCRYPTION_SALT:?set APP_ENCRYPTION_SALT in .env}
+      # アクセスゲート（Next.js middleware の Basic 認証）。両方セットで有効化。
+      # 外部公開時は .env で必ず設定すること（未設定なら誰でもアクセス可）。
+      BASIC_AUTH_USER: ${BASIC_AUTH_USER:-}
+      BASIC_AUTH_PASSWORD: ${BASIC_AUTH_PASSWORD:-}
       JAVA_OPTS: -Xmx512m -Xms256m
     depends_on:
       kakeibo-database:
@@ -40,15 +44,14 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
       MYSQL_DATABASE: kakeibo
+    # スキーマは Spring Boot 起動時に Flyway が作成する（init.sql は廃止）。
+    # DBデータは compose と同じ場所の ./data/mysql に永続化（LXC運用に整合。
+    # バックアップは ./data を tar で固めるだけ。停止中の物理コピー推奨）。
     volumes:
-      - kakeibo-db-data:/var/lib/mysql
-      - ./database/init/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./data/mysql:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${DB_PASSWORD:-password}"]
       interval: 10s
       timeout: 5s
       retries: 12
       start_period: 40s
-
-volumes:
-  kakeibo-db-data:

@@ -5,9 +5,10 @@ import { importApi, ApiError } from '@/lib/api';
 import { ImportResult } from '@/types';
 import { Icon } from '@/app/_components/Icon';
 
-const CSV_PLACEHOLDER = `日付,店舗,カテゴリ,金額,メモ
-2026-05-01,ライフ,食費,1500,お昼ご飯
-2026-05-02,セブンイレブン,日用品,320,洗剤`;
+const CSV_PLACEHOLDER = `日付,金額,カテゴリ,店舗,タイプ,メモ,口座,除外
+2026-05-01,1500,食費,ライフ,EXPENSE,お昼ご飯,,
+2026-04-25,250000,給与,,INCOME,4月給料,,
+2026-05-02,320,日用品,セブンイレブン,EXPENSE,"洗剤, 詰め替え",,`;
 
 const MD_PLACEHOLDER = `---
 date: 2026-05-01

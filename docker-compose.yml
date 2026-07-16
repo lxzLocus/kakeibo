@@ -29,12 +29,12 @@ services:
         target: /app
     environment:
       - JAVA_OPTS=-Xmx512m -Xms256m
+      # DBパスワードは DB サービスと同期（.env の DB_PASSWORD があれば使用、無ければ password）
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-password}
 
 
   kakeibo-database:
-    build:
-      context: ./database
-      dockerfile: Dockerfile
+    image: mysql:8.4
     container_name: kakeibo-database
     restart: unless-stopped
     tty: true
@@ -47,10 +47,12 @@ services:
       # ホスト側3306が別サービスで使用中のため3307に変更（コンテナ間通信はkakeibo-database:3306のまま）
       - "3307:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
       MYSQL_DATABASE: kakeibo
+    # スキーマは Spring Boot 起動時に Flyway が作成する（init.sql は廃止）。
+    # 開発は Windows/Docker Desktop のバインドマウントが遅いため named volume を使う。
     volumes:
-      - ./database/init/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - kakeibo-db-data:/var/lib/mysql
 
-# volumes:
-#   mysql-data:
+volumes:
+  kakeibo-db-data:
