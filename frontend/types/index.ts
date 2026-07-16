@@ -198,6 +198,32 @@ export interface ImportResult {
   createdEntryIds: number[];
 }
 
+export interface ImportRow {
+  line: number;
+  status: 'OK' | 'WARNING' | 'ERROR';
+  message: string | null;
+  date: string;
+  amount: number | null;
+  type: 'INCOME' | 'EXPENSE' | null;
+  category: string | null;
+  newCategory: boolean;
+  store: string | null;
+  newStore: boolean;
+  memo: string | null;
+  note: string | null;
+  pool: string | null;
+  excludeFromSimulation: boolean;
+}
+
+export interface ImportPreview {
+  totalRows: number;
+  okCount: number;
+  warningCount: number;
+  errorCount: number;
+  headerError: string | null;
+  rows: ImportRow[];
+}
+
 // --- Inventory ---
 export interface InventoryResponse {
   id: number;

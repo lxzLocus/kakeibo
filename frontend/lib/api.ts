@@ -1,5 +1,5 @@
 import {
-  ErrorResponse, UserResponse, MonthlySummary, TrendSummary, AnalysisResult, EvaluationResponse, ImportResult, InventoryResponse, InventoryRequest,
+  ErrorResponse, UserResponse, MonthlySummary, TrendSummary, AnalysisResult, EvaluationResponse, ImportResult, ImportPreview, InventoryResponse, InventoryRequest,
   MealResponse, MealRequest, LlmConfigResponse, LlmConfigRequest, LlmConfigsResponse, LlmPurpose, ChatSessionResponse,
   ChatMessageResponse, SendMessageResponse, GoalResponse, GoalRequest, FixedCostResponse,
   FixedCostRequest, SimulationResult, ReceiptDraft, ShoppingItemResponse,
@@ -227,6 +227,11 @@ export const evaluationApi = {
 
 // --- Import API ---
 export const importApi = {
+  preview: (format: 'csv' | 'markdown', content: string) =>
+    fetchApi<ImportPreview>('/import/preview', {
+      method: 'POST',
+      body: JSON.stringify({ format, content }),
+    }),
   import: (format: 'csv' | 'markdown', content: string) =>
     fetchApi<ImportResult>('/import', {
       method: 'POST',

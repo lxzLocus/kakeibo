@@ -2185,6 +2185,88 @@ a {
   line-height: 1.7;
 }
 
+/* --- 取込プレビュー --- */
+.ip-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 12px;
+}
+
+.ip-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: var(--surface-2, rgba(255, 255, 255, 0.05));
+  color: var(--text-secondary);
+}
+
+.ip-chip.ok { background: var(--success-bg); color: var(--success); }
+.ip-chip.warn { background: var(--warning-bg); color: var(--warning); }
+.ip-chip.err { background: var(--danger-bg); color: var(--danger); }
+
+.ip-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+}
+
+.ip-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.ip-table th,
+.ip-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--hairline-row);
+}
+
+.ip-table th {
+  color: var(--text-faint);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+}
+
+.ip-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.ip-table tr:last-child td { border-bottom: none; }
+.ip-row-err { background: var(--danger-bg); }
+.ip-row-warn { background: var(--warning-bg); }
+
+.ip-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ip-badge.ok { background: var(--success-bg); color: var(--success); }
+.ip-badge.warn { background: var(--warning-bg); color: var(--warning); }
+.ip-badge.err { background: var(--danger-bg); color: var(--danger); }
+
+.ip-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--accent-bg, rgba(168, 199, 250, 0.16));
+  color: var(--accent);
+}
+
+.ip-msg { color: var(--text-secondary); white-space: normal; min-width: 180px; }
+
 /* ============================================================
    買い物リスト
    ============================================================ */
