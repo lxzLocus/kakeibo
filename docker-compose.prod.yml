@@ -22,6 +22,9 @@ services:
       SPRING_DATASOURCE_URL: "jdbc:mysql://kakeibo-database:3306/kakeibo?serverTimezone=Asia/Tokyo"
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-password}
+      # CORS 許可オリジン。独自ホスト名で公開するなら .env で必ず設定する
+      # （未設定だとローカル/LAN内のみ許可で、ホスト名アクセスが 403 Invalid CORS request になる）。
+      APP_CORS_ALLOWED_ORIGIN_PATTERNS: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost:*,http://127.0.0.1:*,http://192.168.*.*:*,http://10.*.*.*:*,http://172.*.*.*:*}
       # 保存済み API キーの暗号化キー。変更すると復号できなくなるため固定必須（.env で指定）。
       APP_ENCRYPTION_PASSWORD: ${APP_ENCRYPTION_PASSWORD:?set APP_ENCRYPTION_PASSWORD in .env}
       APP_ENCRYPTION_SALT: ${APP_ENCRYPTION_SALT:?set APP_ENCRYPTION_SALT in .env}

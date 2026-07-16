@@ -1,5 +1,6 @@
 package com.study.kakeibo.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -17,6 +18,16 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    // フロントは /api を同一オリジンでプロキシするが、Next がバックエンドへ転送する際に
+    // Origin ヘッダ（例: http://192.168.1.50:3000, http://kakeibo.home）を引き継ぐため、
+    // ブラウザから見えるオリジンをここで許可する必要がある。既定はLAN内アクセスのみ。
+    // 独自ホスト名で公開する場合は APP_CORS_ALLOWED_ORIGIN_PATTERNS に追加すること。
+    private final List<String> allowedOriginPatterns;
+
+    public SecurityConfig(@Value("${app.cors.allowed-origin-patterns}") List<String> allowedOriginPatterns) {
+        this.allowedOriginPatterns = allowedOriginPatterns;
+    }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -25,16 +36,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        // フロントは /api を同一オリジンでプロキシするが、Next がバックエンドへ転送する際に
-        // Origin ヘッダ（例: http://192.168.1.50:3000）を引き継ぐため、LAN内アクセスを許可する。
         // 認証情報付き(allowCredentials=true)でもパターン指定なら利用可能。
-        config.setAllowedOriginPatterns(List.of(
-                "http://localhost:*",
-                "http://127.0.0.1:*",
-                "http://192.168.*.*:*",
-                "http://10.*.*.*:*",
-                "http://172.*.*.*:*"
-        ));
+        config.setAllowedOriginPatterns(allowedOriginPatterns);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
