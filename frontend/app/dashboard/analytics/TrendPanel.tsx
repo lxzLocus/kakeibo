@@ -156,8 +156,10 @@ function CategoryLineChart({
         })}
 
         {months.map((m, i) => {
-          // 間引き対象はスキップ（最初と最後は必ず出す）
-          if (i % labelStep !== 0 && i !== n - 1) return null;
+          // 末尾（最新月）を起点に labelStep ごとへ間引く。
+          // 先頭起点にして「最後だけ必ず出す」とすると、末尾が間引き位置と隣り合ったときに
+          // ラベル同士が重なる（例: 12ヶ月・step=2 で 26/06 と 26/07 が被る）。
+          if ((n - 1 - i) % labelStep !== 0) return null;
           // 端のラベルが viewBox からはみ出して切れないよう、両端だけ寄せる
           const anchor = i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle';
           return (
