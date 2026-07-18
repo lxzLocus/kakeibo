@@ -46,17 +46,72 @@ public class FundPoolService {
     public record PoolBalance(FundPool pool, BigDecimal balance) {
     }
 
-    /** プールが1つも無ければ主口座「メイン口座」を自動作成する。 */
+    /** 自動作成される主口座の既定名。 */
+    private static final String DEFAULT_POOL_NAME = "メイン口座";
+
+    /**
+     * プールが1つも無ければ主口座「メイン口座」を自動作成する。
+     * あわせて、過去の競合で生じた重複を自己修復する（重複した空のメイン口座を1つに集約し、
+     * 主口座フラグをちょうど1つにする）。
+     *
+     * 二重作成の再発防止のため、ユーザー行を排他ロックして同一ユーザーの処理を直列化する。
+     */
     @Transactional
     public void ensureDefaultPool(Long userId) {
-        if (poolRepository.countByUserId(userId) == 0) {
+        // 並行リクエストが同時に「プール無し」を見て主口座を二重作成する競合を、
+        // ユーザー行のロックで直列化して防ぐ。
+        userRepository.lockById(userId);
+
+        List<FundPool> pools = poolRepository.findByUserIdOrderBySortOrderAscIdAsc(userId);
+        if (pools.isEmpty()) {
             FundPool p = new FundPool();
             p.setUserId(userId);
-            p.setName("メイン口座");
+            p.setName(DEFAULT_POOL_NAME);
             p.setInitialBalance(BigDecimal.ZERO);
             p.setPrimary(true);
             p.setSortOrder(0);
             poolRepository.save(p);
+            return;
+        }
+        healDuplicates(userId, pools);
+    }
+
+    /**
+     * 競合で生じた重複を修復する。
+     *  1) 自動作成された空の「メイン口座」が複数あれば、最古の1つだけ残して他は削除
+     *     （削除する口座の収支は主口座へ戻し、関連する振替は削除する）。
+     *  2) 主口座（primary）がちょうど1つになるよう正規化する。
+     */
+    private void healDuplicates(Long userId, List<FundPool> pools) {
+        // 1) 重複した「空のメイン口座」を集約
+        List<FundPool> emptyDefaults = pools.stream()
+                .filter(p -> DEFAULT_POOL_NAME.equals(p.getName())
+                        && (p.getInitialBalance() == null || p.getInitialBalance().signum() == 0))
+                .sorted(java.util.Comparator.comparing(FundPool::getId))
+                .collect(Collectors.toList());
+        if (emptyDefaults.size() > 1 && pools.size() > 1) {
+            // 最古（先頭）を残し、残りを削除。ただし全消しは避ける。
+            for (int i = 1; i < emptyDefaults.size() && pools.size() > 1; i++) {
+                FundPool dup = emptyDefaults.get(i);
+                entryRepository.clearFundPool(dup.getId());                        // 収支は主口座へ
+                transferRepository.deleteByFromPoolIdOrToPoolId(dup.getId(), dup.getId());
+                poolRepository.delete(dup);
+                pools.remove(dup);
+            }
+            pools = poolRepository.findByUserIdOrderBySortOrderAscIdAsc(userId);
+        }
+
+        // 2) 主口座をちょうど1つに
+        List<FundPool> primaries = pools.stream().filter(FundPool::isPrimary).collect(Collectors.toList());
+        if (primaries.size() != 1) {
+            Long keepId = (primaries.isEmpty() ? pools.get(0) : primaries.get(0)).getId();
+            for (FundPool p : pools) {
+                boolean shouldBePrimary = p.getId().equals(keepId);
+                if (p.isPrimary() != shouldBePrimary) {
+                    p.setPrimary(shouldBePrimary);
+                    poolRepository.save(p);
+                }
+            }
         }
     }
 

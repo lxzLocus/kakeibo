@@ -396,9 +396,23 @@ a {
   flex-wrap: wrap;
 }
 
+/* 分析結果の3タイル。基底の .sim-stat は「ラベルと値を左右に並べる横flex」なので、
+   そのまま使うと狭いタイル内で潰れて1文字ずつ縦に折り返す（縦文字化）。
+   ここでは縦積みのタイルに上書きして、ラベルの上に値が乗るようにする。 */
 .analysis-stat-row .sim-stat {
-  flex: 1;
-  min-width: 90px;
+  flex: 1 1 96px;
+  min-width: 96px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+}
+
+.analysis-stat-row .sim-stat-value {
+  font-size: 15px;
 }
 
 .analysis-highlights {
