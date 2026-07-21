@@ -5,6 +5,8 @@ import com.study.kakeibo.dto.Request.TransferRequestDto;
 import com.study.kakeibo.dto.Response.FundPoolResponseDto;
 import com.study.kakeibo.dto.Response.TransferResponseDto;
 import com.study.kakeibo.entity.FundTransfer;
+import com.study.kakeibo.service.CardSettlementService;
+import com.study.kakeibo.service.FixedCostPostingService;
 import com.study.kakeibo.service.FundPoolService;
 import com.study.kakeibo.service.FundPoolService.PoolBalance;
 import jakarta.validation.Valid;
@@ -21,16 +23,24 @@ import java.util.stream.Collectors;
 public class FundPoolController {
 
     private final FundPoolService service;
+    private final FixedCostPostingService postingService;
+    private final CardSettlementService settlementService;
 
-    public FundPoolController(FundPoolService service) {
+    public FundPoolController(FundPoolService service,
+                             FixedCostPostingService postingService,
+                             CardSettlementService settlementService) {
         this.service = service;
+        this.postingService = postingService;
+        this.settlementService = settlementService;
     }
 
     private FundPoolResponseDto toDto(PoolBalance pb) {
         return new FundPoolResponseDto(
                 pb.pool().getId(), pb.pool().getName(), pb.pool().getInitialBalance(),
                 pb.balance(), pb.pool().isPrimary(), pb.pool().getSortOrder(),
-                pb.pool().getKind(), pb.pool().getColor());
+                pb.pool().getKind(), pb.pool().getColor(),
+                pb.pool().getClosingDay(), pb.pool().getPaymentDay(),
+                pb.pool().getSettlementPoolId(), pb.pool().isAutoSettle());
     }
 
     private FundPoolResponseDto findDto(Long userId, Long id) {
@@ -52,8 +62,7 @@ public class FundPoolController {
     public ResponseEntity<FundPoolResponseDto> create(
             @RequestHeader("X-User-Id") Long userId,
             @RequestBody FundPoolRequestDto request) {
-        var pool = service.createPool(userId, request.getName(), request.getInitialBalance(), request.getPrimary(),
-                request.getKind(), request.getColor());
+        var pool = service.createPool(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(findDto(userId, pool.getId()));
     }
 
@@ -62,9 +71,24 @@ public class FundPoolController {
             @RequestHeader("X-User-Id") Long userId,
             @PathVariable Long id,
             @RequestBody FundPoolRequestDto request) {
-        var pool = service.updatePool(userId, id, request.getName(), request.getInitialBalance(), request.getPrimary(),
-                request.getKind(), request.getColor());
+        var pool = service.updatePool(userId, id, request);
         return ResponseEntity.ok(findDto(userId, pool.getId()));
+    }
+
+    /**
+     * 月次の自動処理をまとめて実行する（冪等）:
+     *  1) 固定費の自動記帳（カード払いのものはカードに記帳される）
+     *  2) カードの自動引き落とし（締め→引き落としの振替生成）
+     * この順で行うことで、固定費のカード利用も当月の締めに含まれる。
+     * アプリ表示時などに呼ぶ。
+     *
+     * POST /pools/settle → { "postedFixedCosts": n, "cardSettlements": m }
+     */
+    @PostMapping("/settle")
+    public ResponseEntity<Map<String, Integer>> settle(@RequestHeader("X-User-Id") Long userId) {
+        int posted = postingService.apply(userId);
+        int settled = settlementService.apply(userId);
+        return ResponseEntity.ok(Map.of("postedFixedCosts", posted, "cardSettlements", settled));
     }
 
     @DeleteMapping("/{id}")

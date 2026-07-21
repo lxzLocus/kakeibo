@@ -37,6 +37,24 @@ public class FundPool {
     @Column(name = "color", length = 16)
     private String color;
 
+    // --- カード(kind=CARD)の引き落とし設定 ---
+
+    /** 締め日 (1-31, null は月末締め)。 */
+    @Column(name = "closing_day")
+    private Integer closingDay;
+
+    /** 引き落とし日 (1-31)。 */
+    @Column(name = "payment_day")
+    private Integer paymentDay;
+
+    /** 引き落とし元の口座（銀行プール）ID。 */
+    @Column(name = "settlement_pool_id")
+    private Long settlementPoolId;
+
+    /** 締め→引き落としの振替を自動生成するか。 */
+    @Column(name = "auto_settle", nullable = false)
+    private boolean autoSettle = false;
+
     /** 開始残高（この口座の起点となる手動入力の金額）。 */
     @Column(name = "initial_balance", nullable = false, precision = 15, scale = 2)
     private BigDecimal initialBalance = BigDecimal.ZERO;

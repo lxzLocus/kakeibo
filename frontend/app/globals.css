@@ -2922,6 +2922,18 @@ button.month-pill-label:hover {
   opacity: 0.85;
 }
 
+.card-tile__bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.card-tile__sub {
+  font-size: 10.5px;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
 /* --- カードカラー選択（ブランドプリセット + スウォッチ） --- */
 .brand-presets {
   display: flex;

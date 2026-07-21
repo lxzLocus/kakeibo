@@ -26,7 +26,7 @@ public class FixedCostController {
 
     private FixedCostResponseDto toDto(FixedCost fc) {
         return new FixedCostResponseDto(fc.getId(), fc.getName(), fc.getAmount(), fc.getPaymentDay(),
-                fc.isAutoPost(), fc.getCategoryId());
+                fc.isAutoPost(), fc.getCategoryId(), fc.getPaymentPoolId());
     }
 
     @GetMapping
@@ -39,7 +39,7 @@ public class FixedCostController {
             @RequestHeader("X-User-Id") Long userId,
             @RequestBody FixedCostRequestDto request) {
         FixedCost fc = fixedCostService.create(userId, request.getName(), request.getAmount(),
-                request.getPaymentDay(), request.isAutoPost(), request.getCategoryId());
+                request.getPaymentDay(), request.isAutoPost(), request.getCategoryId(), request.getPaymentPoolId());
         return ResponseEntity.status(HttpStatus.CREATED).body(toDto(fc));
     }
 
@@ -49,7 +49,7 @@ public class FixedCostController {
             @PathVariable Long id,
             @RequestBody FixedCostRequestDto request) {
         FixedCost fc = fixedCostService.update(userId, id, request.getName(), request.getAmount(),
-                request.getPaymentDay(), request.isAutoPost(), request.getCategoryId());
+                request.getPaymentDay(), request.isAutoPost(), request.getCategoryId(), request.getPaymentPoolId());
         return ResponseEntity.ok(toDto(fc));
     }
 

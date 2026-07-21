@@ -41,6 +41,10 @@ public class FundTransfer {
     @Column
     private String memo;
 
+    /** カード自動引き落としで生成した振替なら対象カードのID（手動振替は null）。冪等判定に使う。 */
+    @Column(name = "auto_card_id")
+    private Long autoCardId;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

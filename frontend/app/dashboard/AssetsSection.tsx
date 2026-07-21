@@ -89,6 +89,11 @@ export function AssetsSection({
   const [poolPrimary, setPoolPrimary] = useState(false);
   const [poolKind, setPoolKind] = useState<FundPoolKind>('BANK');
   const [poolColor, setPoolColor] = useState('');
+  // カードの引き落とし設定
+  const [poolClosingDay, setPoolClosingDay] = useState('');       // '' = 月末
+  const [poolPaymentDay, setPoolPaymentDay] = useState('');
+  const [poolSettlePoolId, setPoolSettlePoolId] = useState('');
+  const [poolAutoSettle, setPoolAutoSettle] = useState(false);
   const [poolSaving, setPoolSaving] = useState(false);
 
   // 振替モーダル
@@ -122,6 +127,10 @@ export function AssetsSection({
     setPoolPrimary(false);
     setPoolKind(kind);
     setPoolColor(kind === 'CARD' ? CARD_COLORS[0] : '');
+    setPoolClosingDay('');
+    setPoolPaymentDay('');
+    setPoolSettlePoolId('');
+    setPoolAutoSettle(false);
     setError('');
     setPoolModalOpen(true);
   }
@@ -133,6 +142,10 @@ export function AssetsSection({
     setPoolPrimary(p.primary);
     setPoolKind(p.kind ?? 'BANK');
     setPoolColor(p.color ?? '');
+    setPoolClosingDay(p.closingDay != null ? String(p.closingDay) : '');
+    setPoolPaymentDay(p.paymentDay != null ? String(p.paymentDay) : '');
+    setPoolSettlePoolId(p.settlementPoolId != null ? String(p.settlementPoolId) : '');
+    setPoolAutoSettle(p.autoSettle);
     setError('');
     setPoolModalOpen(true);
   }
@@ -144,11 +157,21 @@ export function AssetsSection({
     setError('');
     try {
       const initialBalance = poolInitial ? toNumber(poolInitial) : 0;
-      const color = poolKind === 'CARD' ? (poolColor || null) : null;
+      const isCard = poolKind === 'CARD';
+      const payload = {
+        name: poolName.trim(),
+        initialBalance,
+        kind: poolKind,
+        color: isCard ? (poolColor || null) : null,
+        closingDay: isCard && poolClosingDay ? Number(poolClosingDay) : null,
+        paymentDay: isCard && poolPaymentDay ? Number(poolPaymentDay) : null,
+        settlementPoolId: isCard && poolSettlePoolId ? Number(poolSettlePoolId) : null,
+        autoSettle: isCard ? poolAutoSettle : false,
+      };
       if (editingPool) {
-        await poolApi.update(editingPool.id, { name: poolName.trim(), initialBalance, primary: poolPrimary || undefined, kind: poolKind, color });
+        await poolApi.update(editingPool.id, { ...payload, primary: poolPrimary || undefined });
       } else {
-        await poolApi.create({ name: poolName.trim(), initialBalance, primary: poolPrimary, kind: poolKind, color });
+        await poolApi.create({ ...payload, primary: poolPrimary });
       }
       await onReloadPools();
       setPoolModalOpen(false);
@@ -274,11 +297,16 @@ export function AssetsSection({
                 </button>
               </div>
             </div>
-            <div className="card-tile__bal">
-              {c.balance < 0 ? (
-                <><span className="card-tile__unpaid">未払</span> <span className="tnum">{formatCurrency(-c.balance)}</span></>
-              ) : (
-                <span className="tnum">{formatCurrency(c.balance)}</span>
+            <div className="card-tile__bottom">
+              <div className="card-tile__bal">
+                {c.balance < 0 ? (
+                  <><span className="card-tile__unpaid">未払</span> <span className="tnum">{formatCurrency(-c.balance)}</span></>
+                ) : (
+                  <span className="tnum">{formatCurrency(c.balance)}</span>
+                )}
+              </div>
+              {c.autoSettle && c.paymentDay != null && (
+                <div className="card-tile__sub">毎月{c.paymentDay}日 自動引落</div>
               )}
             </div>
           </div>
@@ -405,6 +433,50 @@ export function AssetsSection({
                   <label>{poolKind === 'CARD' ? '開始時の未払い残高 (円)' : '開始残高 (円)'}</label>
                   <input type="text" inputMode="numeric" value={poolInitial} onChange={(e) => setPoolInitial(withCommas(e.target.value))} placeholder="0" />
                 </div>
+
+                {poolKind === 'CARD' && (
+                  <>
+                    <div className="modal-field-row">
+                      <div className="modal-field">
+                        <label>締め日</label>
+                        <select value={poolClosingDay} onChange={(e) => setPoolClosingDay(e.target.value)}>
+                          <option value="">月末</option>
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                            <option key={d} value={d}>{d}日</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="modal-field">
+                        <label>引き落とし日</label>
+                        <select value={poolPaymentDay} onChange={(e) => setPoolPaymentDay(e.target.value)}>
+                          <option value="">未設定</option>
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                            <option key={d} value={d}>{d}日</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="modal-field">
+                      <label>引き落とし元の口座</label>
+                      <select value={poolSettlePoolId} onChange={(e) => setPoolSettlePoolId(e.target.value)}>
+                        <option value="">未設定</option>
+                        {pools
+                          .filter((p) => p.kind !== 'CARD' && p.id !== editingPool?.id)
+                          .map((p) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                          ))}
+                      </select>
+                    </div>
+                    <label className="pool-primary-check">
+                      <input type="checkbox" checked={poolAutoSettle} onChange={(e) => setPoolAutoSettle(e.target.checked)} />
+                      毎月自動で引き落とす（締め→引き落とし日に「口座→カード」振替を自動生成）
+                    </label>
+                    <p className="goal-summary__note" style={{ margin: 0 }}>
+                      引き落とし日と引き落とし元の口座を設定すると有効化できます。このカードで払った支出は締め日ごとに集計され、引き落とし日に口座から自動で精算されます。
+                    </p>
+                  </>
+                )}
+
                 <label className="pool-primary-check">
                   <input type="checkbox" checked={poolPrimary} onChange={(e) => setPoolPrimary(e.target.checked)} />
                   {poolKind === 'CARD' ? 'デフォルトカードにする（新規支出の既定）' : '主口座にする（収支の既定の紐づけ先）'}

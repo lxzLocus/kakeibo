@@ -497,11 +497,25 @@ export const shoppingApi = {
 // --- 資金プール（口座）・振替 ---
 export const poolApi = {
   getAll: () => fetchApi<FundPoolResponse[]>('/pools'),
-  create: (data: { name: string; initialBalance?: number; primary?: boolean; kind?: string; color?: string | null }) =>
+  create: (data: PoolPayload) =>
     fetchApi<FundPoolResponse>('/pools', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: number, data: Partial<{ name: string; initialBalance: number; primary: boolean; kind: string; color: string | null }>) =>
+  update: (id: number, data: Partial<PoolPayload>) =>
     fetchApi<FundPoolResponse>(`/pools/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   delete: (id: number) => fetchApi<void>(`/pools/${id}`, { method: 'DELETE' }),
+  /** 月次の自動処理（固定費の記帳＋カードの引き落とし）をまとめて実行（冪等） */
+  settle: () => fetchApi<{ postedFixedCosts: number; cardSettlements: number }>('/pools/settle', { method: 'POST' }),
+};
+
+type PoolPayload = {
+  name: string;
+  initialBalance?: number;
+  primary?: boolean;
+  kind?: string;
+  color?: string | null;
+  closingDay?: number | null;
+  paymentDay?: number | null;
+  settlementPoolId?: number | null;
+  autoSettle?: boolean;
 };
 
 export const transferApi = {

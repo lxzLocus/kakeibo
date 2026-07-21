@@ -91,7 +91,8 @@ public class FixedCostPostingService {
                 entry.setType(EntryType.EXPENSE);
                 entry.setMemo(fc.getName());
                 entry.setNote("固定費から自動記帳");
-                entry.setFundPoolId(null); // 主口座扱い
+                // 支払い元プール（null=主口座、カードIDならカード払い）
+                entry.setFundPoolId(fc.getPaymentPoolId());
                 entry.setFixedCostId(fc.getId());
                 // シミュレーションでは固定費として別途加算されるため、学習からは除外する
                 entry.setExcludeFromSimulation(true);

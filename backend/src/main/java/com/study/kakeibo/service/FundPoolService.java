@@ -168,48 +168,76 @@ public class FundPoolService {
     }
 
     @Transactional
-    public FundPool createPool(Long userId, String name, BigDecimal initialBalance, Boolean primary,
-                               String kind, String color) {
-        if (name == null || name.isBlank()) {
+    public FundPool createPool(Long userId, com.study.kakeibo.dto.Request.FundPoolRequestDto req) {
+        if (req.getName() == null || req.getName().isBlank()) {
             throw new IllegalArgumentException("口座名を入力してください。");
         }
         long count = poolRepository.countByUserId(userId);
-        boolean makePrimary = Boolean.TRUE.equals(primary) || count == 0;
+        boolean makePrimary = Boolean.TRUE.equals(req.getPrimary()) || count == 0;
         if (makePrimary) {
             unsetPrimary(userId);
         }
         FundPool p = new FundPool();
         p.setUserId(userId);
-        p.setName(name.trim());
-        p.setInitialBalance(initialBalance == null ? BigDecimal.ZERO : initialBalance);
+        p.setName(req.getName().trim());
+        p.setInitialBalance(req.getInitialBalance() == null ? BigDecimal.ZERO : req.getInitialBalance());
         p.setPrimary(makePrimary);
         p.setSortOrder((int) count);
-        p.setKind(normalizeKind(kind));
-        p.setColor(color != null && !color.isBlank() ? color.trim() : null);
+        p.setKind(normalizeKind(req.getKind()));
+        p.setColor(cleanColor(req.getColor()));
+        applyCardSettings(p, req);
         return poolRepository.save(p);
     }
 
     @Transactional
-    public FundPool updatePool(Long userId, Long id, String name, BigDecimal initialBalance, Boolean primary,
-                               String kind, String color) {
+    public FundPool updatePool(Long userId, Long id, com.study.kakeibo.dto.Request.FundPoolRequestDto req) {
         FundPool p = getOwnedPool(userId, id);
-        if (name != null && !name.isBlank()) {
-            p.setName(name.trim());
+        if (req.getName() != null && !req.getName().isBlank()) {
+            p.setName(req.getName().trim());
         }
-        if (initialBalance != null) {
-            p.setInitialBalance(initialBalance);
+        if (req.getInitialBalance() != null) {
+            p.setInitialBalance(req.getInitialBalance());
         }
-        if (Boolean.TRUE.equals(primary) && !p.isPrimary()) {
+        if (Boolean.TRUE.equals(req.getPrimary()) && !p.isPrimary()) {
             unsetPrimary(userId);
             p.setPrimary(true);
         }
-        if (kind != null) {
-            p.setKind(normalizeKind(kind));
+        if (req.getKind() != null) {
+            p.setKind(normalizeKind(req.getKind()));
         }
-        if (color != null) {
-            p.setColor(color.isBlank() ? null : color.trim());
+        if (req.getColor() != null) {
+            p.setColor(cleanColor(req.getColor()));
         }
+        applyCardSettings(p, req);
         return poolRepository.save(p);
+    }
+
+    private String cleanColor(String color) {
+        return (color != null && !color.isBlank()) ? color.trim() : null;
+    }
+
+    private Integer clampDay(Integer day) {
+        if (day == null) return null;
+        return Math.min(Math.max(day, 1), 31);
+    }
+
+    /** カードの引き落とし設定を反映する。CARD 以外はカード用フィールドをクリアする。 */
+    private void applyCardSettings(FundPool p, com.study.kakeibo.dto.Request.FundPoolRequestDto req) {
+        if (!"CARD".equals(p.getKind())) {
+            p.setClosingDay(null);
+            p.setPaymentDay(null);
+            p.setSettlementPoolId(null);
+            p.setAutoSettle(false);
+            return;
+        }
+        if (req.getClosingDay() != null) p.setClosingDay(clampDay(req.getClosingDay()));
+        if (req.getPaymentDay() != null) p.setPaymentDay(clampDay(req.getPaymentDay()));
+        if (req.getSettlementPoolId() != null) p.setSettlementPoolId(req.getSettlementPoolId());
+        // 自動引き落としは、引き落とし日と引き落とし元が揃っているときだけ有効化できる
+        if (req.getAutoSettle() != null) {
+            boolean canAuto = p.getPaymentDay() != null && p.getSettlementPoolId() != null;
+            p.setAutoSettle(Boolean.TRUE.equals(req.getAutoSettle()) && canAuto);
+        }
     }
 
     @Transactional

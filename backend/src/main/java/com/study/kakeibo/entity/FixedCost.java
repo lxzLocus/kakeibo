@@ -47,6 +47,10 @@ public class FixedCost {
     @Column(name = "category_id")
     private Long categoryId;
 
+    /** 支払い元プール（口座/カード）ID。null は主口座。カードを指定すると「カード払いの固定費」になる。 */
+    @Column(name = "payment_pool_id")
+    private Long paymentPoolId;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

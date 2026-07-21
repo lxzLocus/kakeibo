@@ -91,6 +91,11 @@ export interface FundPoolResponse {
   sortOrder: number;
   kind: FundPoolKind;       // 銀行 / 現金 / カード
   color: string | null;     // カードのブランドカラー等（16進）
+  // カード(kind=CARD)の引き落とし設定
+  closingDay: number | null;      // 締め日（null=月末）
+  paymentDay: number | null;      // 引き落とし日
+  settlementPoolId: number | null; // 引き落とし元口座
+  autoSettle: boolean;             // 自動引き落とし
 }
 
 export interface TransferResponse {
@@ -363,6 +368,8 @@ export interface FixedCostRequest {
   autoPost?: boolean;
   /** 自動記帳先カテゴリ。未指定なら「固定費」カテゴリ */
   categoryId?: number | null;
+  /** 支払い元プール（口座/カード）。未指定は主口座 */
+  paymentPoolId?: number | null;
 }
 
 export interface FixedCostResponse {
@@ -372,6 +379,7 @@ export interface FixedCostResponse {
   paymentDay: number | null;
   autoPost: boolean;
   categoryId: number | null;
+  paymentPoolId: number | null;
 }
 
 // --- シミュレーション ---

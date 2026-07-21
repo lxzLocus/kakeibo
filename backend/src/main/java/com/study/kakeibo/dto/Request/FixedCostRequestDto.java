@@ -14,4 +14,6 @@ public class FixedCostRequestDto {
     private boolean autoPost;
     /** 自動記帳先のカテゴリID。未指定なら「固定費」カテゴリを使う。 */
     private Long categoryId;
+    /** 支払い元プール（口座/カード）ID。未指定は主口座。カードを指定するとカード払い。 */
+    private Long paymentPoolId;
 }

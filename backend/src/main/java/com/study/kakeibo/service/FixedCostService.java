@@ -24,7 +24,7 @@ public class FixedCostService {
 
     @Transactional
     public FixedCost create(Long userId, String name, BigDecimal amount, Integer paymentDay,
-                            boolean autoPost, Long categoryId) {
+                            boolean autoPost, Long categoryId, Long paymentPoolId) {
         validate(name, amount, paymentDay);
         FixedCost fc = new FixedCost();
         fc.setUserId(userId);
@@ -33,12 +33,13 @@ public class FixedCostService {
         fc.setPaymentDay(paymentDay);
         fc.setAutoPost(autoPost);
         fc.setCategoryId(categoryId);
+        fc.setPaymentPoolId(paymentPoolId);
         return fixedCostRepository.save(fc);
     }
 
     @Transactional
     public FixedCost update(Long userId, Long id, String name, BigDecimal amount, Integer paymentDay,
-                            boolean autoPost, Long categoryId) {
+                            boolean autoPost, Long categoryId, Long paymentPoolId) {
         validate(name, amount, paymentDay);
         FixedCost fc = fixedCostRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new IllegalArgumentException("固定費が見つかりません: " + id));
@@ -47,6 +48,7 @@ public class FixedCostService {
         fc.setPaymentDay(paymentDay);
         fc.setAutoPost(autoPost);
         fc.setCategoryId(categoryId);
+        fc.setPaymentPoolId(paymentPoolId);
         return fixedCostRepository.save(fc);
     }
 

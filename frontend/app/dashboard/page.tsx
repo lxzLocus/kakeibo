@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { entryApi, categoryApi, storeApi, receiptApi, poolApi, fixedCostApi, ApiError } from '@/lib/api';
+import { entryApi, categoryApi, storeApi, receiptApi, poolApi, ApiError } from '@/lib/api';
 import { CalendarModal } from './CalendarModal';
 import { EntryResponse, CategoryResponse, StoreResponse, ReceiptDraft, FundPoolResponse } from '@/types';
 import { Icon } from '@/app/_components/Icon';
@@ -218,14 +218,14 @@ export default function DashboardPage() {
     fetchPools();
   }, [fetchEntries, fetchRecent, fetchCategoriesAndStores, fetchPools]);
 
-  // 自動記帳が有効な固定費のうち、未記帳の月ぶんを反映してから表示を更新する（冪等）。
-  // 常駐ジョブに頼らず「アプリを開いたときに追いつく」方式。初回マウント時のみ実行。
+  // 月次の自動処理（固定費の記帳＋カードの引き落とし）を、アプリを開いたときに追いつかせる（冪等）。
+  // 常駐ジョブに頼らない方式。初回マウント時のみ実行。
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fixedCostApi.apply();
-        if (!cancelled && res.created > 0) {
+        const res = await poolApi.settle();
+        if (!cancelled && (res.postedFixedCosts > 0 || res.cardSettlements > 0)) {
           fetchEntries();
           fetchRecent();
           fetchPools();

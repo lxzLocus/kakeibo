@@ -17,4 +17,7 @@ public interface FundTransferRepository extends JpaRepository<FundTransfer, Long
     Optional<FundTransfer> findByIdAndUserId(Long id, Long userId);
 
     void deleteByFromPoolIdOrToPoolId(Long fromPoolId, Long toPoolId);
+
+    /** カード自動引き落としの二重生成防止（同じカード・同じ引き落とし日の振替が既にあるか）。 */
+    boolean existsByAutoCardIdAndTransferDate(Long autoCardId, java.time.LocalDate transferDate);
 }

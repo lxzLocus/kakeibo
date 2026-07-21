@@ -20,4 +20,9 @@ public class FundPoolResponseDto {
     private String kind;
     /** 表示色（カードのブランドカラー等）。 */
     private String color;
+    // --- カードの引き落とし設定 ---
+    private Integer closingDay;
+    private Integer paymentDay;
+    private Long settlementPoolId;
+    private boolean autoSettle;
 }

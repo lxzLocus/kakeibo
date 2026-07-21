@@ -14,4 +14,5 @@ public class FixedCostResponseDto {
     private Integer paymentDay;
     private boolean autoPost;
     private Long categoryId;
+    private Long paymentPoolId;
 }

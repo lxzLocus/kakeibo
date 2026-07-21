@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { fixedCostApi, categoryApi, ApiError } from '@/lib/api';
-import { FixedCostResponse, CategoryResponse } from '@/types';
+import { fixedCostApi, categoryApi, poolApi, ApiError } from '@/lib/api';
+import { FixedCostResponse, CategoryResponse, FundPoolResponse } from '@/types';
 import { Icon } from '@/app/_components/Icon';
 import { useConfirm } from '@/app/_components/ui';
 
@@ -26,6 +26,7 @@ export function FixedCostSettings() {
   const confirm = useConfirm();
   const [list, setList] = useState<FixedCostResponse[]>([]);
   const [cats, setCats] = useState<CategoryResponse[]>([]);
+  const [pools, setPools] = useState<FundPoolResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -37,15 +38,17 @@ export function FixedCostSettings() {
   const [amount, setAmount] = useState('');
   const [paymentDay, setPaymentDay] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [paymentPoolId, setPaymentPoolId] = useState('');
   const [autoPost, setAutoPost] = useState(true);
   const [saving, setSaving] = useState(false);
 
   async function load() {
     setLoading(true);
     try {
-      const [fc, c] = await Promise.all([fixedCostApi.getAll(), categoryApi.getAll()]);
+      const [fc, c, pl] = await Promise.all([fixedCostApi.getAll(), categoryApi.getAll(), poolApi.getAll()]);
       setList(fc);
       setCats((c as CategoryResponse[]).filter((x) => x.type === 'EXPENSE'));
+      setPools(pl);
       setError('');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : '固定費の取得に失敗しました');
@@ -61,6 +64,7 @@ export function FixedCostSettings() {
     setAmount('');
     setPaymentDay('');
     setCategoryId('');
+    setPaymentPoolId('');
     setAutoPost(true);
   }
 
@@ -70,6 +74,7 @@ export function FixedCostSettings() {
     setAmount(withCommas(String(f.amount)));
     setPaymentDay(f.paymentDay != null ? String(f.paymentDay) : '');
     setCategoryId(f.categoryId != null ? String(f.categoryId) : '');
+    setPaymentPoolId(f.paymentPoolId != null ? String(f.paymentPoolId) : '');
     setAutoPost(f.autoPost);
   }
 
@@ -94,6 +99,7 @@ export function FixedCostSettings() {
         paymentDay: day,
         autoPost,
         categoryId: categoryId ? Number(categoryId) : null,
+        paymentPoolId: paymentPoolId ? Number(paymentPoolId) : null,
       };
       if (editingId != null) await fixedCostApi.update(editingId, payload);
       else await fixedCostApi.create(payload);
@@ -115,6 +121,7 @@ export function FixedCostSettings() {
         paymentDay: f.paymentDay,
         autoPost: !f.autoPost,
         categoryId: f.categoryId,
+        paymentPoolId: f.paymentPoolId,
       });
       await load();
     } catch (err) {
@@ -151,6 +158,7 @@ export function FixedCostSettings() {
   const total = list.reduce((s, f) => s + f.amount, 0);
   const autoTotal = list.filter((f) => f.autoPost).reduce((s, f) => s + f.amount, 0);
   const catName = (id: number | null) => cats.find((c) => c.categoryId === id)?.name ?? '固定費';
+  const payPool = (id: number | null) => (id == null ? null : pools.find((p) => p.id === id) ?? null);
 
   if (loading) {
     return <div className="loading-state"><span className="loading-spinner" />読み込み中...</div>;
@@ -195,6 +203,9 @@ export function FixedCostSettings() {
                 </div>
                 <div className="fc-row__meta">
                   毎月{f.paymentDay ?? 1}日 ・ {catName(f.categoryId)}
+                  {payPool(f.paymentPoolId) && (
+                    <> ・ {payPool(f.paymentPoolId)!.kind === 'CARD' ? '💳 ' : ''}{payPool(f.paymentPoolId)!.name}払い</>
+                  )}
                 </div>
               </div>
               <span className="fc-row__amount">{yen(f.amount)}</span>
@@ -251,6 +262,15 @@ export function FixedCostSettings() {
               <option value="">「固定費」を自動作成</option>
               {cats.map((c) => (
                 <option key={c.categoryId} value={c.categoryId}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label className="field__label">支払い元</label>
+            <select className="field__input" value={paymentPoolId} onChange={(e) => setPaymentPoolId(e.target.value)}>
+              <option value="">主口座（銀行）</option>
+              {pools.map((p) => (
+                <option key={p.id} value={p.id}>{p.kind === 'CARD' ? '💳 ' : ''}{p.name}</option>
               ))}
             </select>
           </div>

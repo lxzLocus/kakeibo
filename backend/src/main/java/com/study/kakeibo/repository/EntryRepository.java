@@ -32,6 +32,18 @@ public interface EntryRepository extends JpaRepository<Entry, Long> {
     /** 指定の固定費が、その月に既に自動記帳されているか（二重記帳の防止）。 */
     boolean existsByFixedCostIdAndEntryDateBetween(Long fixedCostId, LocalDate from, LocalDate to);
 
+    /** カード(プール)の締め期間内の支出合計。範囲は (from, to]（fromは含めない）。 */
+    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Entry e "
+            + "WHERE e.fundPoolId = :poolId AND e.type = com.study.kakeibo.entity.EntryType.EXPENSE "
+            + "AND e.entryDate > :from AND e.entryDate <= :to")
+    java.math.BigDecimal sumCardExpenseInCycle(@Param("poolId") Long poolId,
+                                               @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    /** カード(プール)の最古の支出日（自動引き落としの開始月の判定に使う）。無ければ null。 */
+    @Query("SELECT MIN(e.entryDate) FROM Entry e "
+            + "WHERE e.fundPoolId = :poolId AND e.type = com.study.kakeibo.entity.EntryType.EXPENSE")
+    LocalDate minCardExpenseDate(@Param("poolId") Long poolId);
+
     // ユーザーと期間で絞り込んだエントリー一覧を取得
     List<Entry> findByUserAndEntryDateBetween(User user, LocalDate startDate, LocalDate endDate);
 
