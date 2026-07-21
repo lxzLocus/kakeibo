@@ -2256,12 +2256,13 @@ a {
 
 /* 日付セル。記録がある日だけ下にドットが出る */
 .cal-cell {
+  position: relative;
   aspect-ratio: 1 / 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
   padding: 0;
   border: 1px solid transparent;
   border-radius: 10px;
@@ -2270,8 +2271,9 @@ a {
   cursor: pointer;
 }
 
+/* ヒートマップ色（インラインbg）を潰さないよう、ホバーは背景ではなくリングで示す */
 .cal-cell:hover {
-  background: var(--hairline-row);
+  box-shadow: inset 0 0 0 1px var(--text-faint);
 }
 
 .cal-cell--empty {
@@ -2279,7 +2281,7 @@ a {
   pointer-events: none;
 }
 
-/* 記録がある日は少し強調（ドットだけだと拾いにくいため） */
+/* 記録はあるが当該指標で色が付かない日（例: 金額表示で収入のみ）の下地 */
 .cal-cell--has {
   color: var(--text);
   background: var(--hairline-faint);
@@ -2298,32 +2300,68 @@ a {
   line-height: 1;
 }
 
-.cal-dots {
-  display: flex;
-  gap: 3px;
-  height: 5px;
-  align-items: center;
+/* セル内の値（件数 / 金額の圧縮表記） */
+.cal-cell-val {
+  font-size: 9.5px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
 }
 
-.cal-dot {
-  width: 5px;
-  height: 5px;
+/* 収入がある日の右上ドット（どの指標でも見えるよう常時表示） */
+.cal-inc-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+
+.cal-inc-dot--static {
+  position: static;
   display: inline-block;
 }
 
-.cal-dot.inc { background: var(--accent); }
-.cal-dot.exp { background: var(--text-secondary); }
+/* ヒートマップ指標の切替（金額/件数/カテゴリ） */
+.cal-metric .segment-btn {
+  font-size: 12.5px;
+}
 
-.cal-legend {
+/* 逐次スケールの凡例（少→多） */
+.cal-scale-legend {
   display: flex;
-  gap: 14px;
-  justify-content: center;
-  font-size: 11.5px;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
   color: var(--text-faint);
 }
 
-.cal-legend span {
+.cal-scale-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, rgba(168, 199, 250, 0.12), rgba(168, 199, 250, 0.84));
+}
+
+.cal-scale-inc {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* カテゴリ凡例 */
+.cal-cat-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.cal-cat-legend__item {
   display: inline-flex;
   align-items: center;
   gap: 5px;
