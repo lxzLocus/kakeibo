@@ -29,7 +29,8 @@ public class FundPoolController {
     private FundPoolResponseDto toDto(PoolBalance pb) {
         return new FundPoolResponseDto(
                 pb.pool().getId(), pb.pool().getName(), pb.pool().getInitialBalance(),
-                pb.balance(), pb.pool().isPrimary(), pb.pool().getSortOrder());
+                pb.balance(), pb.pool().isPrimary(), pb.pool().getSortOrder(),
+                pb.pool().getKind(), pb.pool().getColor());
     }
 
     private FundPoolResponseDto findDto(Long userId, Long id) {
@@ -51,7 +52,8 @@ public class FundPoolController {
     public ResponseEntity<FundPoolResponseDto> create(
             @RequestHeader("X-User-Id") Long userId,
             @RequestBody FundPoolRequestDto request) {
-        var pool = service.createPool(userId, request.getName(), request.getInitialBalance(), request.getPrimary());
+        var pool = service.createPool(userId, request.getName(), request.getInitialBalance(), request.getPrimary(),
+                request.getKind(), request.getColor());
         return ResponseEntity.status(HttpStatus.CREATED).body(findDto(userId, pool.getId()));
     }
 
@@ -60,7 +62,8 @@ public class FundPoolController {
             @RequestHeader("X-User-Id") Long userId,
             @PathVariable Long id,
             @RequestBody FundPoolRequestDto request) {
-        var pool = service.updatePool(userId, id, request.getName(), request.getInitialBalance(), request.getPrimary());
+        var pool = service.updatePool(userId, id, request.getName(), request.getInitialBalance(), request.getPrimary(),
+                request.getKind(), request.getColor());
         return ResponseEntity.ok(findDto(userId, pool.getId()));
     }
 

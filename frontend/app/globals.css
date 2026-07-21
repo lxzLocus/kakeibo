@@ -2838,6 +2838,139 @@ button.month-pill-label:hover {
   min-height: 78px;
 }
 
+/* 資産セクションの小見出し（口座 / カード） */
+.assets-subhead {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-faint);
+  margin: 18px 0 8px;
+}
+.assets-subhead:first-child { margin-top: 0; }
+
+.pool-kind-icon { color: var(--text-faint); flex-shrink: 0; }
+
+/* --- クレジットカード風タイル --- */
+.card-tile {
+  position: relative;
+  border-radius: 12px;
+  padding: 13px 15px;
+  min-height: 78px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--card-ink, #fff);
+  background-color: var(--card-color, #3c4043);
+  /* 上に光沢、下に影のグラデを重ねてカードらしい立体感を出す */
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(0, 0, 0, 0.30));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.card-tile__top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.card-tile__brand { flex-shrink: 0; opacity: 0.9; }
+
+.card-tile__name {
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.card-tile__badge {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.22);
+  color: inherit;
+}
+
+.card-tile__actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.card-tile .shop-icon-btn {
+  color: var(--card-ink, #fff);
+  opacity: 0.75;
+}
+.card-tile .shop-icon-btn:hover { opacity: 1; }
+
+.card-tile__bal {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.card-tile__unpaid {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+/* --- カードカラー選択（ブランドプリセット + スウォッチ） --- */
+.brand-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.brand-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--input-border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.brand-chip__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--card-color);
+  flex-shrink: 0;
+}
+
+.color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.color-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.color-swatch.is-selected {
+  border-color: var(--text);
+  box-shadow: inset 0 0 0 2px var(--surface-2);
+}
+
 .pool-primary-check {
   display: flex;
   align-items: center;

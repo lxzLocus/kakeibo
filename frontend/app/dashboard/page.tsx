@@ -1108,10 +1108,10 @@ export default function DashboardPage() {
                   />
                 </div>
 
-                {/* 口座（資金プール） */}
+                {/* 口座・カード（資金プール。支払い元） */}
                 {pools.length > 0 && (
                   <div className="modal-field">
-                    <label htmlFor="modal-pool">口座</label>
+                    <label htmlFor="modal-pool">口座・カード</label>
                     <select
                       id="modal-pool"
                       className="select"
@@ -1120,8 +1120,8 @@ export default function DashboardPage() {
                     >
                       {pools.map((p) => (
                         <option key={p.id} value={p.id}>
-                          {p.name}
-                          {p.primary ? '（主口座）' : ''}
+                          {p.kind === 'CARD' ? '💳 ' : ''}{p.name}
+                          {p.primary ? '（既定）' : ''}
                         </option>
                       ))}
                     </select>

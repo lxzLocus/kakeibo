@@ -10,4 +10,8 @@ public class FundPoolRequestDto {
     private String name;
     private BigDecimal initialBalance;
     private Boolean primary;
+    /** 種別: BANK / CASH / CARD（null は変更しない/新規は BANK）。 */
+    private String kind;
+    /** 表示色（カードのブランドカラー等）。 */
+    private String color;
 }

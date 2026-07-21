@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { poolApi, transferApi, ApiError } from '@/lib/api';
-import { FundPoolResponse, TransferResponse } from '@/types';
+import { FundPoolResponse, FundPoolKind, TransferResponse } from '@/types';
 import { Icon } from '@/app/_components/Icon';
 import { withCommas, toNumber } from '@/lib/format';
 import { useToast, useConfirm } from '@/app/_components/ui';
@@ -19,6 +19,48 @@ function formatCurrency(amount: number): string {
 function todayStr(): string {
   const t = new Date();
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+}
+
+/** 種別ごとの表示メタ（ラベルとアイコン）。 */
+const KIND_META: Record<FundPoolKind, { label: string; icon: string }> = {
+  BANK: { label: '銀行', icon: 'account_balance' },
+  CASH: { label: '現金', icon: 'payments' },
+  CARD: { label: 'カード', icon: 'credit_card' },
+};
+
+/** よくあるカードカラーのスウォッチ。 */
+const CARD_COLORS = [
+  '#C4111B', '#E60012', '#CC0033', '#0B6BB5', '#14357F', '#1E8E5A',
+  '#0E8F8F', '#6D3FA0', '#E8730C', '#C8A24B', '#2A2A2A', '#9AA0A6',
+];
+
+/** ブランドのクイックプリセット（名前＋色をまとめて設定）。 */
+const BRAND_PRESETS: { name: string; color: string }[] = [
+  { name: '楽天カード', color: '#C4111B' },
+  { name: 'イオンカード', color: '#0B6BB5' },
+  { name: '三井住友(Olive)', color: '#1E8E5A' },
+  { name: 'JCB', color: '#14357F' },
+  { name: 'dカード', color: '#CC0033' },
+  { name: 'PayPayカード', color: '#E60012' },
+];
+
+const DEFAULT_CARD_COLOR = '#3c4043';
+
+/** 背景色の明度から読みやすい文字色（白 or 濃色）を選ぶ。 */
+function readableInk(hex: string): string {
+  const c = hex.replace('#', '');
+  if (c.length < 6) return '#ffffff';
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
+  const lum = 0.299 * r + 0.587 * g + 0.114 * b; // 0..255
+  return lum > 150 ? '#1b1b1f' : '#ffffff';
+}
+
+/** カードのCSSカスタムプロパティ(--card-color / --card-ink)を型安全に渡す。 */
+function cardVar(color: string | null | undefined): React.CSSProperties {
+  const c = color || DEFAULT_CARD_COLOR;
+  return { ['--card-color' as string]: c, ['--card-ink' as string]: readableInk(c) } as React.CSSProperties;
 }
 
 /**
@@ -45,6 +87,8 @@ export function AssetsSection({
   const [poolName, setPoolName] = useState('');
   const [poolInitial, setPoolInitial] = useState('');
   const [poolPrimary, setPoolPrimary] = useState(false);
+  const [poolKind, setPoolKind] = useState<FundPoolKind>('BANK');
+  const [poolColor, setPoolColor] = useState('');
   const [poolSaving, setPoolSaving] = useState(false);
 
   // 振替モーダル
@@ -71,11 +115,13 @@ export function AssetsSection({
   const total = pools.reduce((sum, p) => sum + p.balance, 0);
 
   // --- 口座 ---
-  function openAddPool() {
+  function openAddPool(kind: FundPoolKind = 'BANK') {
     setEditingPool(null);
     setPoolName('');
     setPoolInitial('');
     setPoolPrimary(false);
+    setPoolKind(kind);
+    setPoolColor(kind === 'CARD' ? CARD_COLORS[0] : '');
     setError('');
     setPoolModalOpen(true);
   }
@@ -85,6 +131,8 @@ export function AssetsSection({
     setPoolName(p.name);
     setPoolInitial(withCommas(p.initialBalance ?? 0));
     setPoolPrimary(p.primary);
+    setPoolKind(p.kind ?? 'BANK');
+    setPoolColor(p.color ?? '');
     setError('');
     setPoolModalOpen(true);
   }
@@ -96,10 +144,11 @@ export function AssetsSection({
     setError('');
     try {
       const initialBalance = poolInitial ? toNumber(poolInitial) : 0;
+      const color = poolKind === 'CARD' ? (poolColor || null) : null;
       if (editingPool) {
-        await poolApi.update(editingPool.id, { name: poolName.trim(), initialBalance, primary: poolPrimary || undefined });
+        await poolApi.update(editingPool.id, { name: poolName.trim(), initialBalance, primary: poolPrimary || undefined, kind: poolKind, color });
       } else {
-        await poolApi.create({ name: poolName.trim(), initialBalance, primary: poolPrimary });
+        await poolApi.create({ name: poolName.trim(), initialBalance, primary: poolPrimary, kind: poolKind, color });
       }
       await onReloadPools();
       setPoolModalOpen(false);
@@ -178,13 +227,16 @@ export function AssetsSection({
       <div className="assets-total tnum">{formatCurrency(total)}</div>
 
       <div className="assets-body">
+      {/* 口座（銀行・現金） */}
+      <div className="assets-subhead">口座</div>
       <div className="pool-grid">
-        {pools.map((p) => (
+        {pools.filter((p) => p.kind !== 'CARD').map((p) => (
           <div key={p.id} className="pool-card">
             <div className="pool-card-top">
               <span className="pool-name">
+                <Icon className="pool-kind-icon" name={KIND_META[p.kind]?.icon ?? 'account_balance'} size={15} />
                 {p.name}
-                {p.primary && <span className="pool-badge">主</span>}
+                {p.primary && <span className="pool-badge">既定</span>}
               </span>
               <div className="pool-card-actions">
                 <button className="shop-icon-btn" onClick={() => openEditPool(p)} aria-label="編集">
@@ -198,9 +250,42 @@ export function AssetsSection({
             <div className="pool-balance tnum">{formatCurrency(p.balance)}</div>
           </div>
         ))}
-        <button className="pool-add" onClick={openAddPool}>
+        <button className="pool-add" onClick={() => openAddPool('BANK')}>
           <Icon name="add" />
           口座を追加
+        </button>
+      </div>
+
+      {/* カード（クレジットカード） */}
+      <div className="assets-subhead">カード</div>
+      <div className="pool-grid">
+        {pools.filter((p) => p.kind === 'CARD').map((c) => (
+          <div key={c.id} className="card-tile" style={cardVar(c.color)}>
+            <div className="card-tile__top">
+              <Icon className="card-tile__brand" name="credit_card" size={18} />
+              <span className="card-tile__name">{c.name}</span>
+              {c.primary && <span className="card-tile__badge">既定</span>}
+              <div className="card-tile__actions">
+                <button className="shop-icon-btn" onClick={() => openEditPool(c)} aria-label="編集">
+                  <Icon name="edit" size={15} />
+                </button>
+                <button className="shop-icon-btn danger" onClick={() => handleDeletePool(c)} aria-label="削除">
+                  <Icon name="delete" size={15} />
+                </button>
+              </div>
+            </div>
+            <div className="card-tile__bal">
+              {c.balance < 0 ? (
+                <><span className="card-tile__unpaid">未払</span> <span className="tnum">{formatCurrency(-c.balance)}</span></>
+              ) : (
+                <span className="tnum">{formatCurrency(c.balance)}</span>
+              )}
+            </div>
+          </div>
+        ))}
+        <button className="pool-add" onClick={() => openAddPool('CARD')}>
+          <Icon name="credit_card" />
+          カードを追加
         </button>
       </div>
 
@@ -241,7 +326,11 @@ export function AssetsSection({
         <div className="modal-overlay" onClick={() => setPoolModalOpen(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title">{editingPool ? '口座の編集' : '口座を追加'}</h3>
+              <h3 className="modal-title">
+                {editingPool
+                  ? (poolKind === 'CARD' ? 'カードの編集' : '口座の編集')
+                  : (poolKind === 'CARD' ? 'カードを追加' : '口座を追加')}
+              </h3>
               <button className="modal-close-btn" onClick={() => setPoolModalOpen(false)} aria-label="閉じる">
                 <Icon name="close" />
               </button>
@@ -255,16 +344,70 @@ export function AssetsSection({
                   </div>
                 )}
                 <div className="modal-field">
-                  <label>口座名</label>
-                  <input type="text" value={poolName} onChange={(e) => setPoolName(e.target.value)} placeholder="例: メイン / 投資用" required />
+                  <label>種別</label>
+                  <div className="segment">
+                    {(['BANK', 'CASH', 'CARD'] as FundPoolKind[]).map((k) => (
+                      <button
+                        key={k}
+                        type="button"
+                        className={`segment-btn ${poolKind === k ? 'active' : ''}`}
+                        onClick={() => { setPoolKind(k); if (k === 'CARD' && !poolColor) setPoolColor(CARD_COLORS[0]); }}
+                      >
+                        {KIND_META[k].label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {poolKind === 'CARD' && (
+                  <div className="modal-field">
+                    <label>カードカラー</label>
+                    <div className="brand-presets">
+                      {BRAND_PRESETS.map((b) => (
+                        <button
+                          key={b.name}
+                          type="button"
+                          className="brand-chip"
+                          style={cardVar(b.color)}
+                          onClick={() => { setPoolColor(b.color); if (!poolName.trim()) setPoolName(b.name); }}
+                        >
+                          <span className="brand-chip__dot" />
+                          {b.name}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="color-swatches">
+                      {CARD_COLORS.map((col) => (
+                        <button
+                          key={col}
+                          type="button"
+                          className={`color-swatch${poolColor.toLowerCase() === col.toLowerCase() ? ' is-selected' : ''}`}
+                          style={{ background: col }}
+                          onClick={() => setPoolColor(col)}
+                          aria-label={`色 ${col}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="modal-field">
+                  <label>{poolKind === 'CARD' ? 'カード名' : '口座名'}</label>
+                  <input
+                    type="text"
+                    value={poolName}
+                    onChange={(e) => setPoolName(e.target.value)}
+                    placeholder={poolKind === 'CARD' ? '例: 楽天カード' : '例: メイン / 投資用'}
+                    required
+                  />
                 </div>
                 <div className="modal-field">
-                  <label>開始残高 (円)</label>
+                  <label>{poolKind === 'CARD' ? '開始時の未払い残高 (円)' : '開始残高 (円)'}</label>
                   <input type="text" inputMode="numeric" value={poolInitial} onChange={(e) => setPoolInitial(withCommas(e.target.value))} placeholder="0" />
                 </div>
                 <label className="pool-primary-check">
                   <input type="checkbox" checked={poolPrimary} onChange={(e) => setPoolPrimary(e.target.checked)} />
-                  主口座にする（収支の既定の紐づけ先）
+                  {poolKind === 'CARD' ? 'デフォルトカードにする（新規支出の既定）' : '主口座にする（収支の既定の紐づけ先）'}
                 </label>
               </div>
               <div className="modal-footer">

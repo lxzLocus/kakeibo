@@ -29,6 +29,14 @@ public class FundPool {
     @Column(nullable = false)
     private String name;
 
+    /** 種別: BANK(銀行) / CASH(現金) / CARD(クレジットカード)。 */
+    @Column(name = "kind", nullable = false, length = 16)
+    private String kind = "BANK";
+
+    /** 表示色（カードのブランドカラー等の16進。null は種別の既定色）。 */
+    @Column(name = "color", length = 16)
+    private String color;
+
     /** 開始残高（この口座の起点となる手動入力の金額）。 */
     @Column(name = "initial_balance", nullable = false, precision = 15, scale = 2)
     private BigDecimal initialBalance = BigDecimal.ZERO;

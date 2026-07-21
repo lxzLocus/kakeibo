@@ -497,9 +497,9 @@ export const shoppingApi = {
 // --- 資金プール（口座）・振替 ---
 export const poolApi = {
   getAll: () => fetchApi<FundPoolResponse[]>('/pools'),
-  create: (data: { name: string; initialBalance?: number; primary?: boolean }) =>
+  create: (data: { name: string; initialBalance?: number; primary?: boolean; kind?: string; color?: string | null }) =>
     fetchApi<FundPoolResponse>('/pools', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: number, data: Partial<{ name: string; initialBalance: number; primary: boolean }>) =>
+  update: (id: number, data: Partial<{ name: string; initialBalance: number; primary: boolean; kind: string; color: string | null }>) =>
     fetchApi<FundPoolResponse>(`/pools/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   delete: (id: number) => fetchApi<void>(`/pools/${id}`, { method: 'DELETE' }),
 };

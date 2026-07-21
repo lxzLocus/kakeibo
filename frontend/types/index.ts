@@ -80,13 +80,17 @@ export interface EntryResponse {
 }
 
 // --- 資金プール（口座）・振替 ---
+export type FundPoolKind = 'BANK' | 'CASH' | 'CARD';
+
 export interface FundPoolResponse {
   id: number;
   name: string;
   initialBalance: number;
-  balance: number;          // 開始残高 + 収支 + 振替 の現在残高
+  balance: number;          // 開始残高 + 収支 + 振替 の現在残高（カードは未払い額が負で出る）
   primary: boolean;
   sortOrder: number;
+  kind: FundPoolKind;       // 銀行 / 現金 / カード
+  color: string | null;     // カードのブランドカラー等（16進）
 }
 
 export interface TransferResponse {

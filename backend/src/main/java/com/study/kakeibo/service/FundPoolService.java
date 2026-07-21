@@ -160,8 +160,16 @@ public class FundPoolService {
         return result;
     }
 
+    /** 許可される種別。未知値は BANK に丸める。 */
+    private String normalizeKind(String kind) {
+        if (kind == null) return "BANK";
+        String k = kind.trim().toUpperCase();
+        return (k.equals("BANK") || k.equals("CASH") || k.equals("CARD")) ? k : "BANK";
+    }
+
     @Transactional
-    public FundPool createPool(Long userId, String name, BigDecimal initialBalance, Boolean primary) {
+    public FundPool createPool(Long userId, String name, BigDecimal initialBalance, Boolean primary,
+                               String kind, String color) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("口座名を入力してください。");
         }
@@ -176,11 +184,14 @@ public class FundPoolService {
         p.setInitialBalance(initialBalance == null ? BigDecimal.ZERO : initialBalance);
         p.setPrimary(makePrimary);
         p.setSortOrder((int) count);
+        p.setKind(normalizeKind(kind));
+        p.setColor(color != null && !color.isBlank() ? color.trim() : null);
         return poolRepository.save(p);
     }
 
     @Transactional
-    public FundPool updatePool(Long userId, Long id, String name, BigDecimal initialBalance, Boolean primary) {
+    public FundPool updatePool(Long userId, Long id, String name, BigDecimal initialBalance, Boolean primary,
+                               String kind, String color) {
         FundPool p = getOwnedPool(userId, id);
         if (name != null && !name.isBlank()) {
             p.setName(name.trim());
@@ -191,6 +202,12 @@ public class FundPoolService {
         if (Boolean.TRUE.equals(primary) && !p.isPrimary()) {
             unsetPrimary(userId);
             p.setPrimary(true);
+        }
+        if (kind != null) {
+            p.setKind(normalizeKind(kind));
+        }
+        if (color != null) {
+            p.setColor(color.isBlank() ? null : color.trim());
         }
         return poolRepository.save(p);
     }
