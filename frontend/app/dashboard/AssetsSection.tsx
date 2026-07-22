@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { poolApi, transferApi, ApiError } from '@/lib/api';
 import { FundPoolResponse, FundPoolKind, TransferResponse } from '@/types';
 import { Icon } from '@/app/_components/Icon';
@@ -258,7 +259,7 @@ export function AssetsSection({
             <div className="pool-card-top">
               <span className="pool-name">
                 <Icon className="pool-kind-icon" name={KIND_META[p.kind]?.icon ?? 'account_balance'} size={15} />
-                {p.name}
+                <span className="pool-name__text">{p.name}</span>
                 {p.primary && <span className="pool-badge">既定</span>}
               </span>
               <div className="pool-card-actions">
@@ -349,8 +350,8 @@ export function AssetsSection({
         {open ? '閉じる' : '口座を見る'}
       </button>
 
-      {/* 口座 追加/編集モーダル */}
-      {poolModalOpen && (
+      {/* 口座 追加/編集モーダル（親に transform が掛かる領域内なので、全画面オーバーレイにするため body へポータルする） */}
+      {poolModalOpen && createPortal(
         <div className="modal-overlay" onClick={() => setPoolModalOpen(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -373,12 +374,12 @@ export function AssetsSection({
                 )}
                 <div className="modal-field">
                   <label>種別</label>
-                  <div className="segment">
+                  <div className="type-segment">
                     {(['BANK', 'CASH', 'CARD'] as FundPoolKind[]).map((k) => (
                       <button
                         key={k}
                         type="button"
-                        className={`segment-btn ${poolKind === k ? 'active' : ''}`}
+                        className={`type-segment-btn ${poolKind === k ? 'active' : ''}`}
                         onClick={() => { setPoolKind(k); if (k === 'CARD' && !poolColor) setPoolColor(CARD_COLORS[0]); }}
                       >
                         {KIND_META[k].label}
@@ -494,11 +495,12 @@ export function AssetsSection({
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
-      {/* 振替モーダル */}
-      {transferOpen && (
+      {/* 振替モーダル（同上・全画面オーバーレイのため body へポータル） */}
+      {transferOpen && createPortal(
         <div className="modal-overlay" onClick={() => setTransferOpen(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
@@ -564,7 +566,8 @@ export function AssetsSection({
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

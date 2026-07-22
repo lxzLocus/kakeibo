@@ -2794,6 +2794,11 @@ button.month-pill-label:hover {
   align-items: center;
   gap: 6px;
   min-width: 0;
+}
+
+/* 名前テキストだけを省略対象にする。バッジ(.pool-badge)は縮まないので被らない。 */
+.pool-name__text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -3381,9 +3386,21 @@ button.month-pill-label:hover {
   color: var(--on-accent-container);
 }
 
+/* 汎用の active（口座種別 銀行/現金/カード など、収支以外のセグメント用）。
+   .expense.active / .income.active はクラス数が多く優先されるので上書きされない。 */
+.type-segment-btn.active {
+  background: var(--accent-container);
+  color: var(--on-accent-container);
+}
+
 .modal-footer {
   padding: 16px 24px 24px;
   border-top: 1px solid var(--hairline);
+  /* 縦長モーダル（カード設定など）でも操作ボタンが常に見えるよう、
+     スクロールする .modal の底に貼り付ける。背景は .modal と同色。 */
+  position: sticky;
+  bottom: 0;
+  background: var(--surface-2);
 }
 
 .modal-btn-group {
