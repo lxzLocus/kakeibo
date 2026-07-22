@@ -59,6 +59,7 @@ export function CalendarModal({
   loading = false,
   onPrevMonth,
   onNextMonth,
+  onCurrentMonth,
   onEditEntry,
   onAddOnDay,
   onClose,
@@ -69,6 +70,7 @@ export function CalendarModal({
   loading?: boolean;
   onPrevMonth: () => void;
   onNextMonth: () => void;
+  onCurrentMonth: () => void;
   onEditEntry: (entry: EntryResponse) => void;
   onAddOnDay: (dateStr: string) => void;
   onClose: () => void;
@@ -124,8 +126,8 @@ export function CalendarModal({
   }, [entries, ym]);
 
   const today = new Date();
-  const isToday = (d: number) =>
-    today.getFullYear() === year && today.getMonth() + 1 === month && today.getDate() === d;
+  const isCurrentMonth = today.getFullYear() === year && today.getMonth() + 1 === month;
+  const isToday = (d: number) => isCurrentMonth && today.getDate() === d;
 
   /** その日の最大支出カテゴリ。 */
   function dominantCat(sum: DaySummary): { id: number; name: string; amount: number } | null {
@@ -212,7 +214,7 @@ export function CalendarModal({
         <div className="modal-body">
           {selectedDay == null ? (
             <>
-              {/* 月ナビ */}
+              {/* 月ナビ（別の月を見ているときは「今月」ボタンも出す） */}
               <div className="cal-nav">
                 <button className="month-pill-btn" onClick={onPrevMonth} aria-label="前月">
                   <Icon name="chevron_left" />
@@ -221,6 +223,12 @@ export function CalendarModal({
                 <button className="month-pill-btn" onClick={onNextMonth} aria-label="翌月">
                   <Icon name="chevron_right" />
                 </button>
+                {!isCurrentMonth && (
+                  <button className="today-btn cal-today-btn" onClick={onCurrentMonth} title="今月へ戻る">
+                    <Icon name="today" size={15} />
+                    今月
+                  </button>
+                )}
               </div>
 
               {/* ヒートマップの指標切替 */}

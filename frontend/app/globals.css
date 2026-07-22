@@ -2236,6 +2236,38 @@ a {
   min-width: 0;
 }
 
+/* 「今月へ戻る」ボタン（ホームの month-pill 右横 / カレンダーの月ナビ）。 */
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.today-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 12px;
+  border-radius: 99px;
+  border: 1px solid var(--input-border);
+  background: transparent;
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.today-btn:hover {
+  background: var(--hairline-row);
+}
+
+.cal-today-btn {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
 .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);

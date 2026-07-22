@@ -514,6 +514,20 @@ export default function DashboardPage() {
       setMonth(1);
     } else setMonth(month + 1);
   }
+  function goCurrentMonth() {
+    const d = new Date();
+    setYear(d.getFullYear());
+    setMonth(d.getMonth() + 1);
+  }
+
+  // 別の月を見ているときだけ「今月」へ戻るボタンを出す（month-pill の右横に配置）。
+  // isCurrentMonth は「今月のペース」ブロックで既に算出済みのものを使う。
+  const todayBtn = isCurrentMonth ? null : (
+    <button className="today-btn" onClick={goCurrentMonth} title="今月へ戻る">
+      <Icon name="today" size={15} />
+      今月
+    </button>
+  );
 
   const monthPill = (
     <div className="month-pill">
@@ -545,7 +559,10 @@ export default function DashboardPage() {
       {/* ============ PC レイアウト ============ */}
       <div className="desktop-only screen">
         <div className="page-head">
-          {monthPill}
+          <div className="month-nav">
+            {monthPill}
+            {todayBtn}
+          </div>
           <button className="btn-primary" onClick={() => openAddModal()}>
             <Icon name="add" />
             収支を追加
@@ -739,6 +756,7 @@ export default function DashboardPage() {
           <button className="month-pill-btn" onClick={nextMonth} aria-label="翌月">
             <Icon name="chevron_right" />
           </button>
+          {todayBtn}
         </div>
 
         {error && (
@@ -852,6 +870,7 @@ export default function DashboardPage() {
           loading={loading}
           onPrevMonth={prevMonth}
           onNextMonth={nextMonth}
+          onCurrentMonth={goCurrentMonth}
           onEditEntry={(entry) => {
             setCalendarOpen(false);
             openEditModal(entry);
