@@ -1741,7 +1741,10 @@ a {
 .mobile-tabs {
   display: flex;
   gap: 4px;
-  background: var(--surface-2);
+  /* type-segment と同じ「囲み」に統一。surface-2 のモーダル上でも枠が見えるよう
+     背景は --bg + hairline 枠にする（surface-2 だと同色で枠が消える）。 */
+  background: var(--bg);
+  border: 1px solid var(--hairline);
   border-radius: 99px;
   padding: 4px;
 }
@@ -3760,7 +3763,8 @@ button.month-pill-label:hover {
 .settings-seg {
   display: none;
   gap: 4px;
-  background: var(--surface-2);
+  background: var(--bg);
+  border: 1px solid var(--hairline);
   border-radius: 99px;
   padding: 4px;
   margin-bottom: 18px;
