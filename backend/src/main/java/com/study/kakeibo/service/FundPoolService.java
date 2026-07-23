@@ -31,15 +31,18 @@ public class FundPoolService {
     private final FundTransferRepository transferRepository;
     private final EntryRepository entryRepository;
     private final UserRepository userRepository;
+    private final com.study.kakeibo.repository.FixedCostRepository fixedCostRepository;
 
     public FundPoolService(FundPoolRepository poolRepository,
                            FundTransferRepository transferRepository,
                            EntryRepository entryRepository,
-                           UserRepository userRepository) {
+                           UserRepository userRepository,
+                           com.study.kakeibo.repository.FixedCostRepository fixedCostRepository) {
         this.poolRepository = poolRepository;
         this.transferRepository = transferRepository;
         this.entryRepository = entryRepository;
         this.userRepository = userRepository;
+        this.fixedCostRepository = fixedCostRepository;
     }
 
     /** プール＋計算済み残高。 */
@@ -94,7 +97,7 @@ public class FundPoolService {
             for (int i = 1; i < emptyDefaults.size() && pools.size() > 1; i++) {
                 FundPool dup = emptyDefaults.get(i);
                 entryRepository.clearFundPool(dup.getId());                        // 収支は主口座へ
-                transferRepository.deleteByFromPoolIdOrToPoolId(dup.getId(), dup.getId());
+                transferRepository.deleteByPool(dup.getId());
                 poolRepository.delete(dup);
                 pools.remove(dup);
             }
@@ -246,10 +249,12 @@ public class FundPoolService {
         if (poolRepository.countByUserId(userId) <= 1) {
             throw new IllegalArgumentException("最後の口座は削除できません。");
         }
-        // このプールの収支は主口座(null)へ戻し、関連する振替は削除する
-        entryRepository.clearFundPool(id);
-        transferRepository.deleteByFromPoolIdOrToPoolId(id, id);
         boolean wasPrimary = p.isPrimary();
+        // 参照のクリーンアップ（このプールを指す参照を宙に浮かせない）
+        entryRepository.clearFundPool(id);                     // 収支 → 主口座(null)
+        transferRepository.deleteByPool(id); // このプール絡みの振替（カード引き落とし含む）を削除
+        fixedCostRepository.clearPaymentPool(id);              // このプール払いの固定費 → 主口座払いに戻す
+        poolRepository.clearSettlementSource(id);              // このプールを引き落とし元にしていたカードの設定を解除
         poolRepository.delete(p);
         if (wasPrimary) {
             List<FundPool> rest = poolRepository.findByUserIdOrderBySortOrderAscIdAsc(userId);

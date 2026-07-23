@@ -21,13 +21,16 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final EntryRepository entryRepository;
+    private final com.study.kakeibo.repository.FixedCostRepository fixedCostRepository;
 
     @Autowired
     public CategoryServiceImpl(CategoryRepository categoryRepository, UserRepository userRepository,
-                              EntryRepository entryRepository) {
+                              EntryRepository entryRepository,
+                              com.study.kakeibo.repository.FixedCostRepository fixedCostRepository) {
         this.categoryRepository = categoryRepository;
         this.userRepository = userRepository;
         this.entryRepository = entryRepository;
+        this.fixedCostRepository = fixedCostRepository;
     }
 
     // カテゴリの追加（収入/支出 区分つき）
@@ -136,6 +139,8 @@ public class CategoryServiceImpl implements CategoryService {
             entryRepository.reassignCategory(existingCategory, target);
         }
 
+        // 固定費が記帳先カテゴリに指定していた場合は参照を外す（記帳時に「固定費」へフォールバック）
+        fixedCostRepository.clearCategory(categoryId);
         categoryRepository.delete(existingCategory);
     }
 

@@ -3,10 +3,12 @@ package com.study.kakeibo.service.impl;
 import com.study.kakeibo.service.StoreService;
 import com.study.kakeibo.entity.Store;
 import com.study.kakeibo.entity.User;
+import com.study.kakeibo.repository.EntryRepository;
 import com.study.kakeibo.repository.StoreRepository;
 import com.study.kakeibo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
@@ -14,11 +16,14 @@ public class StoreServiceImpl implements StoreService {
 
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
+    private final EntryRepository entryRepository;
 
     @Autowired
-    public StoreServiceImpl(StoreRepository storeRepository, UserRepository userRepository) {
+    public StoreServiceImpl(StoreRepository storeRepository, UserRepository userRepository,
+                            EntryRepository entryRepository) {
         this.storeRepository = storeRepository;
         this.userRepository = userRepository;
+        this.entryRepository = entryRepository;
     }
 
     // 店舗の追加
@@ -70,7 +75,9 @@ public class StoreServiceImpl implements StoreService {
         return storeRepository.save(existingStore);
     }
 
-    // 店舗の削除
+    // 店舗の削除。紐づく取引の店舗参照は外す（entry.store_id は FK なので、
+    // 外さずに削除すると FK 制約違反になる。取引自体は残す）。
+    @Transactional
     public void deleteStore(Long userId, Long storeId) {
         Store existingStore = storeRepository.findById(storeId)
             .orElseThrow(() -> new IllegalArgumentException("Store not found with id: " + storeId));
@@ -78,6 +85,7 @@ public class StoreServiceImpl implements StoreService {
         if (!existingStore.getUser().getId().equals(userId)) {
             throw new IllegalArgumentException("You do not have permission to delete this store.");
         }
+        entryRepository.clearStore(storeId);
         storeRepository.deleteById(storeId);
     }
 

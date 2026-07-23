@@ -25,6 +25,11 @@ public interface EntryRepository extends JpaRepository<Entry, Long> {
     @Query("UPDATE Entry e SET e.fundPoolId = null WHERE e.fundPoolId = :poolId")
     void clearFundPool(@Param("poolId") Long poolId);
 
+    /** 店舗削除時: その店舗に紐づく収支の店舗参照を外す（store は任意なので null 可）。 */
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Entry e SET e.store = null WHERE e.store.id = :storeId")
+    void clearStore(@Param("storeId") Long storeId);
+
     /* Getter */
     // ユーザーに紐づくエントリー一覧を取得
     List<Entry> findByUser(User user);
