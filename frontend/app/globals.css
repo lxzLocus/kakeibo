@@ -1046,6 +1046,34 @@ a {
   margin-bottom: 10px;
 }
 
+/* 取引履歴のヘッダ（ラベル + 並べ替え） */
+.txn-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.txn-head .stack-label {
+  margin-bottom: 0;
+}
+
+/* 並べ替えセグメント（日付/金額/名称、アクティブに昇降アイコン） */
+.txn-sort {
+  padding: 3px;
+}
+
+.txn-sort .type-segment-btn {
+  padding: 6px 11px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
 /* 取引テーブル */
 .txn-table {
   width: 100%;

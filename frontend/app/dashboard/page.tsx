@@ -112,6 +112,8 @@ export default function DashboardPage() {
   const [entries, setEntries] = useState<EntryResponse[]>([]);
   const [recentEntries, setRecentEntries] = useState<EntryResponse[]>([]); // 履歴用（月に依存しない直近データ）
   const [recentDays, setRecentDays] = useState(7); // 履歴の表示期間（直近N日）
+  const [sortKey, setSortKey] = useState<'date' | 'amount' | 'name'>('date'); // 取引履歴の並べ替え
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -474,14 +476,53 @@ export default function DashboardPage() {
     d.setDate(d.getDate() - recentDays);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   })();
+  // 並べ替え（クレカ明細のように 日付/金額/名称。名称はカテゴリ+店舗）
   const sortedEntries = [...recentEntries]
     .filter((e) => e.entryDate >= recentCutoff)
-    .sort((a, b) => b.entryDate.localeCompare(a.entryDate));
+    .sort((a, b) => {
+      let cmp: number;
+      if (sortKey === 'amount') cmp = a.amount - b.amount;
+      else if (sortKey === 'name') {
+        const na = `${a.categoryName} ${a.storeName ?? ''}`;
+        const nb = `${b.categoryName} ${b.storeName ?? ''}`;
+        cmp = na.localeCompare(nb, 'ja');
+      } else cmp = a.entryDate.localeCompare(b.entryDate);
+      if (cmp === 0) cmp = a.id - b.id; // 同値は id で安定化
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
   const hasMoreRecent = recentDays < 366 && recentEntries.some((e) => e.entryDate < recentCutoff);
   const recentLabel = recentDays <= 7 ? '直近1週間' : recentDays <= 31 ? '直近1ヶ月' : recentDays <= 92 ? '直近3ヶ月' : '直近1年';
   function showMoreRecent() {
     setRecentDays((d) => RECENT_STEPS.find((s) => s > d) ?? 366);
   }
+  // 同じキーをタップで昇順/降順を反転。別キーは既定の向き（日付・金額=降順、名称=昇順）
+  function changeSort(key: 'date' | 'amount' | 'name') {
+    if (key === sortKey) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else {
+      setSortKey(key);
+      setSortDir(key === 'name' ? 'asc' : 'desc');
+    }
+  }
+  const SORT_KEYS: { k: 'date' | 'amount' | 'name'; label: string }[] = [
+    { k: 'date', label: '日付' },
+    { k: 'amount', label: '金額' },
+    { k: 'name', label: '名称' },
+  ];
+  const sortControl = (
+    <div className="type-segment txn-sort">
+      {SORT_KEYS.map((s) => (
+        <button
+          key={s.k}
+          type="button"
+          className={`type-segment-btn ${sortKey === s.k ? 'active' : ''}`}
+          onClick={() => changeSort(s.k)}
+        >
+          {s.label}
+          {sortKey === s.k && <Icon name={sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'} size={13} />}
+        </button>
+      ))}
+    </div>
+  );
 
   // 今月のペース
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -609,7 +650,10 @@ export default function DashboardPage() {
           <div className="home-grid">
             {/* 左: 取引履歴 */}
             <div>
-              <div className="section-label stack-label">取引履歴（{recentLabel}）</div>
+              <div className="txn-head">
+                <div className="section-label stack-label">取引履歴（{recentLabel}）</div>
+                {sortedEntries.length > 0 && sortControl}
+              </div>
               {sortedEntries.length > 0 ? (
                 <>
                   <div className="card flush">
