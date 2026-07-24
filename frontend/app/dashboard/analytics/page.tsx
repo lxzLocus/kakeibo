@@ -31,7 +31,7 @@ function formatCompact(amount: number): string {
 
 export default function AnalyticsPage() {
   const now = new Date();
-  const [view, setView] = useState<'report' | 'trend' | 'simulation'>('report');
+  const [view, setView] = useState<'report' | 'compare' | 'trend' | 'simulation'>('report');
   const [catMetric, setCatMetric] = useState<'amount' | 'pct' | 'count'>('amount'); // カテゴリ別の表示指標
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -143,9 +143,11 @@ export default function AnalyticsPage() {
     return max || 1;
   }
 
-  // 分析: 過去平均と差がある費目だけ（住居費など ±10%以内=flat は除外）、差額の大きい順
+  // 分析: 過去平均と差がある費目だけ（住居費など ±10%以内=flat は除外）、差額の大きい順。
+  // 「その他」は catch-all で必ず上位に来てノイズになるため一覧から除外する。
   const changedCats = analysis
     ? [...analysis.categories]
+        .filter((c) => c.name !== 'その他')
         .filter((c) => c.direction === 'up' || c.direction === 'down' || c.direction === 'new')
         .sort((a, b) => Math.abs(b.amount - b.avgAmount) - Math.abs(a.amount - a.avgAmount))
         .slice(0, 10)
@@ -158,10 +160,15 @@ export default function AnalyticsPage() {
         <h1 className="page-title">分析</h1>
       </div>
 
-      <div className="segment" style={{ maxWidth: 520, marginBottom: 24 }}>
+      <div className="segment" style={{ maxWidth: 640, marginBottom: 24 }}>
         <button className={`segment-btn ${view === 'report' ? 'active' : ''}`} onClick={() => setView('report')}>
-          月次レポート
+          月次
         </button>
+        {analysisEnabled && (
+          <button className={`segment-btn ${view === 'compare' ? 'active' : ''}`} onClick={() => setView('compare')}>
+            比較
+          </button>
+        )}
         <button className={`segment-btn ${view === 'trend' ? 'active' : ''}`} onClick={() => setView('trend')}>
           推移
         </button>
@@ -204,7 +211,8 @@ export default function AnalyticsPage() {
         </div>
       ) : data ? (
         <>
-          {/* 収支ヒーロー */}
+          {/* 収支ヒーロー（月次タブ） */}
+          {view === 'report' && (
           <div className="hero">
             <div className="section-label">収支バランス</div>
             <div className="hero-value">{formatSignedCurrency(data.balance)}</div>
@@ -227,12 +235,13 @@ export default function AnalyticsPage() {
               </div>
             </div>
           </div>
+          )}
 
-          {/* 分析する（コードベースの平均・中央値比較。LLM不使用。設定でオン/オフ） */}
-          {analysisEnabled && (
+          {/* 分析する（自分の過去比。比較タブ・LLM不使用・設定でオン/オフ） */}
+          {view === 'compare' && analysisEnabled && (
             <div className="card pad-lg" style={{ marginBottom: 16 }}>
               <div className="card-head">
-                <div className="section-label">分析</div>
+                <div className="section-label">分析（自分の過去比）</div>
                 <button className="btn btn--outline" onClick={runAnalyze} disabled={analyzing}>
                   {analyzing ? <><span className="loading-spinner" />分析中…</> : <><Icon name="insights" size={16} />分析する</>}
                 </button>
@@ -297,15 +306,17 @@ export default function AnalyticsPage() {
             </div>
           )}
 
-          {/* 世帯平均との比較（同年代・同収入帯。家計調査ベースの概算・LLM不使用） */}
-          {analysisEnabled && benchmark && benchmark.totalExpense > 0 && (() => {
+          {/* 世帯平均との比較（比較タブ・同年代/同収入帯・家計調査ベースの概算・LLM不使用） */}
+          {view === 'compare' && analysisEnabled && benchmark && benchmark.totalExpense > 0 && (() => {
             const hasAge = benchmark.byAge.length > 0;
             const hasIncome = benchmark.byIncome.length > 0;
             const axis: 'age' | 'income' | null =
               (benchAxis === 'age' && hasAge) || (benchAxis === 'income' && hasIncome)
                 ? benchAxis
                 : hasIncome ? 'income' : hasAge ? 'age' : null;
-            const items = axis === 'age' ? benchmark.byAge : axis === 'income' ? benchmark.byIncome : [];
+            // 「その他」は catch-all で必ず上位に来るため比較一覧から除外（%は総額基準のまま）
+            const items = (axis === 'age' ? benchmark.byAge : axis === 'income' ? benchmark.byIncome : [])
+              .filter((it) => it.category !== 'その他');
             const hhLabel = benchmark.household === 'FAMILY' ? '2人以上' : '単身';
             return (
               <div className="card pad-lg" style={{ marginBottom: 16 }}>
@@ -364,6 +375,8 @@ export default function AnalyticsPage() {
             );
           })()}
 
+          {/* 月次タブ本体（カテゴリ別・店舗・日別・取引） */}
+          {view === 'report' && (<>
           <div className="analytics-grid">
             {/* カテゴリ別ドーナツ */}
             <div className="card pad-lg">
@@ -517,6 +530,7 @@ export default function AnalyticsPage() {
               </div>
             )}
           </div>
+          </>)}
         </>
       ) : null}
         </>
