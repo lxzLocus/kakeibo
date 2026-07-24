@@ -306,12 +306,17 @@ function AiSettings() {
   );
 }
 
+/** 世帯平均比較に使う年代の選択肢（backend の AGE_GROUPS と一致させる） */
+const AGE_GROUP_OPTIONS = ['20代', '30代', '40代', '50代', '60代', '70代以上'] as const;
+
 /** アカウントタブ */
 function AccountSettings() {
   const router = useRouter();
   const confirm = useConfirm();
   const [user, setUser] = useState<UserResponse | null>(null);
   const [analysisOn, setAnalysisOn] = useState(true);
+  const [ageGroup, setAgeGroup] = useState('');
+  const [household, setHousehold] = useState<'SINGLE' | 'FAMILY'>('SINGLE');
   const [resetting, setResetting] = useState(false);
   const [msg, setMsg] = useState('');
   const [evalCfg, setEvalCfg] = useState<EvaluationResponse | null>(null);
@@ -321,9 +326,20 @@ function AccountSettings() {
     setUser(getUser());
     try {
       setAnalysisOn(localStorage.getItem('kakeibo.analysisEnabled') !== 'false');
-    } catch { /* 既定=有効 */ }
+      setAgeGroup(localStorage.getItem('kakeibo.ageGroup') ?? '');
+      setHousehold(localStorage.getItem('kakeibo.household') === 'FAMILY' ? 'FAMILY' : 'SINGLE');
+    } catch { /* 既定 */ }
     evaluationApi.get().then(setEvalCfg).catch(() => { /* 未対応/未起動時は無視 */ });
   }, []);
+
+  function changeAgeGroup(v: string) {
+    setAgeGroup(v);
+    try { localStorage.setItem('kakeibo.ageGroup', v); } catch { /* ignore */ }
+  }
+  function changeHousehold(v: 'SINGLE' | 'FAMILY') {
+    setHousehold(v);
+    try { localStorage.setItem('kakeibo.household', v); } catch { /* ignore */ }
+  }
 
   async function changeFrequency(frequency: string) {
     try {
@@ -417,6 +433,40 @@ function AccountSettings() {
               分析タブの「分析する」（平均・中央値との比較・LLM不使用）の表示を切り替えます。OFFにすると通常の家計簿として使えます。
             </div>
           </div>
+        </div>
+
+        {/* 世帯平均との比較（年代・世帯区分）。収入は記録から直近3ヶ月平均で自動判定するため入力不要 */}
+        <div className="settings-section__desc" style={{ marginTop: 18 }}>
+          世帯平均との比較（分析タブ）
+        </div>
+        <div className="field-grid">
+          <div className="field">
+            <label className="field__label">年代</label>
+            <select
+              className="field__input"
+              value={ageGroup}
+              onChange={(e) => changeAgeGroup(e.target.value)}
+            >
+              <option value="">未設定（同年代比較なし）</option>
+              {AGE_GROUP_OPTIONS.map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label className="field__label">世帯区分</label>
+            <select
+              className="field__input"
+              value={household}
+              onChange={(e) => changeHousehold(e.target.value === 'FAMILY' ? 'FAMILY' : 'SINGLE')}
+            >
+              <option value="SINGLE">単身</option>
+              <option value="FAMILY">2人以上世帯</option>
+            </select>
+          </div>
+        </div>
+        <div className="vision-toggle__hint" style={{ marginTop: 6 }}>
+          同年代平均・同収入帯平均との比較に使います。収入は記録から直近3ヶ月平均で自動判定します（入力不要）。参照値は家計調査ベースの概算です。
         </div>
 
         {/* 評価バッチ（頻度で分析を定期実行・最終更新表示） */}

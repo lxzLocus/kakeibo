@@ -190,6 +190,28 @@ export interface AnalysisResult {
   highlights: string[];
 }
 
+// 「世帯平均との比較」: 家計調査ベースの概算参照値との比較
+export interface BenchmarkItem {
+  category: string;   // 10大費目名
+  amount: number;     // ユーザーの当月金額
+  userPct: number;    // ユーザーの構成比(%)
+  avgPct: number;     // 参照平均の構成比(%)
+  diffPct: number;    // userPct - avgPct（ポイント差）
+}
+
+export interface BenchmarkResult {
+  month: string;
+  household: 'SINGLE' | 'FAMILY';
+  ageGroup: string | null;
+  totalExpense: number;
+  avgIncome3m: number | null;   // 直近3ヶ月平均収入
+  spendingRate: number | null;  // 支出/収入 %
+  incomeBand: string | null;
+  sourceNote: string;
+  byAge: BenchmarkItem[];
+  byIncome: BenchmarkItem[];
+}
+
 // 評価バッチの設定・状態
 export type EvaluationFrequency = 'OFF' | 'DAILY' | 'WEEKLY' | 'MONTHLY';
 export interface EvaluationResponse {

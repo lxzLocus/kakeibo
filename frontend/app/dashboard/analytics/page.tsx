@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { analyticsApi, entryApi, ApiError } from '@/lib/api';
-import { MonthlySummary, EntryResponse, AnalysisResult } from '@/types';
+import { MonthlySummary, EntryResponse, AnalysisResult, BenchmarkResult } from '@/types';
 
 const ANALYSIS_ENABLED_KEY = 'kakeibo.analysisEnabled';
 import { Icon } from '@/app/_components/Icon';
@@ -43,12 +43,32 @@ export default function AnalyticsPage() {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisEnabled, setAnalysisEnabled] = useState(true);
+  // 「世帯平均との比較」（設定の年代・世帯区分。収入は記録から直近3ヶ月平均）
+  const [benchmark, setBenchmark] = useState<BenchmarkResult | null>(null);
+  const [benchAxis, setBenchAxis] = useState<'age' | 'income'>('income');
 
   useEffect(() => {
     try {
       setAnalysisEnabled(localStorage.getItem(ANALYSIS_ENABLED_KEY) !== 'false');
     } catch { /* 既定=有効 */ }
   }, []);
+
+  // 世帯平均との比較を読み込む（選択月・設定に追従）。全部出す方針で自動取得。
+  useEffect(() => {
+    if (!analysisEnabled) return;
+    let ageGroup = '';
+    let household = 'SINGLE';
+    try {
+      ageGroup = localStorage.getItem('kakeibo.ageGroup') ?? '';
+      household = localStorage.getItem('kakeibo.household') === 'FAMILY' ? 'FAMILY' : 'SINGLE';
+    } catch { /* 既定 */ }
+    let alive = true;
+    analyticsApi
+      .benchmark(year, month, ageGroup, household)
+      .then((b) => { if (alive) setBenchmark(b); })
+      .catch(() => { if (alive) setBenchmark(null); });
+    return () => { alive = false; };
+  }, [year, month, analysisEnabled]);
 
   async function runAnalyze() {
     setAnalyzing(true);
@@ -276,6 +296,73 @@ export default function AnalyticsPage() {
               )}
             </div>
           )}
+
+          {/* 世帯平均との比較（同年代・同収入帯。家計調査ベースの概算・LLM不使用） */}
+          {analysisEnabled && benchmark && benchmark.totalExpense > 0 && (() => {
+            const hasAge = benchmark.byAge.length > 0;
+            const hasIncome = benchmark.byIncome.length > 0;
+            const axis: 'age' | 'income' | null =
+              (benchAxis === 'age' && hasAge) || (benchAxis === 'income' && hasIncome)
+                ? benchAxis
+                : hasIncome ? 'income' : hasAge ? 'age' : null;
+            const items = axis === 'age' ? benchmark.byAge : axis === 'income' ? benchmark.byIncome : [];
+            const hhLabel = benchmark.household === 'FAMILY' ? '2人以上' : '単身';
+            return (
+              <div className="card pad-lg" style={{ marginBottom: 16 }}>
+                <div className="card-head">
+                  <div className="section-label">世帯平均との比較</div>
+                  <span className="bench-source">{benchmark.sourceNote}</span>
+                </div>
+
+                <div className="analysis-stat-row">
+                  <div className="sim-stat"><div className="sim-stat-label">今月の支出</div><div className="sim-stat-value">{formatCurrency(benchmark.totalExpense)}</div></div>
+                  <div className="sim-stat"><div className="sim-stat-label">直近3ヶ月平均収入</div><div className="sim-stat-value">{benchmark.avgIncome3m != null ? formatCurrency(benchmark.avgIncome3m) : '—'}</div></div>
+                  <div className="sim-stat"><div className="sim-stat-label">収支率</div><div className="sim-stat-value">{benchmark.spendingRate != null ? `${Math.round(benchmark.spendingRate)}%` : '—'}</div></div>
+                </div>
+
+                {axis == null ? (
+                  <p className="goal-summary__note" style={{ marginTop: 12 }}>
+                    設定で「年代」を選ぶと同年代平均と、収入を記録すると同収入帯平均と比較できます。
+                  </p>
+                ) : (
+                  <>
+                    {hasAge && hasIncome && (
+                      <div className="type-segment bench-seg">
+                        <button type="button" className={`type-segment-btn ${axis === 'income' ? 'active' : ''}`} onClick={() => setBenchAxis('income')}>
+                          同収入帯{benchmark.incomeBand ? `（${benchmark.incomeBand}）` : ''}
+                        </button>
+                        <button type="button" className={`type-segment-btn ${axis === 'age' ? 'active' : ''}`} onClick={() => setBenchAxis('age')}>
+                          同年代{benchmark.ageGroup ? `（${benchmark.ageGroup}）` : ''}
+                        </button>
+                      </div>
+                    )}
+                    <div className="bench-caption">
+                      {axis === 'age'
+                        ? `同年代平均（${benchmark.ageGroup}・${hhLabel}）との構成比の差`
+                        : `同収入帯平均（${benchmark.incomeBand}・${hhLabel}）との構成比の差`}
+                    </div>
+                    <div className="bench-list">
+                      {items.map((it) => (
+                        <div key={it.category} className="bench-row">
+                          <span className="bench-cat">
+                            {it.category}
+                            <span className="bench-amt tnum">{formatCurrency(it.amount)}</span>
+                          </span>
+                          <span className="bench-nums tnum">
+                            <span className="bench-you">{it.userPct}%</span>
+                            <span className="bench-avg">平均 {it.avgPct}%</span>
+                          </span>
+                          <span className={`bench-diff ${it.diffPct >= 0.5 ? 'up' : it.diffPct <= -0.5 ? 'down' : ''}`}>
+                            {it.diffPct > 0 ? '+' : ''}{it.diffPct}pt
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })()}
 
           <div className="analytics-grid">
             {/* カテゴリ別ドーナツ */}

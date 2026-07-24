@@ -1,5 +1,5 @@
 import {
-  ErrorResponse, UserResponse, MonthlySummary, TrendSummary, AnalysisResult, EvaluationResponse, ImportResult, ImportPreview, InventoryResponse, InventoryRequest,
+  ErrorResponse, UserResponse, MonthlySummary, TrendSummary, AnalysisResult, BenchmarkResult, EvaluationResponse, ImportResult, ImportPreview, InventoryResponse, InventoryRequest,
   MealResponse, MealRequest, LlmConfigResponse, LlmConfigRequest, LlmConfigsResponse, LlmPurpose, ChatSessionResponse,
   ChatMessageResponse, SendMessageResponse, GoalResponse, GoalRequest, FixedCostResponse,
   FixedCostRequest, SimulationResult, ReceiptDraft, ShoppingItemResponse,
@@ -215,6 +215,13 @@ export const analyticsApi = {
   // 「分析する」: 選択月を自分の過去平均・中央値と比較（コードベース）
   analyze: (year: number, month: number) =>
     fetchApi<AnalysisResult>(`/analytics/analyze?year=${year}&month=${month}`),
+  // 「世帯平均との比較」: 同年代平均・同収入帯平均と比較（家計調査ベースの概算）
+  benchmark: (year: number, month: number, ageGroup: string, household: string) =>
+    fetchApi<BenchmarkResult>(
+      `/analytics/benchmark?year=${year}&month=${month}` +
+        `${ageGroup ? `&ageGroup=${encodeURIComponent(ageGroup)}` : ''}` +
+        `${household ? `&household=${encodeURIComponent(household)}` : ''}`,
+    ),
 };
 
 // --- 評価バッチ（設定の頻度で分析を定期実行） ---

@@ -2,6 +2,7 @@ package com.study.kakeibo.controller;
 
 import com.study.kakeibo.dto.Response.AnalysisResponseDto;
 import com.study.kakeibo.dto.Response.AnalyticsResponseDto;
+import com.study.kakeibo.dto.Response.BenchmarkResponseDto;
 import com.study.kakeibo.dto.Response.TrendResponseDto;
 import com.study.kakeibo.service.AnalyticsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,5 +62,22 @@ public class AnalyticsController {
             @RequestParam int month
     ) {
         return ResponseEntity.ok(analyticsService.analyze(userId, year, month));
+    }
+
+    /**
+     * 「世帯平均との比較」: 選択月の支出構成比を、同年代平均・同収入帯平均と比較する
+     * （家計調査ベースの概算参照値・LLM不使用）。収入は記録から直近3ヶ月平均で判定。
+     *
+     * GET /analytics/benchmark?year=2026&month=7&ageGroup=30代&household=SINGLE
+     */
+    @GetMapping("/benchmark")
+    public ResponseEntity<BenchmarkResponseDto> getBenchmark(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam int year,
+            @RequestParam int month,
+            @RequestParam(required = false) String ageGroup,
+            @RequestParam(required = false) String household
+    ) {
+        return ResponseEntity.ok(analyticsService.getBenchmark(userId, year, month, ageGroup, household));
     }
 }

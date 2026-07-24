@@ -2,6 +2,7 @@ package com.study.kakeibo.service;
 
 import com.study.kakeibo.dto.Response.AnalysisResponseDto;
 import com.study.kakeibo.dto.Response.AnalyticsResponseDto;
+import com.study.kakeibo.dto.Response.BenchmarkResponseDto;
 import com.study.kakeibo.dto.Response.TrendResponseDto;
 
 public interface AnalyticsService {
@@ -10,6 +11,14 @@ public interface AnalyticsService {
      * 選択月の支出を、ユーザー自身の過去の平均・中央値と比較する（コードベース・LLM不使用）。
      */
     AnalysisResponseDto analyze(Long userId, int year, int month);
+
+    /**
+     * 選択月の支出構成比を、世帯平均（同年代・同収入帯）と比較する（家計調査ベースの概算・LLM不使用）。
+     *
+     * @param ageGroup  年代（"30代" 等。未設定なら null → 同年代比較は省略）
+     * @param household 世帯区分（"SINGLE" | "FAMILY"。未知は単身）
+     */
+    BenchmarkResponseDto getBenchmark(Long userId, int year, int month, String ageGroup, String household);
 
     /**
      * 指定されたユーザーの月次サマリーを取得する。

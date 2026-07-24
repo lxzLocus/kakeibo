@@ -514,6 +514,96 @@ a {
   color: var(--text);
 }
 
+/* 世帯平均との比較 */
+.bench-source {
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+.bench-seg {
+  margin-top: 12px;
+}
+
+.bench-seg .type-segment-btn {
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.bench-caption {
+  margin-top: 12px;
+  padding: 0 2px 2px;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.bench-list {
+  border-top: 1px solid var(--hairline);
+}
+
+.bench-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 2px;
+  border-bottom: 1px solid var(--hairline-row);
+  font-size: 12.5px;
+}
+
+.bench-cat {
+  flex: 1;
+  min-width: 0;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.bench-amt {
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+.bench-nums {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  line-height: 1.2;
+  width: 96px;
+  text-align: right;
+}
+
+.bench-you {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.bench-avg {
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+.bench-diff {
+  flex: 0 0 auto;
+  width: 62px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.bench-diff.up {
+  color: var(--danger);
+}
+
+.bench-diff.down {
+  color: var(--success);
+}
+
 /* 取引履歴「もっと見る」 */
 .load-more-btn {
   display: block;

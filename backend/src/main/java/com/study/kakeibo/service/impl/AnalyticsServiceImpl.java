@@ -6,6 +6,8 @@ import com.study.kakeibo.dto.Response.AnalyticsResponseDto;
 import com.study.kakeibo.dto.Response.AnalyticsResponseDto.CategorySummary;
 import com.study.kakeibo.dto.Response.AnalyticsResponseDto.StoreSummary;
 import com.study.kakeibo.dto.Response.AnalyticsResponseDto.DailySummary;
+import com.study.kakeibo.dto.Response.BenchmarkResponseDto;
+import com.study.kakeibo.dto.Response.BenchmarkResponseDto.BenchmarkItem;
 import com.study.kakeibo.dto.Response.TrendResponseDto;
 import com.study.kakeibo.dto.Response.TrendResponseDto.CategoryTrend;
 import com.study.kakeibo.entity.Entry;
@@ -14,6 +16,7 @@ import com.study.kakeibo.entity.User;
 import com.study.kakeibo.repository.EntryRepository;
 import com.study.kakeibo.repository.UserRepository;
 import com.study.kakeibo.service.AnalyticsService;
+import com.study.kakeibo.service.benchmark.HouseholdBenchmarkData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -188,6 +191,94 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .categories(categories)
                 .highlights(highlights)
                 .build();
+    }
+
+    @Override
+    public BenchmarkResponseDto getBenchmark(Long userId, int year, int month, String ageGroup, String household) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+
+        String hh = HouseholdBenchmarkData.normalizeHousehold(household);
+        String age = (ageGroup != null && HouseholdBenchmarkData.AGE_GROUPS.contains(ageGroup)) ? ageGroup : null;
+
+        YearMonth target = YearMonth.of(year, month);
+        List<Entry> all = entryRepository.findByUser(user);
+
+        // 当月の支出を 10大費目 に寄せて集計
+        long[] catAmount = new long[HouseholdBenchmarkData.CATEGORIES.size()];
+        long totalExpense = 0;
+        // 直近3ヶ月（target を含む target-2..target）の収入合計
+        long income3m = 0;
+        YearMonth incomeFrom = target.minusMonths(2);
+        for (Entry e : all) {
+            if (e.getAmount() == null) continue;
+            YearMonth ym = YearMonth.from(e.getEntryDate());
+            long amt = e.getAmount().longValue();
+            if (e.getType() == EntryType.EXPENSE && ym.equals(target)) {
+                int idx = HouseholdBenchmarkData.categoryIndex(
+                        e.getCategory() != null ? e.getCategory().getName() : null);
+                catAmount[idx] += amt;
+                totalExpense += amt;
+            } else if (e.getType() == EntryType.INCOME
+                    && !ym.isBefore(incomeFrom) && !ym.isAfter(target)) {
+                income3m += amt;
+            }
+        }
+
+        Long avgIncome3m = income3m > 0 ? Math.round(income3m / 3.0) : null;
+        Double spendingRate = (avgIncome3m != null && avgIncome3m > 0)
+                ? Math.round(totalExpense * 1000.0 / avgIncome3m) / 10.0 : null;
+        String incomeBand = avgIncome3m != null
+                ? HouseholdBenchmarkData.incomeBandLabel(hh, avgIncome3m) : null;
+
+        List<BenchmarkItem> byAge = buildComparison(catAmount, totalExpense,
+                HouseholdBenchmarkData.byAge(hh, age));
+        List<BenchmarkItem> byIncome = buildComparison(catAmount, totalExpense,
+                HouseholdBenchmarkData.byIncome(hh, incomeBand));
+
+        return BenchmarkResponseDto.builder()
+                .month(String.format("%d-%02d", year, month))
+                .household(hh)
+                .ageGroup(age)
+                .totalExpense(totalExpense)
+                .avgIncome3m(avgIncome3m)
+                .spendingRate(spendingRate)
+                .incomeBand(incomeBand)
+                .sourceNote(HouseholdBenchmarkData.SOURCE_NOTE)
+                .byAge(byAge)
+                .byIncome(byIncome)
+                .build();
+    }
+
+    /**
+     * ユーザーの費目別金額と、参照平均の構成比(%)を突き合わせて比較行を作る。
+     * 参照が無い（年代未設定・収入不明）または当月支出0なら空リストを返す。
+     * 参照の合計が100でなくても、正規化してから比較する。
+     */
+    private List<BenchmarkItem> buildComparison(long[] catAmount, long totalExpense, double[] refShares) {
+        if (refShares == null || totalExpense <= 0) {
+            return List.of();
+        }
+        double refSum = 0;
+        for (double v : refShares) refSum += v;
+        if (refSum <= 0) return List.of();
+
+        List<String> names = HouseholdBenchmarkData.CATEGORIES;
+        List<BenchmarkItem> items = new ArrayList<>(names.size());
+        for (int i = 0; i < names.size(); i++) {
+            double userPct = catAmount[i] * 100.0 / totalExpense;
+            double avgPct = refShares[i] * 100.0 / refSum;
+            items.add(BenchmarkItem.builder()
+                    .category(names.get(i))
+                    .amount(catAmount[i])
+                    .userPct(Math.round(userPct * 10) / 10.0)
+                    .avgPct(Math.round(avgPct * 10) / 10.0)
+                    .diffPct(Math.round((userPct - avgPct) * 10) / 10.0)
+                    .build());
+        }
+        // ユーザーの金額が大きい費目を上に
+        items.sort((a, b) -> Long.compare(b.getAmount(), a.getAmount()));
+        return items;
     }
 
     @Override
