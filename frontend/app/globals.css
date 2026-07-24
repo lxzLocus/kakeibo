@@ -435,9 +435,30 @@ a {
   line-height: 1.6;
 }
 
+/* 全体の平均比（1行だけ残す。個別のハイライト文はテーブルと重複するため廃止） */
+.analysis-total-note {
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.analysis-total-note.up {
+  color: var(--danger);
+}
+
+.analysis-total-note.down {
+  color: var(--success);
+}
+
 .analysis-cat-list {
-  margin-top: 10px;
+  margin-top: 12px;
   border-top: 1px solid var(--hairline);
+}
+
+.analysis-cat-caption {
+  padding: 8px 2px 2px;
+  font-size: 11px;
+  color: var(--text-faint);
 }
 
 .analysis-cat-row {
@@ -453,18 +474,32 @@ a {
   flex: 1;
   min-width: 0;
   color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.analysis-cat-amount {
-  color: var(--text-secondary);
-}
-
+/* 差額（+¥）を主役に、%を副次で下段に。色は増=danger / 減=success */
 .analysis-cat-diff {
   flex: 0 0 auto;
-  font-size: 11.5px;
-  color: var(--text-faint);
-  width: 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  line-height: 1.2;
+  color: var(--text-secondary);
+  width: 120px;
   text-align: right;
+}
+
+.analysis-cat-diff-yen {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.analysis-cat-diff-pct {
+  font-size: 10.5px;
+  color: var(--text-faint);
 }
 
 .analysis-cat-diff.up {
@@ -473,6 +508,10 @@ a {
 
 .analysis-cat-diff.down {
   color: var(--success);
+}
+
+.analysis-cat-diff.new {
+  color: var(--text);
 }
 
 /* 取引履歴「もっと見る」 */

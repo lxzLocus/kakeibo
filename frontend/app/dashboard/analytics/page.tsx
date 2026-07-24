@@ -123,6 +123,14 @@ export default function AnalyticsPage() {
     return max || 1;
   }
 
+  // 分析: 過去平均と差がある費目だけ（住居費など ±10%以内=flat は除外）、差額の大きい順
+  const changedCats = analysis
+    ? [...analysis.categories]
+        .filter((c) => c.direction === 'up' || c.direction === 'down' || c.direction === 'new')
+        .sort((a, b) => Math.abs(b.amount - b.avgAmount) - Math.abs(a.amount - a.avgAmount))
+        .slice(0, 10)
+    : [];
+
   return (
     <div className="screen">
       {/* ヘッダーとタブはタブ切替で不変（月セレクタは下のレポート内に配置し、切替でガタつかせない） */}
@@ -219,21 +227,45 @@ export default function AnalyticsPage() {
                       <div className="sim-stat"><div className="sim-stat-label">あなたの平均</div><div className="sim-stat-value">{formatCurrency(analysis.avgMonthlyExpense)}</div></div>
                       <div className="sim-stat"><div className="sim-stat-label">中央値</div><div className="sim-stat-value">{formatCurrency(analysis.medianMonthlyExpense)}</div></div>
                     </div>
-                    <ul className="analysis-highlights">
-                      {analysis.highlights.map((h, i) => <li key={i}>{h}</li>)}
-                    </ul>
-                    {analysis.categories.length > 0 && (
-                      <div className="analysis-cat-list">
-                        {analysis.categories.slice(0, 6).map((c) => (
-                          <div key={c.name} className="analysis-cat-row">
-                            <span className="analysis-cat-name">{c.name}</span>
-                            <span className="analysis-cat-amount tnum">{formatCurrency(c.amount)}</span>
-                            <span className={`analysis-cat-diff ${c.direction}`}>
-                              {c.diffPct == null ? '新規' : `${c.diffPct >= 0 ? '+' : ''}${Math.round(c.diffPct)}% vs平均`}
-                            </span>
-                          </div>
-                        ))}
+                    {analysis.totalVsAvgPct != null && (
+                      <div
+                        className={`analysis-total-note ${
+                          analysis.totalVsAvgPct > 5 ? 'up' : analysis.totalVsAvgPct < -5 ? 'down' : ''
+                        }`}
+                      >
+                        今月は平均より {analysis.totalVsAvgPct >= 0 ? '+' : ''}
+                        {Math.round(analysis.totalVsAvgPct)}%
+                        {analysis.totalVsAvgPct > 5 ? '（高め）' : analysis.totalVsAvgPct < -5 ? '（抑えめ）' : '（ほぼ平均）'}
                       </div>
+                    )}
+                    {changedCats.length > 0 ? (
+                      <div className="analysis-cat-list">
+                        <div className="analysis-cat-caption">過去平均との差（変化があった費目のみ）</div>
+                        {changedCats.map((c) => {
+                          const diff = c.amount - c.avgAmount;
+                          return (
+                            <div key={c.name} className="analysis-cat-row">
+                              <span className="analysis-cat-name">{c.name}</span>
+                              <span className={`analysis-cat-diff ${c.direction}`}>
+                                <span className="analysis-cat-diff-yen tnum">
+                                  {diff >= 0 ? '+' : '-'}{formatCurrency(Math.abs(diff))}
+                                </span>
+                                <span className="analysis-cat-diff-pct">
+                                  {c.direction === 'new'
+                                    ? '新規'
+                                    : c.diffPct != null
+                                      ? `${c.diffPct >= 0 ? '+' : ''}${Math.round(c.diffPct)}%`
+                                      : ''}
+                                </span>
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="goal-summary__note" style={{ marginTop: 12 }}>
+                        過去平均と比べて大きく変化した費目はありません。
+                      </p>
                     )}
                   </>
                 )
