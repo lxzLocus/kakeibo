@@ -32,6 +32,7 @@ function formatCompact(amount: number): string {
 export default function AnalyticsPage() {
   const now = new Date();
   const [view, setView] = useState<'report' | 'trend' | 'simulation'>('report');
+  const [catMetric, setCatMetric] = useState<'amount' | 'pct' | 'count'>('amount'); // カテゴリ別の表示指標
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [data, setData] = useState<MonthlySummary | null>(null);
@@ -247,7 +248,23 @@ export default function AnalyticsPage() {
           <div className="analytics-grid">
             {/* カテゴリ別ドーナツ */}
             <div className="card pad-lg">
-              <div className="section-label" style={{ display: 'block', marginBottom: 18 }}>カテゴリ別支出</div>
+              <div className="cat-head">
+                <div className="section-label">カテゴリ別支出</div>
+                {data.byCategory.length > 0 && (
+                  <div className="type-segment cat-metric-seg">
+                    {([['amount', '金額'], ['pct', '割合'], ['count', '件数']] as const).map(([m, label]) => (
+                      <button
+                        key={m}
+                        type="button"
+                        className={`type-segment-btn ${catMetric === m ? 'active' : ''}`}
+                        onClick={() => setCatMetric(m)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               {data.byCategory.length > 0 ? (
                 <div className="donut-wrap">
                   <div className="donut" style={{ background: buildDonutGradient() }}>
@@ -261,7 +278,13 @@ export default function AnalyticsPage() {
                       <div key={cat.categoryId} className="legend-item">
                         <div className="legend-chip" style={{ background: categoryColor(i) }} />
                         <span className="legend-name">{cat.name}</span>
-                        <span className="legend-pct">{cat.percentage.toFixed(1)}%</span>
+                        <span className="legend-pct tnum">
+                          {catMetric === 'amount'
+                            ? formatCurrency(cat.amount)
+                            : catMetric === 'count'
+                              ? `${cat.transactionCount}件`
+                              : `${cat.percentage.toFixed(1)}%`}
+                        </span>
                       </div>
                     ))}
                   </div>

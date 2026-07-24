@@ -1322,6 +1322,30 @@ a {
   color: var(--text);
 }
 
+/* カテゴリ別カードのヘッダ（ラベル + 指標トグル 金額/割合/件数） */
+.cat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.cat-head .section-label {
+  margin-bottom: 0;
+}
+
+.cat-metric-seg {
+  padding: 3px;
+}
+
+.cat-metric-seg .type-segment-btn {
+  padding: 5px 11px;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
 .legend {
   display: flex;
   flex-direction: column;
