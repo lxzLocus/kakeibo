@@ -411,6 +411,12 @@ a {
   border-radius: 12px;
 }
 
+/* 基底の .sim-stat:last-child { border-bottom: none } が後方・同詳細度で
+   最後のタイル（中央値）の下線を消してしまうため、ここで全周ボーダーを戻す。 */
+.analysis-stat-row .sim-stat:last-child {
+  border-bottom: 1px solid var(--hairline);
+}
+
 .analysis-stat-row .sim-stat-value {
   font-size: 15px;
 }
