@@ -10,6 +10,39 @@ import { AssetsSection } from './AssetsSection';
 import { useToast, useConfirm } from '@/app/_components/ui';
 
 /**
+ * カテゴリ選択の <option> を、グループ（プライマリ）ごとに <optgroup> でまとめて返す。
+ * グループが1つも無ければフラットな <option> 一覧。未分類は最後に「未分類」見出しでまとめる。
+ * 並び順は sortOrder（=渡された配列の順）を尊重し、グループ順はグループ内の先頭が現れた順。
+ */
+function categoryOptions(cats: CategoryResponse[]) {
+  const hasGroups = cats.some((c) => c.groupName);
+  if (!hasGroups) {
+    return cats.map((cat, i) => (
+      <option key={`opt-${cat.categoryId}-${i}`} value={cat.categoryId}>{cat.name}</option>
+    ));
+  }
+  const UNGROUPED = '未分類';
+  const order: string[] = [];
+  const map = new Map<string, CategoryResponse[]>();
+  for (const c of cats) {
+    const g = c.groupName || UNGROUPED;
+    if (!map.has(g)) {
+      map.set(g, []);
+      if (g !== UNGROUPED) order.push(g);
+    }
+    map.get(g)!.push(c);
+  }
+  if (map.has(UNGROUPED)) order.push(UNGROUPED); // 未分類は末尾
+  return order.map((g) => (
+    <optgroup key={g} label={g}>
+      {map.get(g)!.map((cat, i) => (
+        <option key={`opt-${cat.categoryId}-${i}`} value={cat.categoryId}>{cat.name}</option>
+      ))}
+    </optgroup>
+  ));
+}
+
+/**
  * アップロード前に画像を縮小してJPEG化する（大きな写真によるアップロードエラー/低速を防ぐ）。
  */
 async function downscaleImage(file: File, maxDim = 1600, quality = 0.8): Promise<Blob> {
@@ -757,13 +790,7 @@ export default function DashboardPage() {
                     required
                   >
                     <option value="">カテゴリを選択</option>
-                    {categories
-                      .filter((cat) => cat.type === 'EXPENSE')
-                      .map((cat, index) => (
-                        <option key={`quick-cat-${cat.categoryId}-${index}`} value={cat.categoryId}>
-                          {cat.name}
-                        </option>
-                      ))}
+                    {categoryOptions(categories.filter((cat) => cat.type === 'EXPENSE'))}
                   </select>
                   <input
                     className="input"
@@ -1036,13 +1063,7 @@ export default function DashboardPage() {
                       required
                     >
                       <option value="">カテゴリを選択</option>
-                      {categories
-                        .filter((cat) => cat.type === modalType)
-                        .map((cat, index) => (
-                          <option key={`modal-cat-${cat.categoryId}-${index}`} value={cat.categoryId}>
-                            {cat.name}
-                          </option>
-                        ))}
+                      {categoryOptions(categories.filter((cat) => cat.type === modalType))}
                     </select>
                     <button
                       type="button"

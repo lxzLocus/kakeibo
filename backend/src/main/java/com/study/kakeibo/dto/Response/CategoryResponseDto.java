@@ -15,5 +15,6 @@ public class CategoryResponseDto {
     private Long userId;
     private String name;
     private EntryType type;
+    private String groupName;   // グループ（プライマリ）。未分類は null
     private LocalDateTime createdAt;
 }

@@ -32,6 +32,10 @@ public class Category {
     @Column(name = "sort_order", nullable = false)
     private int sortOrder = 0;
 
+    /** グループ（プライマリカテゴリ）。NULL は「未分類」。セレクターの optgroup 見出しに使う。 */
+    @Column(name = "group_name")
+    private String groupName;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

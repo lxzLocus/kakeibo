@@ -527,6 +527,8 @@ function CategorySettings() {
   const [error, setError] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
+  const [groupEditId, setGroupEditId] = useState<number | null>(null);
+  const [groupEditVal, setGroupEditVal] = useState('');
   const [deleting, setDeleting] = useState<CategoryResponse | null>(null);
   const [reassignTo, setReassignTo] = useState('');
   const [sortMode, setSortMode] = useState(false);
@@ -558,6 +560,17 @@ function CategorySettings() {
       await load();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : '改名に失敗しました');
+    }
+  }
+
+  async function saveGroup(id: number) {
+    const v = groupEditVal.trim();
+    setGroupEditId(null);
+    try {
+      await categoryApi.setGroup(id, v || null);
+      await load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'グループの設定に失敗しました');
     }
   }
 
@@ -676,8 +689,16 @@ function CategorySettings() {
     { type: 'INCOME', label: '収入カテゴリ' },
   ];
 
+  // グループ（プライマリ）名の候補（既存グループ。入力補完に使う）
+  const groupSuggestions = Array.from(
+    new Set(cats.map((c) => c.groupName).filter((g): g is string => !!g)),
+  );
+
   return (
     <div className="settings-section">
+      <datalist id="cat-group-suggestions">
+        {groupSuggestions.map((g) => <option key={g} value={g} />)}
+      </datalist>
       <div className="cat-mgmt-head">
         <div className="settings-section__title" style={{ margin: 0 }}>カテゴリ管理</div>
         {cats.length > 1 && (
@@ -694,7 +715,7 @@ function CategorySettings() {
       <div className="settings-section__desc">
         {sortMode
           ? 'ハンドルをドラッグ、または上下ボタンで並び順を変更できます。「名前順」で自動整列も可能です。'
-          : 'カテゴリの改名・削除ができます。削除時に取引がある場合は、別のカテゴリへ付け替えてから削除します。'}
+          : 'カテゴリの改名・削除・グループ設定ができます。グループ（プライマリ）を割り当てると、収支登録のカテゴリ選択でグループごとにまとまって表示されます。'}
       </div>
       {error && <div className="error-banner"><Icon name="error" /> {error}</div>}
 
@@ -753,6 +774,33 @@ function CategorySettings() {
                           {cat.name}
                           <span className="cat-count">{count}件</span>
                         </span>
+                      )}
+                      {!sortMode && editingId !== cat.categoryId && (
+                        groupEditId === cat.categoryId ? (
+                          <input
+                            className="input cat-group-input"
+                            list="cat-group-suggestions"
+                            autoFocus
+                            placeholder="グループ名"
+                            value={groupEditVal}
+                            onChange={(e) => setGroupEditVal(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveGroup(cat.categoryId);
+                              if (e.key === 'Escape') setGroupEditId(null);
+                            }}
+                            onBlur={() => saveGroup(cat.categoryId)}
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            className={`cat-group-chip${cat.groupName ? '' : ' is-empty'}`}
+                            onClick={() => { setGroupEditId(cat.categoryId); setGroupEditVal(cat.groupName ?? ''); }}
+                            title="グループ（プライマリ）を設定"
+                          >
+                            <Icon name="folder" size={13} />
+                            {cat.groupName ?? 'グループ未設定'}
+                          </button>
+                        )
                       )}
                       <div className="cat-actions">
                         {sortMode ? (

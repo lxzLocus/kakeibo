@@ -11,4 +11,7 @@ public class CategoryRequestDto {
 
     /** 収入用 / 支出用。未指定なら支出(EXPENSE)扱い。 */
     private EntryType type;
+
+    /** グループ（プライマリカテゴリ）。空/未指定は「未分類」。 */
+    private String groupName;
 }

@@ -26,6 +26,7 @@ public class CategoryController {
                 category.getUser().getId(),
                 category.getName(),
                 category.getType(),
+                category.getGroupName(),
                 category.getCreatedAt()
         );
     }
@@ -36,7 +37,8 @@ public class CategoryController {
             @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody CategoryRequestDto request
     ) {
-        Category newCategory = categoryService.addCategory(userId, request.getName(), request.getType());
+        Category newCategory = categoryService.addCategory(
+                userId, request.getName(), request.getType(), request.getGroupName());
         return ResponseEntity.ok(toDto(newCategory));
     }
 
@@ -61,6 +63,17 @@ public class CategoryController {
     ) {
         Category updatedCategory = categoryService.updateCategory(userId, categoryId, request.getName());
         return ResponseEntity.ok(toDto(updatedCategory));
+    }
+
+    // カテゴリのグループ（プライマリ）を設定する。groupName 省略＝未分類に戻す。
+    @PutMapping("/{categoryId}/group")
+    public ResponseEntity<CategoryResponseDto> setGroup(
+            @RequestHeader("X-User-Id") Long userId,
+            @PathVariable Long categoryId,
+            @RequestParam(required = false) String groupName
+    ) {
+        Category updated = categoryService.setCategoryGroup(userId, categoryId, groupName);
+        return ResponseEntity.ok(toDto(updated));
     }
 
     // カテゴリ削除（reassignTo 指定時は紐づく取引をそのカテゴリへ付け替えてから削除）

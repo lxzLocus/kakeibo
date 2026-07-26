@@ -35,6 +35,11 @@ public class CategoryServiceImpl implements CategoryService {
 
     // カテゴリの追加（収入/支出 区分つき）
     public Category addCategory(Long userId, String name, EntryType type) {
+        return addCategory(userId, name, type, null);
+    }
+
+    // カテゴリの追加（グループ付き）
+    public Category addCategory(Long userId, String name, EntryType type, String groupName) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
 
@@ -49,12 +54,20 @@ public class CategoryServiceImpl implements CategoryService {
         newCategory.setUser(user);
         newCategory.setName(name);
         newCategory.setType(categoryType);
+        newCategory.setGroupName(normalizeGroup(groupName));
         // 末尾に追加（既存の最大 sortOrder + 1）
         int maxOrder = categoryRepository.findByUser(user).stream()
             .mapToInt(Category::getSortOrder).max().orElse(-1);
         newCategory.setSortOrder(maxOrder + 1);
 
         return categoryRepository.save(newCategory);
+    }
+
+    /** グループ名の正規化（空白のみ・空文字は未分類=null に寄せる）。 */
+    private String normalizeGroup(String groupName) {
+        if (groupName == null) return null;
+        String g = groupName.trim();
+        return g.isEmpty() ? null : g;
     }
 
     // ユーザーのカテゴリ一覧取得（表示順）
@@ -88,21 +101,32 @@ public class CategoryServiceImpl implements CategoryService {
             .orElseThrow(() -> new IllegalArgumentException("Category not found with id: " + categoryId));
     }
 
-    // カテゴリの更新
+    // カテゴリの更新（名前のみ。グループは変更しない）
     public Category updateCategory(Long userId, Long categoryId, String name) {
+        Category existingCategory = requireOwnedCategory(userId, categoryId);
+        existingCategory.setName(name);
+        return categoryRepository.save(existingCategory);
+    }
+
+    // カテゴリのグループ（プライマリ）を設定する。null/空は未分類。
+    @Override
+    public Category setCategoryGroup(Long userId, Long categoryId, String groupName) {
+        Category existingCategory = requireOwnedCategory(userId, categoryId);
+        existingCategory.setGroupName(normalizeGroup(groupName));
+        return categoryRepository.save(existingCategory);
+    }
+
+    /** 対象カテゴリを取得し、ユーザー所有であることを確認する。 */
+    private Category requireOwnedCategory(Long userId, Long categoryId) {
         if (!userRepository.existsById(userId)) {
             throw new IllegalArgumentException("permission error");
         }
-
         Category existingCategory = categoryRepository.findById(categoryId)
             .orElseThrow(() -> new IllegalArgumentException("permission error"));
-
         if (!existingCategory.getUser().getId().equals(userId)) {
             throw new IllegalArgumentException("permission error");
         }
-
-        existingCategory.setName(name);
-        return categoryRepository.save(existingCategory);
+        return existingCategory;
     }
 
     // カテゴリの削除。紐づく取引がある場合は reassignToId のカテゴリへ付け替えてから削除する。

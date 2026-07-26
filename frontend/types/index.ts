@@ -33,6 +33,7 @@ export interface CategoryResponse {
   categoryId: number;
   name: string;
   type: EntryType;
+  groupName: string | null;   // グループ（プライマリ）。未分類は null
   createdAt: string;
 }
 

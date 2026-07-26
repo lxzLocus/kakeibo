@@ -662,6 +662,42 @@ a {
   flex: 0 0 auto;
 }
 
+/* カテゴリのグループ（プライマリ）設定チップ／入力 */
+.cat-group-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  max-width: 150px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--hairline);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.cat-group-chip.is-empty {
+  color: var(--text-faint);
+}
+
+.cat-group-chip:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.cat-row .input.cat-group-input {
+  flex: 0 0 auto;
+  width: 140px;
+  font-size: 12px;
+  padding: 5px 9px;
+}
+
 .cat-icon-btn {
   background: none;
   border: none;

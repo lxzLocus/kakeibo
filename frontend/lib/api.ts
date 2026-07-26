@@ -168,15 +168,20 @@ export const entryApi = {
 // --- Category API ---
 export const categoryApi = {
   getAll: () => fetchApi('/categories'),
-  create: (name: string, type: 'INCOME' | 'EXPENSE' = 'EXPENSE') =>
+  create: (name: string, type: 'INCOME' | 'EXPENSE' = 'EXPENSE', groupName?: string) =>
     fetchApi('/categories', {
       method: 'POST',
-      body: JSON.stringify({ name, type }),
+      body: JSON.stringify({ name, type, groupName }),
     }),
   update: (categoryId: number, name: string) =>
     fetchApi(`/categories/${categoryId}`, {
       method: 'PUT',
       body: JSON.stringify({ name }),
+    }),
+  // グループ（プライマリ）の設定。null/空で未分類に戻す
+  setGroup: (categoryId: number, groupName: string | null) =>
+    fetchApi(`/categories/${categoryId}/group${groupName ? `?groupName=${encodeURIComponent(groupName)}` : ''}`, {
+      method: 'PUT',
     }),
   // reassignTo 指定時は、紐づく取引をそのカテゴリへ付け替えてから削除する
   delete: (categoryId: number, reassignTo?: number) =>
