@@ -14,10 +14,13 @@ import com.study.kakeibo.service.llm.LlmConfig;
 import com.study.kakeibo.service.llm.PromptLoaderService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,6 +50,7 @@ public class ChatService {
     private final FixedCostService fixedCostService;
     private final GoalService goalService;
     private final UserMemoryRepository userMemoryRepository;
+    private final ObjectMapper objectMapper;
 
     public ChatService(ChatSessionRepository sessionRepository,
                        ChatMessageRepository messageRepository,
@@ -56,7 +60,8 @@ public class ChatService {
                        AnalyticsService analyticsService,
                        FixedCostService fixedCostService,
                        GoalService goalService,
-                       UserMemoryRepository userMemoryRepository) {
+                       UserMemoryRepository userMemoryRepository,
+                       ObjectMapper objectMapper) {
         this.sessionRepository = sessionRepository;
         this.messageRepository = messageRepository;
         this.llmConfigService = llmConfigService;
@@ -66,6 +71,7 @@ public class ChatService {
         this.fixedCostService = fixedCostService;
         this.goalService = goalService;
         this.userMemoryRepository = userMemoryRepository;
+        this.objectMapper = objectMapper;
     }
 
     // --- セッション操作 ---
@@ -170,8 +176,8 @@ public class ChatService {
         List<ChatMessage> history = messageRepository.findBySessionIdOrderByCreatedAtAscIdAsc(session.getId());
         List<LlmClient.Message> apiMessages = buildApiMessages(userId, session, history, llmConfig);
 
-        // 3. LLM呼び出し
-        String reply = llmClient.chat(llmConfig, apiMessages, 2048);
+        // 3. LLM呼び出し（ツール対応モデルならツール付き。非対応は自動フォールバック）
+        String reply = replyWithToolsOrFallback(userId, apiMessages, llmConfig);
 
         // 4. assistantメッセージ保存
         ChatMessage aiMessage = saveMessage(session.getId(), "assistant", reply.trim(), null, null);
@@ -219,11 +225,20 @@ public class ChatService {
         List<ChatMessage> history = messageRepository.findBySessionIdOrderByCreatedAtAscIdAsc(session.getId());
         List<LlmClient.Message> apiMessages = buildApiMessages(userId, session, history, llmConfig);
         String firstText = text.isEmpty() ? "画像の相談" : text;
-        return new StreamPrep(userMessage, apiMessages, llmConfig, firstText);
+        return new StreamPrep(userId, userMessage, apiMessages, llmConfig, firstText);
     }
 
-    /** LLMをストリーミング呼び出し。差分トークンごとに onChunk を呼び、本文全体を返す。 */
+    /**
+     * LLMをストリーミング呼び出し。差分トークンごとに onChunk を呼び、本文全体を返す。
+     * ツール対応モデルの場合はツール（関数呼び出し）を使うため、その回だけ非ストリームで実行し、
+     * 得られた本文を一括で onChunk に流す（ユーザーの合意どおりストリーム→非ストリームに切替）。
+     */
     public String streamReply(StreamPrep prep, java.util.function.Consumer<String> onChunk) {
+        if (shouldTryTools(prep.llmConfig())) {
+            String reply = replyWithToolsOrFallback(prep.userId(), prep.apiMessages(), prep.llmConfig());
+            onChunk.accept(reply);
+            return reply;
+        }
         return llmClient.chatStream(prep.llmConfig(), prep.apiMessages(), 2048, onChunk);
     }
 
@@ -242,7 +257,7 @@ public class ChatService {
         return new FinalizeResult(aiMessage, related);
     }
 
-    public record StreamPrep(ChatMessage userMessage, List<LlmClient.Message> apiMessages,
+    public record StreamPrep(Long userId, ChatMessage userMessage, List<LlmClient.Message> apiMessages,
                              LlmConfig llmConfig, String firstText) {
     }
 
@@ -610,6 +625,142 @@ public class ChatService {
             case "new" -> "新規";
             default -> "ほぼ平常";
         };
+    }
+
+    // --- ツール（関数呼び出し）。モデルの対応可否は自動判定してキャッシュ（手動設定不要） ---
+
+    /** このモデルでツールを試すべきか。true=対応確定 / false=非対応確定 / null=未判定→試して自動判定。 */
+    private boolean shouldTryTools(LlmConfig cfg) {
+        Boolean s = cfg.supportsTools();
+        return s == null || s;
+    }
+
+    /**
+     * ツール付きで応答を得る。ツール非対応エンドポイントでは chatWithTools が例外になるため、
+     * その場合はツール無しで再試行する。「ツールを外すと成功する＝非対応」と判断してキャッシュする。
+     * ツール無しでも失敗するなら本物のエラーとしてそのまま伝播させる。
+     */
+    private String replyWithToolsOrFallback(Long userId, List<LlmClient.Message> apiMessages, LlmConfig cfg) {
+        if (!shouldTryTools(cfg)) {
+            return llmClient.chat(cfg, apiMessages, 2048);
+        }
+        try {
+            String reply = llmClient.chatWithTools(cfg, apiMessages, toolSpecs(),
+                    (name, args) -> executeTool(userId, name, args), 2048);
+            rememberToolSupport(userId, true);
+            return reply;
+        } catch (Exception toolErr) {
+            String reply = llmClient.chat(cfg, apiMessages, 2048); // ここも失敗すれば例外がそのまま伝播
+            rememberToolSupport(userId, false);
+            return reply;
+        }
+    }
+
+    private void rememberToolSupport(Long userId, boolean supported) {
+        try {
+            llmConfigService.markToolSupport(userId, com.study.kakeibo.entity.LlmPurpose.CHAT, supported);
+        } catch (Exception ignore) {
+            // キャッシュ更新は best-effort
+        }
+    }
+
+    /** チャットで使える分析ツールの定義（OpenAI互換 tools）。 */
+    private List<Map<String, Object>> toolSpecs() {
+        return List.of(
+                functionSpec("get_month_summary",
+                        "指定した年月の収入・支出・収支・カテゴリ別支出の合計を取得する。特定の月の実績を知りたいときに使う。",
+                        Map.of("year", intProp("西暦の年 例:2026"), "month", intProp("月 1〜12")),
+                        List.of("year", "month")),
+                functionSpec("get_spending_analysis",
+                        "指定した年月の支出を、ユーザー自身の過去平均・中央値と比較した分析（カテゴリ別に平常か急増かの判定を含む）を取得する。"
+                                + "金額が多い費目が平常か異常かを見極めたいときに使う。",
+                        Map.of("year", intProp("西暦の年"), "month", intProp("月 1〜12")),
+                        List.of("year", "month")));
+    }
+
+    private Map<String, Object> functionSpec(String name, String description,
+                                             Map<String, Object> properties, List<String> required) {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("type", "object");
+        params.put("properties", properties);
+        params.put("required", required);
+        Map<String, Object> fn = new LinkedHashMap<>();
+        fn.put("name", name);
+        fn.put("description", description);
+        fn.put("parameters", params);
+        Map<String, Object> tool = new LinkedHashMap<>();
+        tool.put("type", "function");
+        tool.put("function", fn);
+        return tool;
+    }
+
+    private Map<String, Object> intProp(String description) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("type", "integer");
+        m.put("description", description);
+        return m;
+    }
+
+    /** モデルからのツール呼び出しを実行し、結果テキストを返す。 */
+    private String executeTool(Long userId, String name, String argsJson) {
+        try {
+            Map<String, Object> args = (argsJson == null || argsJson.isBlank())
+                    ? Map.of()
+                    : objectMapper.readValue(argsJson, new TypeReference<Map<String, Object>>() {});
+            LocalDate now = LocalDate.now();
+            int year = toInt(args.get("year"), now.getYear());
+            int month = toInt(args.get("month"), now.getMonthValue());
+            return switch (name == null ? "" : name) {
+                case "get_month_summary" -> monthSummaryText(userId, year, month);
+                case "get_spending_analysis" -> analysisText(userId, year, month);
+                default -> "未対応のツールです: " + name;
+            };
+        } catch (Exception e) {
+            return "ツール実行エラー: " + e.getMessage();
+        }
+    }
+
+    private int toInt(Object o, int def) {
+        if (o instanceof Number n) return n.intValue();
+        if (o == null) return def;
+        try {
+            return (int) Math.round(Double.parseDouble(String.valueOf(o)));
+        } catch (Exception e) {
+            return def;
+        }
+    }
+
+    private String monthSummaryText(Long userId, int year, int month) {
+        AnalyticsResponseDto s = analyticsService.getMonthlySummary(userId, year, month);
+        StringBuilder sb = new StringBuilder();
+        sb.append(s.getMonth()).append(": 収入 ").append(yen(toLong(s.getTotalIncome())))
+                .append(" / 支出 ").append(yen(toLong(s.getTotalExpense())))
+                .append(" / 収支 ").append(yen(toLong(s.getBalance()))).append("。");
+        if (s.getByCategory() != null && !s.getByCategory().isEmpty()) {
+            sb.append(" カテゴリ別: ");
+            s.getByCategory().stream().limit(12).forEach(c ->
+                    sb.append(c.getName()).append(" ").append(yen(toLong(c.getAmount()))).append("; "));
+        }
+        return sb.toString();
+    }
+
+    private String analysisText(Long userId, int year, int month) {
+        AnalysisResponseDto a = analyticsService.analyze(userId, year, month);
+        StringBuilder sb = new StringBuilder();
+        sb.append(a.getMonth()).append(" の分析: 今月支出 ").append(yen(a.getTotalExpense()));
+        if (a.getMonthsAnalyzed() > 0) {
+            sb.append("（あなたの月次平均 ").append(yen(a.getAvgMonthlyExpense()))
+                    .append(" / 中央値 ").append(yen(a.getMedianMonthlyExpense())).append("）");
+        } else {
+            sb.append("（比較できる過去データが不足）");
+        }
+        sb.append("。カテゴリ別[今月/平均/判定]: ");
+        if (a.getCategories() != null) {
+            a.getCategories().stream().limit(12).forEach(c ->
+                    sb.append(c.getName()).append(" ").append(yen(c.getAmount())).append("/")
+                            .append(yen(c.getAvgAmount())).append("/").append(judge(c.getDirection())).append("; "));
+        }
+        return sb.toString();
     }
 
     private void generateTitleSafely(ChatSession session, LlmConfig llmConfig, String firstUserMessage) {

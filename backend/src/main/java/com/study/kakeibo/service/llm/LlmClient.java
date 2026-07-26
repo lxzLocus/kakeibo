@@ -113,6 +113,104 @@ public class LlmClient {
     }
 
     /**
+     * ツール（関数呼び出し）付きでLLMを呼び出す。モデルがツールを要求したら {@code toolExecutor} で実行し、
+     * 結果を会話に足して再度問い合わせる、を最終回答が出るまで繰り返す（最大数回）。
+     * このメソッド自体は成否を判定せず、ツール非対応エンドポイントでは例外を投げる（呼び出し側でフォールバック）。
+     *
+     * @param initialMessages system/履歴/user のメッセージ列
+     * @param toolSpecs        OpenAI互換の tools 定義（List&lt;Map&gt;）
+     * @param toolExecutor     (関数名, 引数JSON) → 実行結果文字列
+     */
+    public String chatWithTools(LlmConfig config, List<Message> initialMessages, Object toolSpecs,
+                                java.util.function.BiFunction<String, String, String> toolExecutor,
+                                Integer maxCompletionTokens) {
+        validate(config);
+        String endpoint = resolveEndpoint(config.baseUrl());
+        List<Object> convo = new ArrayList<>(initialMessages);
+        String lastContent = "";
+
+        for (int iter = 0; iter < 5; iter++) {
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("model", config.model());
+            payload.put("messages", convo);
+            payload.put("tools", toolSpecs);
+            payload.put("tool_choice", "auto");
+            if (maxCompletionTokens != null) {
+                payload.put("max_completion_tokens", maxCompletionTokens);
+            }
+
+            String raw;
+            try {
+                raw = restClient.post()
+                        .uri(endpoint)
+                        .header("Authorization", "Bearer " + config.apiKey())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(payload)
+                        .retrieve()
+                        .body(String.class);
+            } catch (RestClientResponseException e) {
+                throw new LlmException(describeHttpError(e, endpoint, config.model()));
+            } catch (Exception e) {
+                throw new LlmException("LLM APIに接続できませんでした（接続先: " + endpoint + "）: " + e.getMessage());
+            }
+
+            JsonNode root;
+            try {
+                root = objectMapper.readTree(raw);
+            } catch (Exception e) {
+                throw new LlmException("LLM応答の解析に失敗しました。");
+            }
+            JsonNode choices = root.path("choices");
+            if (!choices.isArray() || choices.isEmpty()) {
+                throw new LlmException("LLMからのレスポンスが空でした（モデル: " + config.model() + "）。");
+            }
+            JsonNode message = choices.get(0).path("message");
+            JsonNode contentNode = message.path("content");
+            String content = (contentNode.isMissingNode() || contentNode.isNull()) ? null : contentNode.asString();
+            if (content != null) {
+                lastContent = content;
+            }
+
+            JsonNode toolCalls = message.path("tool_calls");
+            if (toolCalls.isArray() && !toolCalls.isEmpty()) {
+                // アシスタントのツール要求メッセージをそのまま会話に追加
+                Map<String, Object> assistantMsg = objectMapper.convertValue(
+                        message, new tools.jackson.core.type.TypeReference<Map<String, Object>>() {});
+                convo.add(assistantMsg);
+                // 各ツールを実行し、role=tool の結果メッセージを追加
+                for (JsonNode tc : toolCalls) {
+                    String id = nodeText(tc.path("id"));
+                    String name = nodeText(tc.path("function").path("name"));
+                    String args = nodeText(tc.path("function").path("arguments"));
+                    String result;
+                    try {
+                        result = toolExecutor.apply(name, args.isBlank() ? "{}" : args);
+                    } catch (Exception ex) {
+                        result = "ツール実行エラー: " + ex.getMessage();
+                    }
+                    Map<String, Object> toolMsg = new LinkedHashMap<>();
+                    toolMsg.put("role", "tool");
+                    toolMsg.put("tool_call_id", id);
+                    toolMsg.put("content", result == null ? "" : result);
+                    convo.add(toolMsg);
+                }
+                continue; // ツール結果を踏まえて再問い合わせ
+            }
+
+            // ツール要求が無ければ最終回答
+            if (content != null && !content.isBlank()) {
+                return content;
+            }
+            return lastContent;
+        }
+        return lastContent; // 反復上限に達した場合の保険
+    }
+
+    private String nodeText(JsonNode n) {
+        return (n == null || n.isMissingNode() || n.isNull()) ? "" : n.asString();
+    }
+
+    /**
      * ストリーミングでLLMを呼び出す。差分トークンごとに {@code onChunk} を呼び、最終的な本文全体を返す。
      * OpenAI互換の SSE（{@code data: {...}} 行）を1行ずつ読む。
      */

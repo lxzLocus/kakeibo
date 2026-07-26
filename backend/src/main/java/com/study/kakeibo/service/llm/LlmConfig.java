@@ -8,7 +8,8 @@ package com.study.kakeibo.service.llm;
  * @param model   モデル名（例: gpt-4o-mini）
  * @param apiKey  APIキー（復号済みの生キー）
  */
-public record LlmConfig(String baseUrl, String model, String apiKey, boolean supportsVision, boolean directOcr) {
+public record LlmConfig(String baseUrl, String model, String apiKey, boolean supportsVision, boolean directOcr,
+                        Boolean supportsTools) {
 
     /**
      * ログにAPIキーが平文で出力されないようにマスクする。
@@ -17,7 +18,7 @@ public record LlmConfig(String baseUrl, String model, String apiKey, boolean sup
     @Override
     public String toString() {
         return "LlmConfig[baseUrl=" + baseUrl + ", model=" + model + ", apiKey=***REDACTED***, supportsVision="
-                + supportsVision + ", directOcr=" + directOcr + "]";
+                + supportsVision + ", directOcr=" + directOcr + ", supportsTools=" + supportsTools + "]";
     }
 }
 

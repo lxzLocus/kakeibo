@@ -46,6 +46,8 @@ public class LlmConfigService {
         config.setModel(model.trim());
         config.setSupportsVision(supportsVision);
         config.setDirectOcr(directOcr);
+        // 設定変更（モデル等）でツール対応が変わりうるので、判定キャッシュをリセットして再判定させる
+        config.setSupportsTools(null);
 
         // APIキーが空の場合（既存更新時）は既存キーを維持する
         if (rawApiKey != null && !rawApiKey.isBlank()) {
@@ -65,7 +67,17 @@ public class LlmConfigService {
         UserLlmConfig config = repository.findByUserIdAndPurpose(userId, purpose)
                 .orElseThrow(() -> new IllegalArgumentException(notConfiguredMessage(purpose)));
         String rawKey = textEncryptor.decrypt(config.getApiKeyEnc());
-        return new LlmConfig(config.getBaseUrl(), config.getModel(), rawKey, config.isSupportsVision(), config.isDirectOcr());
+        return new LlmConfig(config.getBaseUrl(), config.getModel(), rawKey,
+                config.isSupportsVision(), config.isDirectOcr(), config.getSupportsTools());
+    }
+
+    /** ツール対応の自動判定結果をキャッシュする（best-effort）。 */
+    @Transactional
+    public void markToolSupport(Long userId, LlmPurpose purpose, boolean supported) {
+        repository.findByUserIdAndPurpose(userId, purpose).ifPresent(c -> {
+            c.setSupportsTools(supported);
+            repository.save(c);
+        });
     }
 
     /**

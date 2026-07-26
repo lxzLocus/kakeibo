@@ -49,6 +49,10 @@ public class UserLlmConfig {
     @Column(name = "direct_ocr", nullable = false)
     private boolean directOcr = false;
 
+    /** このモデルが関数呼び出し(tools)に対応するか。null=未判定（実行時に自動判定してキャッシュ）。 */
+    @Column(name = "supports_tools")
+    private Boolean supportsTools;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
