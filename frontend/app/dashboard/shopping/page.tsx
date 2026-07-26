@@ -72,6 +72,14 @@ export default function ShoppingPage() {
     }, 5000);
   }
 
+  // 入力中は自動見積りのカウントダウンを止める（品名を打っている間に走ると事実上1件ずつのリクエストになるため）
+  function pauseEstimate() {
+    if (estimateTimer.current) {
+      clearTimeout(estimateTimer.current);
+      estimateTimer.current = null;
+    }
+  }
+
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || adding) return;
@@ -82,7 +90,8 @@ export default function ShoppingPage() {
       const item = await shoppingApi.create(name.trim());
       setItems((prev) => [...prev, item]);
       setName('');
-      scheduleEstimate();
+      // 続けて入力するかもしれないので、ここでは走らせない。入力欄から離れた(blur)ときに見積る。
+      pauseEstimate();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : '追加に失敗しました');
     } finally {
@@ -124,6 +133,21 @@ export default function ShoppingPage() {
     }
   }
 
+  // チェック済み（購入済み）をまとめて削除する
+  async function removeChecked() {
+    const targets = items.filter((i) => i.checked);
+    if (targets.length === 0) return;
+    if (!(await confirm({ title: 'チェック済みを削除', message: `チェックした ${targets.length} 件をまとめて削除しますか？`, confirmText: '削除する', danger: true }))) return;
+    const ids = new Set(targets.map((t) => t.id));
+    try {
+      await Promise.all(targets.map((t) => shoppingApi.delete(t.id)));
+      setItems((prev) => prev.filter((x) => !ids.has(x.id)));
+    } catch {
+      toast('一部の削除に失敗しました', 'error');
+      try { setItems(await shoppingApi.getAll()); } catch { /* ignore */ }
+    }
+  }
+
   // 未購入（未チェック）の見積り合計 = これから使いそうな金額
   const remainingTotal = items
     .filter((i) => !i.checked)
@@ -160,7 +184,9 @@ export default function ShoppingPage() {
           type="text"
           placeholder="品名を入力（例: トイレットペーパー）"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => { setName(e.target.value); pauseEstimate(); }}
+          onFocus={pauseEstimate}
+          onBlur={scheduleEstimate}
         />
         <button type="submit" className="btn-primary" disabled={adding || !name.trim()}>
           {adding ? (
@@ -197,6 +223,17 @@ export default function ShoppingPage() {
               </button>
             </>
           )}
+        </div>
+      )}
+
+      {/* チェック済みをまとめて削除 */}
+      {checkedCount > 0 && (
+        <div className="shop-bulk-bar">
+          <span>{checkedCount}件をチェック中</span>
+          <button type="button" className="shop-bulk-delete" onClick={removeChecked}>
+            <Icon name="delete_sweep" size={17} />
+            チェック済みを削除
+          </button>
         </div>
       )}
 

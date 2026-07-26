@@ -2897,6 +2897,38 @@ button.month-pill-label:hover {
   color: var(--text-secondary);
 }
 
+.shop-bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 14px;
+  margin-bottom: 16px;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--surface-2);
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.shop-bulk-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 99px;
+  border: 1px solid var(--danger);
+  background: transparent;
+  color: var(--danger);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.shop-bulk-delete:hover {
+  background: var(--danger-bg);
+}
+
 .shop-estimate-bar .loading-spinner {
   flex: 0 0 auto;
 }
@@ -4901,13 +4933,61 @@ button.month-pill-label:hover {
 .chat-bubble--ai .md-p:last-child {
   margin-bottom: 0;
 }
-.chat-bubble--ai .md-list {
+.chat-bubble--ai ul.md-list {
   margin: 4px 0 8px;
   padding-left: 1.4em;
+  list-style: disc outside;
+}
+.chat-bubble--ai ol.md-list {
+  margin: 4px 0 8px;
+  padding-left: 1.6em;
+  list-style: decimal outside;
 }
 .chat-bubble--ai .md-list li {
   margin: 2px 0;
   line-height: 1.6;
+  display: list-item;
+}
+/* チェックリストはマーカーを消してチェックボックスを見せる */
+.chat-bubble--ai ul.md-tasklist {
+  list-style: none;
+  padding-left: 0.2em;
+}
+.chat-bubble--ai .md-task {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+}
+.chat-bubble--ai .md-task input[type="checkbox"] {
+  margin-top: 3px;
+  flex: 0 0 auto;
+  accent-color: var(--accent);
+}
+/* 表（GFM） */
+.chat-bubble--ai .md-table-wrap {
+  overflow-x: auto;
+  margin: 8px 0;
+}
+.chat-bubble--ai .md-table {
+  border-collapse: collapse;
+  font-size: 12.5px;
+  min-width: 60%;
+}
+.chat-bubble--ai .md-table th,
+.chat-bubble--ai .md-table td {
+  border: 1px solid var(--hairline);
+  padding: 5px 10px;
+  text-align: left;
+  white-space: nowrap;
+}
+.chat-bubble--ai .md-table th {
+  background: var(--surface-3);
+  font-weight: 600;
+}
+.chat-bubble--ai .md-hr {
+  border: none;
+  border-top: 1px solid var(--hairline);
+  margin: 12px 0;
 }
 .chat-bubble--ai .md-h {
   margin: 12px 0 6px;
@@ -4990,7 +5070,13 @@ button.month-pill-label:hover {
   border: 1px solid var(--input-border);
   border-radius: 12px;
   padding: 10px 12px;
-  max-height: none;
+  width: 100%;
+  box-sizing: border-box;
+  /* 画面サイズに合わせて大きく。ドラッグでさらに拡大も可能 */
+  min-height: min(45vh, 360px);
+  max-height: 75vh;
+  resize: vertical;
+  overflow-y: auto;
 }
 
 .chat-edit-box .chat-input__textarea:focus {

@@ -370,7 +370,8 @@ export default function ChatPage() {
                     className="chat-input__textarea"
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
-                    rows={3}
+                    rows={12}
+                    autoFocus
                   />
                   <div className="chat-edit-actions">
                     <button className="chat-edit-save" onClick={() => saveEdit(m)}>保存</button>
