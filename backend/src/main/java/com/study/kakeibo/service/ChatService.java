@@ -1,8 +1,10 @@
 package com.study.kakeibo.service;
 
+import com.study.kakeibo.dto.Response.AnalysisResponseDto;
 import com.study.kakeibo.dto.Response.AnalyticsResponseDto;
 import com.study.kakeibo.entity.ChatMessage;
 import com.study.kakeibo.entity.ChatSession;
+import com.study.kakeibo.entity.FixedCost;
 import com.study.kakeibo.repository.ChatMessageRepository;
 import com.study.kakeibo.repository.ChatSessionRepository;
 import com.study.kakeibo.service.llm.LlmClient;
@@ -11,6 +13,7 @@ import com.study.kakeibo.service.llm.PromptLoaderService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,19 +42,25 @@ public class ChatService {
     private final LlmClient llmClient;
     private final PromptLoaderService promptLoader;
     private final AnalyticsService analyticsService;
+    private final FixedCostService fixedCostService;
+    private final GoalService goalService;
 
     public ChatService(ChatSessionRepository sessionRepository,
                        ChatMessageRepository messageRepository,
                        LlmConfigService llmConfigService,
                        LlmClient llmClient,
                        PromptLoaderService promptLoader,
-                       AnalyticsService analyticsService) {
+                       AnalyticsService analyticsService,
+                       FixedCostService fixedCostService,
+                       GoalService goalService) {
         this.sessionRepository = sessionRepository;
         this.messageRepository = messageRepository;
         this.llmConfigService = llmConfigService;
         this.llmClient = llmClient;
         this.promptLoader = promptLoader;
         this.analyticsService = analyticsService;
+        this.fixedCostService = fixedCostService;
+        this.goalService = goalService;
     }
 
     // --- セッション操作 ---
@@ -416,26 +425,112 @@ public class ChatService {
     }
 
     /**
-     * 直近月の集計を短い文章にして家計コンテキストとして注入する。失敗しても無視。
+     * 家計コンテキストを組み立てる。単なる「今月の金額」ではなく、
+     * 本人の月次平均との比較（＝金額が大きくても平常か、急増しているのか）、固定費（＝簡単には
+     * 削れない支出）、目標まで含めて注入する。これにより「金額が大きい費目を削れ」という短絡的な
+     * 助言ではなく、本人のベースラインに沿ったパーソナルな助言を促す。失敗しても無視。
      */
     private String buildFinancialContext(Long userId) {
         try {
             LocalDate now = LocalDate.now();
-            AnalyticsResponseDto summary = analyticsService.getMonthlySummary(userId, now.getYear(), now.getMonthValue());
+            int y = now.getYear();
+            int mo = now.getMonthValue();
+            AnalyticsResponseDto summary = analyticsService.getMonthlySummary(userId, y, mo);
+            AnalysisResponseDto analysis = analyticsService.analyze(userId, y, mo);
+
+            long income = toLong(summary.getTotalIncome());
+            long expense = toLong(summary.getTotalExpense());
+            long balance = toLong(summary.getBalance());
+
             StringBuilder sb = new StringBuilder();
-            sb.append(summary.getMonth()).append("の状況: ")
-                    .append("収入 ").append(summary.getTotalIncome()).append("円, ")
-                    .append("支出 ").append(summary.getTotalExpense()).append("円, ")
-                    .append("収支 ").append(summary.getBalance()).append("円。");
-            if (summary.getByCategory() != null && !summary.getByCategory().isEmpty()) {
-                sb.append(" 主な支出カテゴリ: ");
-                summary.getByCategory().stream().limit(3).forEach(c ->
-                        sb.append(c.getName()).append("(").append(c.getAmount()).append("円) "));
+            sb.append("# ").append(summary.getMonth()).append(" の家計スナップショット\n");
+            sb.append("- 収入 ").append(yen(income)).append(" / 支出 ").append(yen(expense))
+                    .append(" / 収支 ").append(yen(balance));
+            if (income > 0) {
+                sb.append("（貯蓄率 ").append(Math.round((income - expense) * 100.0 / income)).append("%）");
             }
+            sb.append("\n");
+
+            // 本人の平常値（過去平均・中央値）との比較
+            if (analysis.getMonthsAnalyzed() > 0) {
+                sb.append("- 今月の支出は、あなたの月次平均 ").append(yen(analysis.getAvgMonthlyExpense()))
+                        .append("（中央値 ").append(yen(analysis.getMedianMonthlyExpense())).append("）と比べて ");
+                Double vs = analysis.getTotalVsAvgPct();
+                if (vs != null) {
+                    sb.append(vs >= 0 ? "+" : "").append(Math.round(vs)).append("%")
+                            .append(vs > 5 ? "（高め）" : vs < -5 ? "（低め・抑えられています）" : "（ほぼ平常）");
+                }
+                sb.append("。過去").append(analysis.getMonthsAnalyzed()).append("ヶ月で算出。\n");
+            } else {
+                sb.append("- まだ過去データが少なく、平常値との比較はできません（数ヶ月記録すると精度が上がります）。\n");
+            }
+
+            // カテゴリ別: 今月 vs 本人の月次平均（＝平常か急増かの判定つき）
+            if (analysis.getCategories() != null && !analysis.getCategories().isEmpty()) {
+                sb.append("\n## カテゴリ別（今月 / あなたの月次平均 / 平常か）\n");
+                analysis.getCategories().stream().limit(8).forEach(c -> {
+                    sb.append("- ").append(c.getName()).append(": ").append(yen(c.getAmount()));
+                    if (c.getAvgAmount() > 0) {
+                        sb.append("（平均 ").append(yen(c.getAvgAmount()));
+                        if (c.getDiffPct() != null) {
+                            sb.append(", ").append(c.getDiffPct() >= 0 ? "+" : "")
+                                    .append(Math.round(c.getDiffPct())).append("%");
+                        }
+                        sb.append(" ").append(judge(c.getDirection())).append("）");
+                    } else {
+                        sb.append("（新規）");
+                    }
+                    sb.append("\n");
+                });
+                sb.append("※「平常より増加/減少」は本人の月次平均との比較であり、金額の大小ではありません。\n");
+            }
+
+            // 固定費（毎月ほぼ固定・簡単には削れない支出）
+            List<FixedCost> fixed = fixedCostService.list(userId);
+            if (fixed != null && !fixed.isEmpty()) {
+                long total = fixed.stream().mapToLong(f -> toLong(f.getAmount())).sum();
+                sb.append("\n## 固定費（毎月ほぼ固定・簡単には削れない支出。合計 ").append(yen(total)).append("）\n");
+                fixed.stream().limit(12).forEach(f ->
+                        sb.append("- ").append(f.getName()).append(": ").append(yen(toLong(f.getAmount()))).append("\n"));
+            }
+
+            // 目標（あれば）
+            goalService.getGoal(userId).ifPresent(g -> {
+                sb.append("\n## 目標\n- ")
+                        .append(g.getTargetName() == null || g.getTargetName().isBlank() ? "貯蓄目標" : g.getTargetName())
+                        .append("：目標 ").append(yen(toLong(g.getTargetAmount())));
+                if (g.getCurrentSavings() != null) {
+                    sb.append(" / 現在 ").append(yen(toLong(g.getCurrentSavings())));
+                }
+                if (g.getTargetDate() != null) {
+                    sb.append(" / 期限 ").append(g.getTargetDate());
+                }
+                sb.append("\n");
+            });
+
             return sb.toString();
         } catch (Exception e) {
             return "";
         }
+    }
+
+    private long toLong(BigDecimal v) {
+        return v == null ? 0L : v.longValue();
+    }
+
+    private String yen(long v) {
+        return String.format("%,d円", v);
+    }
+
+    /** カテゴリの平常比判定（analyze の direction）を日本語ラベルにする。 */
+    private String judge(String direction) {
+        if (direction == null) return "";
+        return switch (direction) {
+            case "up" -> "平常より増加";
+            case "down" -> "平常より減少";
+            case "new" -> "新規";
+            default -> "ほぼ平常";
+        };
     }
 
     private void generateTitleSafely(ChatSession session, LlmConfig llmConfig, String firstUserMessage) {
