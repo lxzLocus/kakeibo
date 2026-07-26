@@ -379,7 +379,7 @@ export interface AdminOverview {
     supportsVision: boolean; supportsTools: boolean | null; directOcr: boolean;
   }[];
   memory: { present: boolean; length: number; updatedAt: string | null };
-  evaluation: { frequency: string; lastRunAt: string | null };
+  evaluation: { frequency: string; lastRunAt: string | null; summary?: string | null };
   automation: { fixedCostPostedEntries: number; cardSettlementTransfers: number };
   pools: {
     id: number; name: string; kind: string; primary: boolean;

@@ -115,6 +115,23 @@ export const userApi = {
       method: 'POST',
       body: JSON.stringify({ username, email, password }),
     }),
+
+  // 現在のユーザー情報
+  me: () => fetchApi<UserResponse>('/users/me'),
+
+  // ユーザー名・メールアドレスの変更
+  updateProfile: (data: { username?: string; email?: string }) =>
+    fetchApi<UserResponse>('/users/me/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // パスワードの変更
+  changePassword: (currentPassword: string, newPassword: string) =>
+    fetchApi<void>('/users/me/password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
 };
 
 // --- Entry API ---

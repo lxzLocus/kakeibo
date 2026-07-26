@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { llmConfigApi, categoryApi, entryApi, evaluationApi, chatApi, adminApi, ApiError } from '@/lib/api';
+import { llmConfigApi, categoryApi, entryApi, evaluationApi, chatApi, adminApi, userApi, ApiError } from '@/lib/api';
 import { LlmConfigResponse, LlmConfigsResponse, LlmPurpose, UserResponse, CategoryResponse, EvaluationResponse, AdminOverview } from '@/types';
-import { getUser, removeUser } from '@/lib/auth';
+import { getUser, removeUser, setUser as persistUser } from '@/lib/auth';
 import { Icon } from '@/app/_components/Icon';
 import { useConfirm } from '@/app/_components/ui';
 import { FixedCostSettings } from './FixedCostSettings';
@@ -381,9 +381,21 @@ function AccountSettings() {
   const [msg, setMsg] = useState('');
   const [evalCfg, setEvalCfg] = useState<EvaluationResponse | null>(null);
   const [evalBusy, setEvalBusy] = useState(false);
+  // プロフィール／パスワード変更
+  const [pName, setPName] = useState('');
+  const [pEmail, setPEmail] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [curPw, setCurPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [savingPw, setSavingPw] = useState(false);
+  const [accMsg, setAccMsg] = useState('');
+  const [accErr, setAccErr] = useState('');
 
   useEffect(() => {
-    setUser(getUser());
+    const u = getUser();
+    setUser(u);
+    setPName(u?.username ?? '');
+    setPEmail(u?.email ?? '');
     try {
       setAnalysisOn(localStorage.getItem('kakeibo.analysisEnabled') !== 'false');
       setAgeGroup(localStorage.getItem('kakeibo.ageGroup') ?? '');
@@ -391,6 +403,39 @@ function AccountSettings() {
     } catch { /* 既定 */ }
     evaluationApi.get().then(setEvalCfg).catch(() => { /* 未対応/未起動時は無視 */ });
   }, []);
+
+  async function saveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    setAccMsg(''); setAccErr('');
+    if (!pName.trim() || !pEmail.trim()) { setAccErr('ユーザー名とメールアドレスを入力してください'); return; }
+    setSavingProfile(true);
+    try {
+      const updated = await userApi.updateProfile({ username: pName.trim(), email: pEmail.trim() });
+      persistUser(updated);
+      setUser(updated);
+      setAccMsg('プロフィールを更新しました');
+    } catch (err) {
+      setAccErr(err instanceof ApiError ? err.message : '更新に失敗しました');
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
+  async function savePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setAccMsg(''); setAccErr('');
+    if (newPw.length < 6) { setAccErr('新しいパスワードは6文字以上にしてください'); return; }
+    setSavingPw(true);
+    try {
+      await userApi.changePassword(curPw, newPw);
+      setCurPw(''); setNewPw('');
+      setAccMsg('パスワードを変更しました');
+    } catch (err) {
+      setAccErr(err instanceof ApiError ? err.message : 'パスワード変更に失敗しました');
+    } finally {
+      setSavingPw(false);
+    }
+  }
 
   function changeAgeGroup(v: string) {
     setAgeGroup(v);
@@ -478,6 +523,45 @@ function AccountSettings() {
             ログアウト
           </button>
         </div>
+      </div>
+
+      {/* プロフィール・パスワード変更 */}
+      <div className="settings-section" style={{ marginTop: 16 }}>
+        <div className="settings-section__title">プロフィール</div>
+        {accMsg && <div className="success-banner" style={{ marginBottom: 10 }}><Icon name="check_circle" /> {accMsg}</div>}
+        {accErr && <div className="error-banner" style={{ marginBottom: 10 }}><Icon name="error" /> {accErr}</div>}
+        <form onSubmit={saveProfile} className="field-grid">
+          <div className="field">
+            <label className="field__label">ユーザー名</label>
+            <input className="field__input" value={pName} onChange={(e) => setPName(e.target.value)} autoComplete="username" />
+          </div>
+          <div className="field">
+            <label className="field__label">メールアドレス</label>
+            <input className="field__input" type="email" value={pEmail} onChange={(e) => setPEmail(e.target.value)} autoComplete="email" />
+          </div>
+          <div className="field field--full">
+            <button type="submit" className="btn btn--primary" disabled={savingProfile}>
+              {savingProfile ? '保存中...' : 'プロフィールを保存'}
+            </button>
+          </div>
+        </form>
+
+        <div className="settings-section__desc" style={{ marginTop: 18 }}>パスワード変更</div>
+        <form onSubmit={savePassword} className="field-grid">
+          <div className="field">
+            <label className="field__label">現在のパスワード</label>
+            <input className="field__input" type="password" value={curPw} onChange={(e) => setCurPw(e.target.value)} autoComplete="current-password" />
+          </div>
+          <div className="field">
+            <label className="field__label">新しいパスワード（6文字以上）</label>
+            <input className="field__input" type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} autoComplete="new-password" />
+          </div>
+          <div className="field field--full">
+            <button type="submit" className="btn btn--primary" disabled={savingPw || !curPw || !newPw}>
+              {savingPw ? '変更中...' : 'パスワードを変更'}
+            </button>
+          </div>
+        </form>
       </div>
 
       <div className="settings-section" style={{ marginTop: 16 }}>
@@ -1009,6 +1093,12 @@ function AdminSettings() {
           <span className="info-row__label">評価バッチ</span>
           <span className="info-row__value">{data.evaluation.frequency}（最終 {fmtDT(data.evaluation.lastRunAt)}）</span>
         </div>
+        {data.evaluation.summary && (
+          <div className="info-row">
+            <span className="info-row__label">評価の所見</span>
+            <span className="info-row__value">{data.evaluation.summary}</span>
+          </div>
+        )}
         <div className="info-row">
           <span className="info-row__label">固定費の自動記帳</span>
           <span className="info-row__value">{data.automation.fixedCostPostedEntries.toLocaleString()} 件</span>

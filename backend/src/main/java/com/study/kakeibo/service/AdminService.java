@@ -33,13 +33,15 @@ public class AdminService {
     private final UserMemoryRepository userMemoryRepository;
     private final UserEvaluationRepository userEvaluationRepository;
     private final UserLlmConfigRepository llmConfigRepository;
+    private final EvaluationService evaluationService;
 
     public AdminService(UserRepository userRepository, EntryRepository entryRepository,
                         CategoryRepository categoryRepository, StoreRepository storeRepository,
                         FundPoolRepository poolRepository, FundTransferRepository transferRepository,
                         FixedCostRepository fixedCostRepository, ChatSessionRepository chatSessionRepository,
                         UserMemoryRepository userMemoryRepository, UserEvaluationRepository userEvaluationRepository,
-                        UserLlmConfigRepository llmConfigRepository) {
+                        UserLlmConfigRepository llmConfigRepository, EvaluationService evaluationService) {
+        this.evaluationService = evaluationService;
         this.userRepository = userRepository;
         this.entryRepository = entryRepository;
         this.categoryRepository = categoryRepository;
@@ -86,7 +88,9 @@ public class AdminService {
                 .orElse(MemoryInfo.builder().present(false).length(0).build());
 
         EvaluationInfo evaluation = userEvaluationRepository.findByUserId(userId)
-                .map(e -> EvaluationInfo.builder().frequency(e.getFrequency()).lastRunAt(e.getLastRunAt()).build())
+                .map(e -> EvaluationInfo.builder()
+                        .frequency(e.getFrequency()).lastRunAt(e.getLastRunAt())
+                        .summary(evaluationService.summaryOf(e)).build())
                 .orElse(EvaluationInfo.builder().frequency("OFF").build());
 
         AutomationInfo automation = AutomationInfo.builder()

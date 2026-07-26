@@ -44,4 +44,29 @@ public class UserController {
         );
         return ResponseEntity.ok(response);
     }
+
+    // 現在のユーザー情報
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDto> me(@RequestHeader("X-User-Id") Long userId) {
+        User u = userService.getById(userId);
+        return ResponseEntity.ok(new UserResponseDto(u.getId(), u.getUsername(), u.getEmail()));
+    }
+
+    // ユーザー名・メールアドレスの変更
+    @PutMapping("/me/profile")
+    public ResponseEntity<UserResponseDto> updateProfile(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestBody UpdateProfileRequestDto request) {
+        User u = userService.updateProfile(userId, request.getUsername(), request.getEmail());
+        return ResponseEntity.ok(new UserResponseDto(u.getId(), u.getUsername(), u.getEmail()));
+    }
+
+    // パスワードの変更
+    @PutMapping("/me/password")
+    public ResponseEntity<Void> changePassword(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestBody ChangePasswordRequestDto request) {
+        userService.changePassword(userId, request.getCurrentPassword(), request.getNewPassword());
+        return ResponseEntity.noContent().build();
+    }
 }

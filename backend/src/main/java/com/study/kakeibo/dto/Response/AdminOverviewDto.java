@@ -58,6 +58,7 @@ public class AdminOverviewDto {
     public static class EvaluationInfo {
         private String frequency;       // OFF / DAILY / WEEKLY / MONTHLY
         private LocalDateTime lastRunAt;
+        private String summary;         // 最終評価の所見（コードベース分析のハイライト）
     }
 
     @Data @NoArgsConstructor @AllArgsConstructor @Builder

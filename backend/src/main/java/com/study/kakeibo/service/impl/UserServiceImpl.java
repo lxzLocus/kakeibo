@@ -48,4 +48,41 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("Invalid email or password.");
         }
     }
+
+    @Override
+    public User getById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("ユーザーが見つかりません。"));
+    }
+
+    // ユーザー名・メールアドレスの更新
+    @Override
+    public User updateProfile(Long userId, String username, String email) {
+        User user = getById(userId);
+        if (username != null && !username.isBlank()) {
+            user.setUsername(username.trim());
+        }
+        if (email != null && !email.isBlank()) {
+            String e = email.trim();
+            if (!e.equalsIgnoreCase(user.getEmail()) && userRepository.existsByEmail(e)) {
+                throw new IllegalArgumentException("このメールアドレスは既に使われています。");
+            }
+            user.setEmail(e);
+        }
+        return userRepository.save(user);
+    }
+
+    // パスワード変更（現在のパスワードで本人確認）
+    @Override
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
+        User user = getById(userId);
+        if (newPassword == null || newPassword.length() < 6) {
+            throw new IllegalArgumentException("新しいパスワードは6文字以上にしてください。");
+        }
+        if (!passwordEncoder.matches(currentPassword == null ? "" : currentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("現在のパスワードが正しくありません。");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
 }
