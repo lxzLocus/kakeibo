@@ -355,7 +355,9 @@ export async function sendMessageStream(
   handlers: {
     onUser?: (m: ChatMessageResponse) => void;
     onChunk?: (text: string) => void;
+    onReasoning?: (text: string) => void;
     onDone?: (m: ChatMessageResponse) => void;
+    onTitle?: (title: string) => void;
     onRelated?: (questions: string[]) => void;
     onError?: (message: string) => void;
   }
@@ -407,7 +409,9 @@ export async function sendMessageStream(
       const parsed = JSON.parse(data);
       if (event === 'user') handlers.onUser?.(parsed);
       else if (event === 'chunk') handlers.onChunk?.(parsed.text ?? '');
+      else if (event === 'reasoning') handlers.onReasoning?.(parsed.text ?? '');
       else if (event === 'done') handlers.onDone?.(parsed);
+      else if (event === 'title') handlers.onTitle?.(parsed.title ?? '');
       else if (event === 'related') handlers.onRelated?.(parsed.questions ?? []);
       else if (event === 'error') handlers.onError?.(parsed.message ?? 'エラーが発生しました');
     } catch {

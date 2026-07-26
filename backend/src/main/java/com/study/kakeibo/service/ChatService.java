@@ -233,13 +233,14 @@ public class ChatService {
      * ツール対応モデルの場合はツール（関数呼び出し）を使うため、その回だけ非ストリームで実行し、
      * 得られた本文を一括で onChunk に流す（ユーザーの合意どおりストリーム→非ストリームに切替）。
      */
-    public String streamReply(StreamPrep prep, java.util.function.Consumer<String> onChunk) {
+    public String streamReply(StreamPrep prep, java.util.function.Consumer<String> onChunk,
+                              java.util.function.Consumer<String> onReasoning) {
         if (shouldTryTools(prep.llmConfig())) {
             String reply = replyWithToolsOrFallback(prep.userId(), prep.apiMessages(), prep.llmConfig());
             onChunk.accept(reply);
             return reply;
         }
-        return llmClient.chatStream(prep.llmConfig(), prep.apiMessages(), 2048, onChunk);
+        return llmClient.chatStream(prep.llmConfig(), prep.apiMessages(), 2048, onChunk, onReasoning);
     }
 
     /** ストリーミング完了後: assistantメッセージ保存＋タイトル生成＋（最初の数ターンのみ）関連質問生成。 */
@@ -254,14 +255,14 @@ public class ChatService {
         // 会話から永続メモリを自動学習（best-effort・ストリーム完了後なので返信表示は遅らせない）
         updateMemory(userId, messageRepository.findBySessionIdOrderByCreatedAtAscIdAsc(session.getId()), llmConfig);
         List<String> related = maybeGenerateRelated(session.getId(), llmConfig);
-        return new FinalizeResult(aiMessage, related);
+        return new FinalizeResult(aiMessage, related, session.getTitle());
     }
 
     public record StreamPrep(Long userId, ChatMessage userMessage, List<LlmClient.Message> apiMessages,
                              LlmConfig llmConfig, String firstText) {
     }
 
-    public record FinalizeResult(ChatMessage aiMessage, List<String> relatedQuestions) {
+    public record FinalizeResult(ChatMessage aiMessage, List<String> relatedQuestions, String title) {
     }
 
     /** アップロード画像を ./chat-uploads/ に保存し、保存ファイル名を返す。 */

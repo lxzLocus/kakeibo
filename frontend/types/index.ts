@@ -359,6 +359,7 @@ export interface ChatMessageResponse {
   content: string;
   imageUrl: string | null;
   createdAt: string;
+  reasoning?: string; // 推論モデルの思考過程（ストリーミング中のみ・永続化しない）
 }
 
 export interface SendMessageResponse {

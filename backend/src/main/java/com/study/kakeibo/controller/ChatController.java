@@ -142,11 +142,21 @@ public class ChatController {
                     } catch (IOException e) {
                         throw new ClientGoneException(e); // クライアント切断
                     }
+                }, reasoning -> {
+                    try {
+                        emitter.send(SseEmitter.event().name("reasoning").data(Map.of("text", reasoning)));
+                    } catch (IOException e) {
+                        throw new ClientGoneException(e);
+                    }
                 });
 
                 ChatService.FinalizeResult fin = chatService.finalizeStream(
                         userId, sessionId, prep.llmConfig(), reply, prep.firstText());
                 emitter.send(SseEmitter.event().name("done").data(toDto(fin.aiMessage())));
+                // タイトル（初回に自動生成される）を通知し、フロントの見出しを確実に更新
+                if (fin.title() != null && !fin.title().isBlank()) {
+                    emitter.send(SseEmitter.event().name("title").data(Map.of("title", fin.title())));
+                }
                 // 最初の数ターンのみ関連質問を送る（画面下部に表示）
                 if (fin.relatedQuestions() != null && !fin.relatedQuestions().isEmpty()) {
                     emitter.send(SseEmitter.event().name("related")

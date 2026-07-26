@@ -209,6 +209,26 @@ export default function ChatPage() {
     let userConfirmed = false;
     let aiAdded = false;
     let assistantText = '';
+    let assistantReasoning = '';
+
+    // 本文・思考の到着ごとに仮AIメッセージを追加/更新（reasoningは本文より先に来る）
+    const upsertAi = () => {
+      setMessages((prev) => {
+        const patch = { content: assistantText, reasoning: assistantReasoning || undefined };
+        if (!aiAdded) {
+          aiAdded = true;
+          return [...prev, {
+            id: tempAiId,
+            sessionId: sessionId as number,
+            role: 'assistant' as const,
+            imageUrl: null,
+            createdAt: new Date().toISOString(),
+            ...patch,
+          }];
+        }
+        return prev.map((x) => (x.id === tempAiId ? { ...x, ...patch } : x));
+      });
+    };
 
     try {
       const compressed = image ? await downscaleImage(image) : null;
@@ -217,31 +237,20 @@ export default function ChatPage() {
           userConfirmed = true;
           setMessages((prev) => prev.map((x) => (x.id === tempUserId ? m : x)));
         },
-        onChunk: (piece) => {
-          assistantText += piece;
-          setMessages((prev) => {
-            if (!aiAdded) {
-              aiAdded = true;
-              return [...prev, {
-                id: tempAiId,
-                sessionId: sessionId as number,
-                role: 'assistant',
-                content: assistantText,
-                imageUrl: null,
-                createdAt: new Date().toISOString(),
-              }];
-            }
-            return prev.map((x) => (x.id === tempAiId ? { ...x, content: assistantText } : x));
-          });
-        },
+        onReasoning: (piece) => { assistantReasoning += piece; upsertAi(); },
+        onChunk: (piece) => { assistantText += piece; upsertAi(); },
         onDone: (m) => {
-          // チャンクが届かず仮AIメッセージが未追加でも、完成メッセージを必ず表示する
+          // チャンクが届かず仮AIメッセージが未追加でも、完成メッセージを必ず表示する。
+          // 思考の過程（reasoning）はサーバに保存しないので、表示継続のためクライアント側で引き継ぐ。
           setMessages((prev) =>
             prev.some((x) => x.id === tempAiId)
-              ? prev.map((x) => (x.id === tempAiId ? m : x))
+              ? prev.map((x) => (x.id === tempAiId ? { ...m, reasoning: assistantReasoning || undefined } : x))
               : [...prev, m]
           );
           loadSessions();
+        },
+        onTitle: (t) => {
+          if (t) setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, title: t } : s)));
         },
         onRelated: (qs) => setRelatedQuestions(qs),
         onError: (msg) => {
@@ -384,6 +393,12 @@ export default function ChatPage() {
                     {m.imageUrl && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={m.imageUrl} alt="添付画像" className="chat-msg__image" />
+                    )}
+                    {m.role === 'assistant' && m.reasoning && (
+                      <details className="chat-reasoning" open={!m.content}>
+                        <summary>思考の過程</summary>
+                        <div className="chat-reasoning__body">{m.reasoning}</div>
+                      </details>
                     )}
                     {m.role === 'user' ? m.content : <Markdown text={m.content} />}
                   </div>

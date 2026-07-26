@@ -5027,6 +5027,33 @@ button.month-pill-label:hover {
   text-decoration: underline;
 }
 
+/* 推論モデルの思考過程（折りたたみ） */
+.chat-reasoning {
+  margin: 0 0 8px;
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  background: var(--surface-2);
+  font-size: 12px;
+}
+.chat-reasoning > summary {
+  cursor: pointer;
+  padding: 6px 10px;
+  color: var(--text-secondary);
+  user-select: none;
+  list-style: none;
+}
+.chat-reasoning > summary::-webkit-details-marker { display: none; }
+.chat-reasoning > summary::before { content: "💭 "; }
+.chat-reasoning__body {
+  padding: 8px 10px;
+  border-top: 1px solid var(--hairline);
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  line-height: 1.6;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
 .chat-bubble--user {
   background: var(--accent-container);
   color: var(--chat-on-user);

@@ -216,6 +216,15 @@ public class LlmClient {
      */
     public String chatStream(LlmConfig config, List<Message> messages, Integer maxCompletionTokens,
                              Consumer<String> onChunk) {
+        return chatStream(config, messages, maxCompletionTokens, onChunk, null);
+    }
+
+    /**
+     * ストリーミング呼び出し（推論トークン対応）。本文は onChunk、reasoning系モデルの
+     * 思考過程（delta.reasoning_content）は onReasoning に流す。onReasoning は null 可。
+     */
+    public String chatStream(LlmConfig config, List<Message> messages, Integer maxCompletionTokens,
+                             Consumer<String> onChunk, Consumer<String> onReasoning) {
         validate(config);
         String endpoint = resolveEndpoint(config.baseUrl());
 
@@ -273,7 +282,18 @@ public class LlmClient {
                     JsonNode node = objectMapper.readTree(data);
                     JsonNode choices = node.path("choices");
                     if (choices.isArray() && !choices.isEmpty()) {
-                        JsonNode contentNode = choices.get(0).path("delta").path("content");
+                        JsonNode delta = choices.get(0).path("delta");
+                        // 推論モデルの思考過程（reasoning_content）を先に流す
+                        if (onReasoning != null) {
+                            JsonNode rNode = delta.path("reasoning_content");
+                            if (!rNode.isMissingNode() && !rNode.isNull()) {
+                                String rPiece = rNode.asString();
+                                if (rPiece != null && !rPiece.isEmpty()) {
+                                    onReasoning.accept(rPiece);
+                                }
+                            }
+                        }
+                        JsonNode contentNode = delta.path("content");
                         if (!contentNode.isMissingNode() && !contentNode.isNull()) {
                             String piece = contentNode.asString();
                             if (piece != null && !piece.isEmpty()) {
