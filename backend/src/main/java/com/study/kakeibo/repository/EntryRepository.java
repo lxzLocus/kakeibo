@@ -34,6 +34,12 @@ public interface EntryRepository extends JpaRepository<Entry, Long> {
     // ユーザーに紐づくエントリー一覧を取得
     List<Entry> findByUser(User user);
 
+    /** ユーザーの取引総件数（管理ビュー用）。 */
+    long countByUser(User user);
+
+    /** 固定費から自動記帳された取引の件数（fixed_cost_id が付いているもの）。 */
+    long countByUserAndFixedCostIdIsNotNull(User user);
+
     /** 指定の固定費が、その月に既に自動記帳されているか（二重記帳の防止）。 */
     boolean existsByFixedCostIdAndEntryDateBetween(Long fixedCostId, LocalDate from, LocalDate to);
 

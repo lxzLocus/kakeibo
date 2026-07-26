@@ -1,5 +1,5 @@
 import {
-  ErrorResponse, UserResponse, MonthlySummary, TrendSummary, AnalysisResult, BenchmarkResult, EvaluationResponse, ImportResult, ImportPreview, InventoryResponse, InventoryRequest,
+  ErrorResponse, UserResponse, MonthlySummary, TrendSummary, AnalysisResult, BenchmarkResult, AdminOverview, EvaluationResponse, ImportResult, ImportPreview, InventoryResponse, InventoryRequest,
   MealResponse, MealRequest, LlmConfigResponse, LlmConfigRequest, LlmConfigsResponse, LlmPurpose, ChatSessionResponse,
   ChatMessageResponse, SendMessageResponse, GoalResponse, GoalRequest, FixedCostResponse,
   FixedCostRequest, SimulationResult, ReceiptDraft, ShoppingItemResponse,
@@ -227,6 +227,11 @@ export const analyticsApi = {
         `${ageGroup ? `&ageGroup=${encodeURIComponent(ageGroup)}` : ''}` +
         `${household ? `&household=${encodeURIComponent(household)}` : ''}`,
     ),
+};
+
+// --- 管理ビュー（裏で自動管理しているデータの参照） ---
+export const adminApi = {
+  overview: () => fetchApi<AdminOverview>('/admin/overview'),
 };
 
 // --- 評価バッチ（設定の頻度で分析を定期実行） ---

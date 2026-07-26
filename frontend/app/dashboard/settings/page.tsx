@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { llmConfigApi, categoryApi, entryApi, evaluationApi, chatApi, ApiError } from '@/lib/api';
-import { LlmConfigResponse, LlmConfigsResponse, LlmPurpose, UserResponse, CategoryResponse, EvaluationResponse } from '@/types';
+import { llmConfigApi, categoryApi, entryApi, evaluationApi, chatApi, adminApi, ApiError } from '@/lib/api';
+import { LlmConfigResponse, LlmConfigsResponse, LlmPurpose, UserResponse, CategoryResponse, EvaluationResponse, AdminOverview } from '@/types';
 import { getUser, removeUser } from '@/lib/auth';
 import { Icon } from '@/app/_components/Icon';
 import { useConfirm } from '@/app/_components/ui';
@@ -933,11 +933,127 @@ function CategorySettings() {
   );
 }
 
+/** 管理タブ: 裏で自動管理しているデータの読み取り専用ビュー */
+function AdminSettings() {
+  const [data, setData] = useState<AdminOverview | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  async function load() {
+    setLoading(true);
+    try {
+      setData(await adminApi.overview());
+      setError('');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : '取得に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => { load(); }, []);
+
+  function fmtDT(iso: string | null): string {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+  const toolLabel = (b: boolean | null) => (b == null ? '未判定' : b ? '対応' : '非対応');
+  const kindLabel = (k: string) => (k === 'CARD' ? 'カード' : k === 'CASH' ? '現金' : '銀行');
+
+  if (loading) return <div className="loading-state"><span className="loading-spinner" />読み込み中...</div>;
+  if (error) return <div className="error-banner"><Icon name="error" /> {error}</div>;
+  if (!data) return null;
+
+  const c = data.counts;
+  const stats: [string, number][] = [
+    ['取引', c.entries], ['カテゴリ', c.categories], ['店舗', c.stores], ['口座', c.pools],
+    ['振替', c.transfers], ['固定費', c.fixedCosts], ['チャット', c.chatSessions],
+  ];
+
+  return (
+    <>
+      <div className="settings-section">
+        <div className="settings-section__title">管理（自動管理データの参照）</div>
+        <div className="settings-section__desc">
+          アプリが裏で自動管理しているデータの読み取り専用ビューです（LLMの自動判定・学習メモリ・評価バッチ・固定費の自動記帳・カード決済振替・口座の内部設定など）。
+        </div>
+      </div>
+
+      <div className="admin-grid">
+        {stats.map(([label, v]) => (
+          <div key={label} className="admin-stat">
+            <div className="admin-stat__value tnum">{v.toLocaleString()}</div>
+            <div className="admin-stat__label">{label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="section-label" style={{ margin: '20px 0 8px' }}>自動処理</div>
+      <div className="card pad-lg">
+        {data.llm.map((l) => (
+          <div key={l.purpose} className="info-row">
+            <span className="info-row__label">LLM（{l.purpose === 'CHAT' ? 'チャット' : '画像/OCR'}）</span>
+            <span className="info-row__value">
+              {l.configured
+                ? `${l.model}｜画像 ${l.supportsVision ? '対応' : '非対応'}／ツール ${toolLabel(l.supportsTools)}`
+                : '未設定'}
+            </span>
+          </div>
+        ))}
+        <div className="info-row">
+          <span className="info-row__label">学習メモリ</span>
+          <span className="info-row__value">{data.memory.present ? `${data.memory.length}文字（更新 ${fmtDT(data.memory.updatedAt)}）` : 'なし'}</span>
+        </div>
+        <div className="info-row">
+          <span className="info-row__label">評価バッチ</span>
+          <span className="info-row__value">{data.evaluation.frequency}（最終 {fmtDT(data.evaluation.lastRunAt)}）</span>
+        </div>
+        <div className="info-row">
+          <span className="info-row__label">固定費の自動記帳</span>
+          <span className="info-row__value">{data.automation.fixedCostPostedEntries.toLocaleString()} 件</span>
+        </div>
+        <div className="info-row info-row--last">
+          <span className="info-row__label">カード決済の自動振替</span>
+          <span className="info-row__value">{data.automation.cardSettlementTransfers.toLocaleString()} 件</span>
+        </div>
+      </div>
+
+      <div className="section-label" style={{ margin: '20px 0 8px' }}>口座・カードの内部設定</div>
+      <div className="admin-table-wrap">
+        <table className="admin-table">
+          <thead>
+            <tr><th>名前</th><th>種別</th><th>主</th><th>締め日</th><th>引落日</th><th>引落元ID</th><th>自動</th></tr>
+          </thead>
+          <tbody>
+            {data.pools.map((p) => (
+              <tr key={p.id}>
+                <td>{p.name}</td>
+                <td>{kindLabel(p.kind)}</td>
+                <td>{p.primary ? '○' : ''}</td>
+                <td className="tnum">{p.closingDay ?? '—'}</td>
+                <td className="tnum">{p.paymentDay ?? '—'}</td>
+                <td className="tnum">{p.settlementPoolId ?? '—'}</td>
+                <td>{p.autoSettle ? 'ON' : ''}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <button className="btn btn--outline" onClick={load} style={{ marginTop: 14 }}>
+        <Icon name="refresh" size={16} /> 再読み込み
+      </button>
+    </>
+  );
+}
+
 const TABS = [
   { key: 'ai', label: 'AI設定', icon: 'smart_toy' },
   { key: 'fixed', label: '固定費', icon: 'home' },
   { key: 'categories', label: 'カテゴリ', icon: 'category' },
   { key: 'account', label: 'アカウント', icon: 'person' },
+  { key: 'admin', label: '管理', icon: 'tune' },
 ] as const;
 
 type TabKey = (typeof TABS)[number]['key'];
@@ -980,6 +1096,7 @@ export default function SettingsPage() {
           {tab === 'fixed' && <FixedCostSettings />}
           {tab === 'categories' && <CategorySettings />}
           {tab === 'account' && <AccountSettings />}
+          {tab === 'admin' && <AdminSettings />}
         </div>
       </div>
     </div>

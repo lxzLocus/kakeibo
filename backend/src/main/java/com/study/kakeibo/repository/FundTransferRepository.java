@@ -26,4 +26,10 @@ public interface FundTransferRepository extends JpaRepository<FundTransfer, Long
 
     /** カード自動引き落としの二重生成防止（同じカード・同じ引き落とし日の振替が既にあるか）。 */
     boolean existsByAutoCardIdAndTransferDate(Long autoCardId, java.time.LocalDate transferDate);
+
+    /** カード自動引き落としとして生成された振替の件数（管理ビュー用）。 */
+    long countByUserIdAndAutoCardIdIsNotNull(Long userId);
+
+    /** ユーザーの振替総件数（管理ビュー用）。 */
+    long countByUserId(Long userId);
 }

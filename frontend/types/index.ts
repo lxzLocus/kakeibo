@@ -368,6 +368,26 @@ export interface SendMessageResponse {
   relatedQuestions?: string[];
 }
 
+// --- 管理ビュー（裏で自動管理しているデータの参照） ---
+export interface AdminOverview {
+  counts: {
+    entries: number; categories: number; stores: number; pools: number;
+    transfers: number; fixedCosts: number; chatSessions: number;
+  };
+  llm: {
+    purpose: string; configured: boolean; model: string | null; baseUrl: string | null;
+    supportsVision: boolean; supportsTools: boolean | null; directOcr: boolean;
+  }[];
+  memory: { present: boolean; length: number; updatedAt: string | null };
+  evaluation: { frequency: string; lastRunAt: string | null };
+  automation: { fixedCostPostedEntries: number; cardSettlementTransfers: number };
+  pools: {
+    id: number; name: string; kind: string; primary: boolean;
+    closingDay: number | null; paymentDay: number | null;
+    settlementPoolId: number | null; autoSettle: boolean;
+  }[];
+}
+
 // --- 貯蓄目標・固定費 ---
 export interface GoalRequest {
   targetName: string;
