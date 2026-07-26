@@ -5,8 +5,10 @@ import com.study.kakeibo.dto.Response.AnalyticsResponseDto;
 import com.study.kakeibo.entity.ChatMessage;
 import com.study.kakeibo.entity.ChatSession;
 import com.study.kakeibo.entity.FixedCost;
+import com.study.kakeibo.entity.UserMemory;
 import com.study.kakeibo.repository.ChatMessageRepository;
 import com.study.kakeibo.repository.ChatSessionRepository;
+import com.study.kakeibo.repository.UserMemoryRepository;
 import com.study.kakeibo.service.llm.LlmClient;
 import com.study.kakeibo.service.llm.LlmConfig;
 import com.study.kakeibo.service.llm.PromptLoaderService;
@@ -44,6 +46,7 @@ public class ChatService {
     private final AnalyticsService analyticsService;
     private final FixedCostService fixedCostService;
     private final GoalService goalService;
+    private final UserMemoryRepository userMemoryRepository;
 
     public ChatService(ChatSessionRepository sessionRepository,
                        ChatMessageRepository messageRepository,
@@ -52,7 +55,8 @@ public class ChatService {
                        PromptLoaderService promptLoader,
                        AnalyticsService analyticsService,
                        FixedCostService fixedCostService,
-                       GoalService goalService) {
+                       GoalService goalService,
+                       UserMemoryRepository userMemoryRepository) {
         this.sessionRepository = sessionRepository;
         this.messageRepository = messageRepository;
         this.llmConfigService = llmConfigService;
@@ -61,6 +65,7 @@ public class ChatService {
         this.analyticsService = analyticsService;
         this.fixedCostService = fixedCostService;
         this.goalService = goalService;
+        this.userMemoryRepository = userMemoryRepository;
     }
 
     // --- セッション操作 ---
@@ -179,7 +184,10 @@ public class ChatService {
         // updatedAt を更新
         sessionRepository.save(session);
 
-        // 6. 最初の数ターンのみ関連質問を生成
+        // 6. 会話から永続メモリを自動学習（best-effort）
+        updateMemory(userId, messageRepository.findBySessionIdOrderByCreatedAtAscIdAsc(session.getId()), llmConfig);
+
+        // 7. 最初の数ターンのみ関連質問を生成
         List<String> related = maybeGenerateRelated(session.getId(), llmConfig);
 
         return new SendResult(userMessage, aiMessage, related);
@@ -228,6 +236,8 @@ public class ChatService {
             generateTitleSafely(session, llmConfig, firstText);
         }
         sessionRepository.save(session);
+        // 会話から永続メモリを自動学習（best-effort・ストリーム完了後なので返信表示は遅らせない）
+        updateMemory(userId, messageRepository.findBySessionIdOrderByCreatedAtAscIdAsc(session.getId()), llmConfig);
         List<String> related = maybeGenerateRelated(session.getId(), llmConfig);
         return new FinalizeResult(aiMessage, related);
     }
@@ -285,6 +295,13 @@ public class ChatService {
         // 2. systemプロンプト（家計コンテキスト + これまでの会話要約を内包）
         String systemPrompt = promptLoader.load("prompts/chat/system.md",
                 Map.of("financialContext", buildFinancialContext(userId)));
+        // 会話から自動学習したユーザーメモリ（過去セッションを跨いで継続するパーソナライズ）
+        String memory = getMemory(userId);
+        if (memory != null && !memory.isBlank()) {
+            systemPrompt = systemPrompt
+                    + "\n\n# このユーザーについて分かっていること（過去の会話から自動学習した要点）\n"
+                    + memory;
+        }
         if (session.getSummary() != null && !session.getSummary().isBlank()) {
             systemPrompt = systemPrompt
                     + "\n\n# これまでの会話の要約（参考。ユーザーには表示されていません）\n"
@@ -511,6 +528,68 @@ public class ChatService {
             return sb.toString();
         } catch (Exception e) {
             return "";
+        }
+    }
+
+    // --- ユーザーメモリ（会話から自動学習・設定不要） ---
+
+    /** 学習済みのユーザーメモリ本文（未学習なら null）。 */
+    @Transactional(readOnly = true)
+    public String getMemory(Long userId) {
+        return userMemoryRepository.findByUserId(userId).map(UserMemory::getContent).orElse(null);
+    }
+
+    /** 学習済みメモリを消去する（ユーザーが「忘れて」と指示したとき用）。 */
+    @Transactional
+    public void clearMemory(Long userId) {
+        userMemoryRepository.findByUserId(userId).ifPresent(userMemoryRepository::delete);
+    }
+
+    /**
+     * 直近のやり取りから、今後の会話に役立つ永続的な事実・好み・方針を抽出し、
+     * 既存メモリに統合して保存する（best-effort・失敗しても会話に影響しない）。
+     * ユーザーの明示設定は不要で、対話しながら少しずつ学習する。
+     */
+    private void updateMemory(Long userId, List<ChatMessage> history, LlmConfig llmConfig) {
+        try {
+            String existing = getMemory(userId);
+            StringBuilder convo = new StringBuilder();
+            int from = Math.max(0, history.size() - 4); // 直近の数メッセージから抽出
+            for (ChatMessage m : history.subList(from, history.size())) {
+                convo.append("user".equals(m.getRole()) ? "ユーザー: " : "アシスタント: ")
+                        .append(m.getContent() == null ? "" : m.getContent()).append("\n");
+            }
+            String prompt = "あなたは家計相談アシスタントの「ユーザーメモリ」を管理します。\n"
+                    + "最新のやり取りから、今後の会話で役立つ『ユーザーについての永続的な情報』だけを抽出し、"
+                    + "既存メモリに統合して最新版を出力してください。\n"
+                    + "含める: 安定した事実（家族構成・働き方など）、価値観（お金をかけたい/削りたくない対象）、"
+                    + "目標・方針・制約。\n"
+                    + "含めない: 一時的な話題・その場限りの質問・月ごとに変わる金額・挨拶。\n"
+                    + "ルール: 箇条書き。重複や古い情報は統合・更新。最大10項目・全体600文字以内。日本語。\n"
+                    + "新しく覚えることが無ければ既存メモリをそのまま出力。既存も無く覚えることも無ければ NONE とだけ出力。\n\n"
+                    + "[既存メモリ]\n" + (existing == null ? "(なし)" : existing) + "\n\n"
+                    + "[最新のやり取り]\n" + convo + "\n"
+                    + "[更新後のユーザーメモリのみを出力]";
+            String updated = llmClient.chat(llmConfig, List.of(new LlmClient.Message("user", prompt)), 512);
+            if (updated == null) {
+                return;
+            }
+            String cleaned = updated.trim();
+            if (cleaned.isBlank() || cleaned.equalsIgnoreCase("NONE")) {
+                return;
+            }
+            if (cleaned.length() > 1200) {
+                cleaned = cleaned.substring(0, 1200);
+            }
+            UserMemory mem = userMemoryRepository.findByUserId(userId).orElseGet(() -> {
+                UserMemory m = new UserMemory();
+                m.setUserId(userId);
+                return m;
+            });
+            mem.setContent(cleaned);
+            userMemoryRepository.save(mem);
+        } catch (Exception e) {
+            // 学習はベストエフォート。失敗しても会話は継続する。
         }
     }
 

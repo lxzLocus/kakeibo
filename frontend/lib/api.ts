@@ -308,6 +308,9 @@ export const llmConfigApi = {
 
 // --- AIチャット ---
 export const chatApi = {
+  // 会話から自動学習したユーザーメモリ（閲覧・消去）
+  getMemory: () => fetchApi<{ content: string }>('/chats/memory'),
+  clearMemory: () => fetchApi<void>('/chats/memory', { method: 'DELETE' }),
   listSessions: () => fetchApi<ChatSessionResponse[]>('/chats'),
   createSession: (title?: string) =>
     fetchApi<ChatSessionResponse>('/chats', {

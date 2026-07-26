@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { llmConfigApi, categoryApi, entryApi, evaluationApi, ApiError } from '@/lib/api';
+import { llmConfigApi, categoryApi, entryApi, evaluationApi, chatApi, ApiError } from '@/lib/api';
 import { LlmConfigResponse, LlmConfigsResponse, LlmPurpose, UserResponse, CategoryResponse, EvaluationResponse } from '@/types';
 import { getUser, removeUser } from '@/lib/auth';
 import { Icon } from '@/app/_components/Icon';
@@ -239,6 +239,64 @@ function LlmConfigForm({
   );
 }
 
+/** チャットが会話から自動学習した「ユーザーメモリ」の確認・消去（手動設定は不要） */
+function ChatMemoryCard() {
+  const confirm = useConfirm();
+  const [memory, setMemory] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [msg, setMsg] = useState('');
+
+  async function load() {
+    setLoading(true);
+    try {
+      const r = await chatApi.getMemory();
+      setMemory(r.content ?? '');
+    } catch {
+      setMemory('');
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => { load(); }, []);
+
+  async function clear() {
+    if (!(await confirm({ title: '学習内容を消去', message: 'AIが会話から学習したユーザーメモリを消去します。よろしいですか？', confirmText: '消去する', danger: true }))) return;
+    try {
+      await chatApi.clearMemory();
+      setMemory('');
+      setMsg('学習内容を消去しました');
+    } catch (err) {
+      setMsg(err instanceof ApiError ? err.message : '消去に失敗しました');
+    }
+  }
+
+  return (
+    <div className="settings-section" style={{ marginTop: 20 }}>
+      <div className="settings-section__title">AIが会話から学習したこと</div>
+      <div className="settings-section__desc">
+        チャットでの会話から、あなたの家計の方針や価値観を自動で学習し、次回以降の相談に活かします（手動設定は不要）。学習内容はここで確認・消去できます。
+      </div>
+      {msg && <div className="success-banner" style={{ marginBottom: 10 }}><Icon name="check_circle" /> {msg}</div>}
+      {loading ? (
+        <div className="loading-state"><span className="loading-spinner" />読み込み中...</div>
+      ) : memory ? (
+        <>
+          <div className="chat-memory-box">{memory}</div>
+          <button
+            className="btn btn--outline"
+            onClick={clear}
+            style={{ marginTop: 10, color: 'var(--danger)', borderColor: 'var(--danger)' }}
+          >
+            <Icon name="delete_forever" size={17} /> 学習内容を消去
+          </button>
+        </>
+      ) : (
+        <p className="goal-summary__note">まだ学習内容はありません。チャットで相談すると少しずつ覚えていきます。</p>
+      )}
+    </div>
+  );
+}
+
 /** AI設定タブ（チャット用・OCR補正用のLLM設定） */
 function AiSettings() {
   const [configs, setConfigs] = useState<LlmConfigsResponse | null>(null);
@@ -302,6 +360,8 @@ function AiSettings() {
           />
         </>
       )}
+
+      <ChatMemoryCard />
     </>
   );
 }

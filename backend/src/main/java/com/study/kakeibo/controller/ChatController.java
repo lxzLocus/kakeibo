@@ -47,6 +47,21 @@ public class ChatController {
                 m.getId(), m.getSessionId(), m.getRole(), m.getContent(), imageUrl, m.getCreatedAt());
     }
 
+    // --- ユーザーメモリ（会話から自動学習した内容の閲覧・消去） ---
+    // 注: リテラルパス /memory は /{sessionId} より優先されるため衝突しない。
+
+    @GetMapping("/memory")
+    public ResponseEntity<Map<String, String>> getMemory(@RequestHeader("X-User-Id") Long userId) {
+        String mem = chatService.getMemory(userId);
+        return ResponseEntity.ok(Map.of("content", mem == null ? "" : mem));
+    }
+
+    @DeleteMapping("/memory")
+    public ResponseEntity<Void> clearMemory(@RequestHeader("X-User-Id") Long userId) {
+        chatService.clearMemory(userId);
+        return ResponseEntity.noContent().build();
+    }
+
     // --- セッション ---
 
     @GetMapping
