@@ -1,14 +1,17 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { analyticsApi, entryApi, ApiError } from '@/lib/api';
-import { MonthlySummary, EntryResponse, AnalysisResult, BenchmarkResult } from '@/types';
+import { analyticsApi, entryApi, categoryApi, storeApi, poolApi, ApiError } from '@/lib/api';
+import { MonthlySummary, EntryResponse, CategoryResponse, StoreResponse, FundPoolResponse, AnalysisResult, BenchmarkResult } from '@/types';
 
 const ANALYSIS_ENABLED_KEY = 'kakeibo.analysisEnabled';
 import { Icon } from '@/app/_components/Icon';
 import { SimulationPanel } from './SimulationPanel';
 import { TrendPanel } from './TrendPanel';
 import { categoryColor } from '@/lib/colors';
+import { readMonthYear, writeMonthYear } from '@/lib/monthStore';
+import { withCommas, toNumber } from '@/lib/format';
+import { useToast, useConfirm } from '@/app/_components/ui';
 
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('ja-JP', {
@@ -33,8 +36,8 @@ export default function AnalyticsPage() {
   const now = new Date();
   const [view, setView] = useState<'report' | 'compare' | 'trend' | 'simulation'>('report');
   const [catMetric, setCatMetric] = useState<'amount' | 'pct' | 'count'>('amount'); // カテゴリ別の表示指標
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(() => readMonthYear().year);
+  const [month, setMonth] = useState(() => readMonthYear().month);
   const [data, setData] = useState<MonthlySummary | null>(null);
   const [monthEntries, setMonthEntries] = useState<EntryResponse[]>([]); // 選択月の全取引
   const [loading, setLoading] = useState(true);
@@ -46,6 +49,33 @@ export default function AnalyticsPage() {
   // 「世帯平均との比較」（設定の年代・世帯区分。収入は記録から直近3ヶ月平均）
   const [benchmark, setBenchmark] = useState<BenchmarkResult | null>(null);
   const [benchAxis, setBenchAxis] = useState<'age' | 'income'>('income');
+
+  const toast = useToast();
+  const confirm = useConfirm();
+  const [categories, setCategories] = useState<CategoryResponse[]>([]);
+  const [stores, setStores] = useState<StoreResponse[]>([]);
+  const [pools, setPools] = useState<FundPoolResponse[]>([]);
+
+  // フィルタ
+  const [filterType, setFilterType] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL');
+  const [filterCategoryId, setFilterCategoryId] = useState('');
+  const [filterSearch, setFilterSearch] = useState('');
+
+  // 取引モーダル
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<EntryResponse | null>(null);
+  const [modalType, setModalType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
+  const [modalDate, setModalDate] = useState('');
+  const [modalAmount, setModalAmount] = useState('');
+  const [modalCategoryId, setModalCategoryId] = useState('');
+  const [modalStoreId, setModalStoreId] = useState('');
+  const [modalMemo, setModalMemo] = useState('');
+  const [modalNote, setModalNote] = useState('');
+  const [modalFundPoolId, setModalFundPoolId] = useState('');
+  const [modalExcludeFromSim, setModalExcludeFromSim] = useState(false);
+  const [modalSubmitError, setModalSubmitError] = useState('');
+  const [modalLoading, setModalLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     try {
@@ -106,17 +136,113 @@ export default function AnalyticsPage() {
     fetchData();
   }, [fetchData]);
 
+  const fetchHelperData = useCallback(async () => {
+    try {
+      const [catData, storeData, poolData] = await Promise.all([
+        categoryApi.getAll() as Promise<CategoryResponse[]>,
+        storeApi.getAll() as Promise<StoreResponse[]>,
+        poolApi.getAll() as Promise<FundPoolResponse[]>,
+      ]);
+      setCategories(catData);
+      setStores(storeData);
+      setPools(poolData);
+    } catch (err) {
+      console.error('カテゴリ/店舗/口座の取得に失敗しました', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchHelperData();
+  }, [fetchHelperData]);
+
+  // モーダル
+  function openEditModal(entry: EntryResponse) {
+    setEditingEntry(entry);
+    setModalType(entry.type);
+    setModalDate(entry.entryDate);
+    setModalAmount(withCommas(entry.amount));
+    setModalCategoryId(String(entry.categoryId));
+    setModalStoreId(entry.storeId ? String(entry.storeId) : '');
+    setModalMemo(entry.memo || '');
+    setModalNote(entry.note || '');
+    setModalFundPoolId(entry.fundPoolId != null ? String(entry.fundPoolId) : (pools.find((p) => p.primary)?.id?.toString() ?? ''));
+    setModalExcludeFromSim(entry.excludeFromSimulation ?? false);
+    setFormErrors({});
+    setModalSubmitError('');
+    setIsModalOpen(true);
+  }
+
+  function closeModal() {
+    setIsModalOpen(false);
+    setEditingEntry(null);
+  }
+
+  function validateForm(): boolean {
+    const errors: Record<string, string> = {};
+    if (!modalDate) errors.date = '日付を入力してください';
+    if (!modalAmount || toNumber(modalAmount) <= 0) errors.amount = '1円以上の金額を入力してください';
+    if (!modalCategoryId) errors.categoryId = 'カテゴリを選択してください';
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  }
+
+  async function handleModalSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setModalSubmitError('');
+    if (!validateForm()) return;
+    setModalLoading(true);
+    try {
+      const payload = {
+        entryDate: modalDate,
+        amount: toNumber(modalAmount),
+        categoryId: parseInt(modalCategoryId, 10),
+        storeId: modalStoreId ? parseInt(modalStoreId, 10) : null,
+        type: modalType,
+        memo: modalMemo.trim() || null,
+        note: modalNote.trim() || null,
+        fundPoolId: modalFundPoolId ? parseInt(modalFundPoolId, 10) : null,
+        excludeFromSimulation: modalExcludeFromSim,
+      };
+      if (editingEntry) {
+        await entryApi.update(editingEntry.id, payload);
+      }
+      await fetchData();
+      closeModal();
+    } catch (err) {
+      setModalSubmitError(err instanceof ApiError ? err.message : '保存に失敗しました。');
+    } finally {
+      setModalLoading(false);
+    }
+  }
+
+  async function handleDeleteEntry() {
+    if (!editingEntry) return;
+    if (!(await confirm({ title: '取引を削除', message: 'この取引レコードを削除してよろしいですか？', confirmText: '削除する', danger: true }))) return;
+    setModalLoading(true);
+    try {
+      await entryApi.delete(editingEntry.id);
+      await fetchData();
+      closeModal();
+    } catch (err) {
+      setModalSubmitError(err instanceof ApiError ? err.message : '削除に失敗しました。');
+    } finally {
+      setModalLoading(false);
+    }
+  }
+
   function prevMonth() {
-    if (month === 1) {
-      setYear(year - 1);
-      setMonth(12);
-    } else setMonth(month - 1);
+    let ny = year, nm = month;
+    if (month === 1) { ny = year - 1; nm = 12; }
+    else nm = month - 1;
+    setYear(ny); setMonth(nm);
+    writeMonthYear(ny, nm);
   }
   function nextMonth() {
-    if (month === 12) {
-      setYear(year + 1);
-      setMonth(1);
-    } else setMonth(month + 1);
+    let ny = year, nm = month;
+    if (month === 12) { ny = year + 1; nm = 1; }
+    else nm = month + 1;
+    setYear(ny); setMonth(nm);
+    writeMonthYear(ny, nm);
   }
 
   function buildDonutGradient(): string {
@@ -152,6 +278,51 @@ export default function AnalyticsPage() {
         .sort((a, b) => Math.abs(b.amount - b.avgAmount) - Math.abs(a.amount - a.avgAmount))
         .slice(0, 10)
     : [];
+
+  // カテゴリ名→色のマップ（一貫した色付けのため）
+  const catColorMap = new Map<string, string>();
+  categories.forEach((cat, i) => { catColorMap.set(cat.name, categoryColor(i)); });
+
+  // フィルタ適用後 + ソート
+  const filteredEntries = monthEntries
+    .filter((e) => {
+      if (filterType !== 'ALL' && e.type !== filterType) return false;
+      if (filterCategoryId && String(e.categoryId) !== filterCategoryId) return false;
+      if (filterSearch) {
+        const q = filterSearch.toLowerCase();
+        const haystack = [e.categoryName, e.storeName ?? '', e.memo ?? '', e.note ?? ''].join(' ').toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => b.entryDate.localeCompare(a.entryDate));
+
+  // カテゴリオプション（グループ付き）
+  function categoryOptionsForType(type: 'ALL' | 'INCOME' | 'EXPENSE') {
+    const filtered = type === 'ALL' ? categories : categories.filter((c) => c.type === type);
+    const hasGroups = filtered.some((c) => c.groupName);
+    if (!hasGroups) {
+      return filtered.map((cat, i) => (
+        <option key={`fopt-${cat.categoryId}-${i}`} value={cat.categoryId}>{cat.name}</option>
+      ));
+    }
+    const UNGROUPED = '未分類';
+    const order: string[] = [];
+    const map = new Map<string, CategoryResponse[]>();
+    for (const c of filtered) {
+      const g = c.groupName || UNGROUPED;
+      if (!map.has(g)) { map.set(g, []); if (g !== UNGROUPED) order.push(g); }
+      map.get(g)!.push(c);
+    }
+    if (map.has(UNGROUPED)) order.push(UNGROUPED);
+    return order.map((g) => (
+      <optgroup key={g} label={g}>
+        {map.get(g)!.map((cat, i) => (
+          <option key={`fopt-${cat.categoryId}-${i}`} value={cat.categoryId}>{cat.name}</option>
+        ))}
+      </optgroup>
+    ));
+  }
 
   return (
     <div className="screen">
@@ -504,15 +675,62 @@ export default function AnalyticsPage() {
 
           {/* この月の全取引 */}
           <div className="card pad-lg" style={{ marginTop: 16 }}>
-            <div className="section-label" style={{ display: 'block', marginBottom: 12 }}>
-              この月の取引（{monthEntries.length}件）
+            <div className="card-head" style={{ marginBottom: 12 }}>
+              <div className="section-label">
+                この月の取引（{filteredEntries.length}件{filteredEntries.length !== monthEntries.length ? ` / 全${monthEntries.length}件` : ''}）
+              </div>
             </div>
-            {monthEntries.length > 0 ? (
+            {/* フィルタバー */}
+            <div className="analytics-filter-bar">
+              <div className="type-segment" style={{ flexShrink: 0 }}>
+                {(['ALL', 'EXPENSE', 'INCOME'] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    className={`type-segment-btn ${filterType === t ? 'active' : ''} ${t === 'EXPENSE' ? 'expense' : t === 'INCOME' ? 'income' : ''}`}
+                    onClick={() => { setFilterType(t); setFilterCategoryId(''); }}
+                  >
+                    {t === 'ALL' ? 'すべて' : t === 'INCOME' ? '収入' : '支出'}
+                  </button>
+                ))}
+              </div>
+              <select
+                className="select"
+                value={filterCategoryId}
+                onChange={(e) => setFilterCategoryId(e.target.value)}
+                style={{ minWidth: 140 }}
+              >
+                <option value="">全カテゴリ</option>
+                {categoryOptionsForType(filterType)}
+              </select>
+              <div className="analytics-search-wrap">
+                <Icon name="search" size={15} />
+                <input
+                  className="input"
+                  type="text"
+                  placeholder="検索..."
+                  value={filterSearch}
+                  onChange={(e) => setFilterSearch(e.target.value)}
+                />
+                {filterSearch && (
+                  <button type="button" className="analytics-search-clear" onClick={() => setFilterSearch('')}>
+                    <Icon name="close" size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+            {filteredEntries.length > 0 ? (
               <div className="analytics-txn-list">
-                {[...monthEntries]
-                  .sort((a, b) => b.entryDate.localeCompare(a.entryDate))
-                  .map((e) => (
-                    <div key={e.id} className="analytics-txn-row">
+                {filteredEntries.map((e) => {
+                  const color = catColorMap.get(e.categoryName) || 'var(--surface-3)';
+                  return (
+                    <div
+                      key={e.id}
+                      className="analytics-txn-row"
+                      onClick={() => openEditModal(e)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className="cat-color-chip" style={{ background: color }} />
                       <span className="analytics-txn-date">{e.entryDate.slice(5).replace('-', '/')}</span>
                       <span className="analytics-txn-body">
                         {e.categoryName}{e.storeName ? ` · ${e.storeName}` : ''}
@@ -522,11 +740,14 @@ export default function AnalyticsPage() {
                         {e.type === 'INCOME' ? '+' : '-'}{formatCurrency(e.amount)}
                       </span>
                     </div>
-                  ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="empty-state">
-                <div className="empty-state-text">この月の取引はありません</div>
+                <div className="empty-state-text">
+                  {monthEntries.length > 0 ? '条件に一致する取引はありません' : 'この月の取引はありません'}
+                </div>
               </div>
             )}
           </div>
@@ -534,6 +755,138 @@ export default function AnalyticsPage() {
         </>
       ) : null}
         </>
+      )}
+      {/* 取引編集モーダル */}
+      {isModalOpen && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">取引の編集</h3>
+              <button className="modal-close-btn" onClick={closeModal} aria-label="閉じる">
+                <Icon name="close" />
+              </button>
+            </div>
+            <form onSubmit={handleModalSubmit}>
+              <div className="modal-body">
+                {modalSubmitError && (
+                  <div className="error-banner" style={{ margin: 0 }}>
+                    <Icon name="error" />
+                    {modalSubmitError}
+                  </div>
+                )}
+                <div className="type-segment">
+                  <button
+                    type="button"
+                    className={`type-segment-btn expense ${modalType === 'EXPENSE' ? 'active' : ''}`}
+                    onClick={() => setModalType('EXPENSE')}
+                  >
+                    支出
+                  </button>
+                  <button
+                    type="button"
+                    className={`type-segment-btn income ${modalType === 'INCOME' ? 'active' : ''}`}
+                    onClick={() => setModalType('INCOME')}
+                  >
+                    収入
+                  </button>
+                </div>
+                <div className="modal-field-row">
+                  <div className="modal-field">
+                    <label htmlFor="amodal-date">日付</label>
+                    <input id="amodal-date" type="date" value={modalDate} onChange={(e) => setModalDate(e.target.value)} className={formErrors.date ? 'field-error' : ''} required />
+                    {formErrors.date && <span className="field-error-text">{formErrors.date}</span>}
+                  </div>
+                  <div className="modal-field">
+                    <label htmlFor="amodal-amount">金額 (円)</label>
+                    <input id="amodal-amount" type="text" inputMode="numeric" placeholder="1,000" value={modalAmount} onChange={(e) => setModalAmount(withCommas(e.target.value))} className={formErrors.amount ? 'field-error' : ''} required />
+                    {formErrors.amount && <span className="field-error-text">{formErrors.amount}</span>}
+                  </div>
+                </div>
+                <div className="modal-field">
+                  <label htmlFor="amodal-category">カテゴリ</label>
+                  <select id="amodal-category" className="select" value={modalCategoryId} onChange={(e) => setModalCategoryId(e.target.value)} required>
+                    <option value="">カテゴリを選択</option>
+                    {(() => {
+                      const cats = categories.filter((cat) => cat.type === modalType);
+                      const hasGroups = cats.some((c) => c.groupName);
+                      if (!hasGroups) return cats.map((cat, i) => (<option key={`mopt-${cat.categoryId}-${i}`} value={cat.categoryId}>{cat.name}</option>));
+                      const UNGROUPED = '未分類';
+                      const order: string[] = [];
+                      const map = new Map<string, CategoryResponse[]>();
+                      for (const c of cats) {
+                        const g = c.groupName || UNGROUPED;
+                        if (!map.has(g)) { map.set(g, []); if (g !== UNGROUPED) order.push(g); }
+                        map.get(g)!.push(c);
+                      }
+                      if (map.has(UNGROUPED)) order.push(UNGROUPED);
+                      return order.map((g) => (
+                        <optgroup key={g} label={g}>
+                          {map.get(g)!.map((cat, i) => (<option key={`mopt-${cat.categoryId}-${i}`} value={cat.categoryId}>{cat.name}</option>))}
+                        </optgroup>
+                      ));
+                    })()}
+                  </select>
+                  {formErrors.categoryId && <span className="field-error-text">{formErrors.categoryId}</span>}
+                </div>
+                {modalType === 'EXPENSE' && (
+                  <div className="modal-field">
+                    <label htmlFor="amodal-store">店舗 (任意)</label>
+                    <select id="amodal-store" className="select" value={modalStoreId} onChange={(e) => setModalStoreId(e.target.value)}>
+                      <option value="">なし</option>
+                      {stores.map((store, index) => (
+                        <option key={`amodal-store-${store.storeId}-${index}`} value={store.storeId}>
+                          {store.name} {store.type ? `(${store.type})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div className="modal-field">
+                  <label htmlFor="amodal-memo">品名 (任意)</label>
+                  <textarea id="amodal-memo" rows={2} placeholder="購入した物・明細" value={modalMemo} onChange={(e) => setModalMemo(e.target.value)} />
+                </div>
+                <div className="modal-field">
+                  <label htmlFor="amodal-note">メモ (任意)</label>
+                  <textarea id="amodal-note" rows={2} placeholder="補足・メモなど" value={modalNote} onChange={(e) => setModalNote(e.target.value)} />
+                </div>
+                {pools.length > 0 && (
+                  <div className="modal-field">
+                    <label htmlFor="amodal-pool">口座・カード</label>
+                    <select id="amodal-pool" className="select" value={modalFundPoolId} onChange={(e) => setModalFundPoolId(e.target.value)}>
+                      {pools.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.kind === 'CARD' ? '💳 ' : ''}{p.name}{p.primary ? '（既定）' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div className="modal-field">
+                  <label className="modal-check">
+                    <input type="checkbox" checked={modalExcludeFromSim} onChange={(e) => setModalExcludeFromSim(e.target.checked)} />
+                    <span>
+                      シミュレーションに反映しない
+                      <small>手持ちを実額に合わせるための調整などに。</small>
+                    </span>
+                  </label>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <div className="modal-btn-group has-delete">
+                  <button type="button" className="modal-btn danger" onClick={handleDeleteEntry} disabled={modalLoading} title="削除する">
+                    <Icon name="delete" />
+                  </button>
+                  <button type="button" className="modal-btn secondary" onClick={closeModal} disabled={modalLoading}>
+                    キャンセル
+                  </button>
+                  <button type="submit" className="modal-btn primary" disabled={modalLoading}>
+                    {modalLoading ? '保存中...' : '保存する'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

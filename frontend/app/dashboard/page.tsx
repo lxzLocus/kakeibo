@@ -8,6 +8,7 @@ import { Icon } from '@/app/_components/Icon';
 import { withCommas, toNumber } from '@/lib/format';
 import { AssetsSection } from './AssetsSection';
 import { useToast, useConfirm } from '@/app/_components/ui';
+import { readMonthYear, writeMonthYear } from '@/lib/monthStore';
 
 /**
  * カテゴリ選択の <option> を、グループ（プライマリ）ごとに <optgroup> でまとめて返す。
@@ -137,22 +138,18 @@ function aggregateByCategory(entries: EntryResponse[]) {
 // メインダッシュボードページ（ホーム）
 // ==========================================
 
-const RECENT_STEPS = [7, 31, 92, 366]; // 取引履歴の表示期間（日）。もっと見るで拡大
-
 export default function DashboardPage() {
   const toast = useToast();
   const confirm = useConfirm();
   const [entries, setEntries] = useState<EntryResponse[]>([]);
-  const [recentEntries, setRecentEntries] = useState<EntryResponse[]>([]); // 履歴用（月に依存しない直近データ）
-  const [recentDays, setRecentDays] = useState(7); // 履歴の表示期間（直近N日）
-  const [sortKey, setSortKey] = useState<'date' | 'amount' | 'name'>('date'); // 取引履歴の並べ替え
+  const [sortKey, setSortKey] = useState<'date' | 'amount' | 'name'>('date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(() => readMonthYear().year);
+  const [month, setMonth] = useState(() => readMonthYear().month);
 
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [stores, setStores] = useState<StoreResponse[]>([]);
@@ -214,19 +211,6 @@ export default function DashboardPage() {
     }
   }, [year, month]);
 
-  // 履歴用: 月に依存せず直近1年分を読み込み（表示は recentDays でクライアント側に絞る）
-  const fetchRecent = useCallback(async () => {
-    try {
-      const from = new Date();
-      from.setDate(from.getDate() - 366);
-      const since = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, '0')}-${String(from.getDate()).padStart(2, '0')}`;
-      const data = (await entryApi.getAll(since, todayStr())) as EntryResponse[];
-      setRecentEntries(data);
-    } catch {
-      // 履歴取得失敗は致命的ではない（月次の表示は別途行う）
-    }
-  }, []);
-
   const fetchCategoriesAndStores = useCallback(async () => {
     try {
       const catData = (await categoryApi.getAll()) as CategoryResponse[];
@@ -248,10 +232,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchEntries();
-    fetchRecent();
     fetchCategoriesAndStores();
     fetchPools();
-  }, [fetchEntries, fetchRecent, fetchCategoriesAndStores, fetchPools]);
+  }, [fetchEntries, fetchCategoriesAndStores, fetchPools]);
 
   // 月次の自動処理（固定費の記帳＋カードの引き落とし）を、アプリを開いたときに追いつかせる（冪等）。
   // 常駐ジョブに頼らない方式。初回マウント時のみ実行。
@@ -262,7 +245,7 @@ export default function DashboardPage() {
         const res = await poolApi.settle();
         if (!cancelled && (res.postedFixedCosts > 0 || res.cardSettlements > 0)) {
           fetchEntries();
-          fetchRecent();
+          fetchEntries();
           fetchPools();
         }
       } catch {
@@ -442,7 +425,7 @@ export default function DashboardPage() {
       if (modalType === 'EXPENSE' && modalStoreId) writeLast(LAST_STORE_KEY, modalStoreId);
 
       await fetchEntries();
-      fetchRecent();
+      await fetchEntries();
       fetchPools();
       closeModal();
     } catch (err) {
@@ -460,7 +443,7 @@ export default function DashboardPage() {
     try {
       await entryApi.delete(editingEntry.id);
       await fetchEntries();
-      fetchRecent();
+      await fetchEntries();
       fetchPools();
       closeModal();
     } catch (err) {
@@ -489,7 +472,7 @@ export default function DashboardPage() {
       setQuickAmount('');
       setQuickMemo('');
       await fetchEntries();
-      fetchRecent();
+      await fetchEntries();
       fetchPools();
     } catch (err) {
       toast(err instanceof ApiError ? err.message : '登録に失敗しました', 'error');
@@ -503,15 +486,8 @@ export default function DashboardPage() {
   const totalExpense = entries.filter((e) => e.type === 'EXPENSE').reduce((s, e) => s + e.amount, 0);
   const balance = totalIncome - totalExpense;
   const categoryData = aggregateByCategory(entries).slice(0, 6);
-  // 取引履歴は月に依存せず「直近 recentDays 日」を新しい順に表示（もっと見るで拡大）
-  const recentCutoff = (() => {
-    const d = new Date();
-    d.setDate(d.getDate() - recentDays);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  })();
-  // 並べ替え（クレカ明細のように 日付/金額/名称。名称はカテゴリ+店舗）
-  const sortedEntries = [...recentEntries]
-    .filter((e) => e.entryDate >= recentCutoff)
+  // 取引履歴: 選択月の取引を並べ替えて表示
+  const sortedEntries = [...entries]
     .sort((a, b) => {
       let cmp: number;
       if (sortKey === 'amount') cmp = a.amount - b.amount;
@@ -520,14 +496,11 @@ export default function DashboardPage() {
         const nb = `${b.categoryName} ${b.storeName ?? ''}`;
         cmp = na.localeCompare(nb, 'ja');
       } else cmp = a.entryDate.localeCompare(b.entryDate);
-      if (cmp === 0) cmp = a.id - b.id; // 同値は id で安定化
+      if (cmp === 0) cmp = a.id - b.id;
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  const hasMoreRecent = recentDays < 366 && recentEntries.some((e) => e.entryDate < recentCutoff);
-  const recentLabel = recentDays <= 7 ? '直近1週間' : recentDays <= 31 ? '直近1ヶ月' : recentDays <= 92 ? '直近3ヶ月' : '直近1年';
-  function showMoreRecent() {
-    setRecentDays((d) => RECENT_STEPS.find((s) => s > d) ?? 366);
-  }
+  const hasMoreRecent = false; // 月絞り時は「もっと見る」不要
+  const recentLabel = `${year}年${month}月`;
   // 同じキーをタップで昇順/降順を反転。別キーは既定の向き（日付・金額=降順、名称=昇順）
   function changeSort(key: 'date' | 'amount' | 'name') {
     if (key === sortKey) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -577,21 +550,24 @@ export default function DashboardPage() {
   const maxDaily = Math.max(1, ...dailyInc, ...dailyExp);
 
   function prevMonth() {
-    if (month === 1) {
-      setYear(year - 1);
-      setMonth(12);
-    } else setMonth(month - 1);
+    let ny = year, nm = month;
+    if (month === 1) { ny = year - 1; nm = 12; }
+    else nm = month - 1;
+    setYear(ny); setMonth(nm);
+    writeMonthYear(ny, nm);
   }
   function nextMonth() {
-    if (month === 12) {
-      setYear(year + 1);
-      setMonth(1);
-    } else setMonth(month + 1);
+    let ny = year, nm = month;
+    if (month === 12) { ny = year + 1; nm = 1; }
+    else nm = month + 1;
+    setYear(ny); setMonth(nm);
+    writeMonthYear(ny, nm);
   }
   function goCurrentMonth() {
     const d = new Date();
     setYear(d.getFullYear());
     setMonth(d.getMonth() + 1);
+    writeMonthYear(d.getFullYear(), d.getMonth() + 1);
   }
 
   // 別の月を見ているときだけ「今月」へ戻るボタンを出す（month-pill の右横に配置）。
@@ -688,33 +664,28 @@ export default function DashboardPage() {
                 {sortedEntries.length > 0 && sortControl}
               </div>
               {sortedEntries.length > 0 ? (
-                <>
-                  <div className="card flush">
-                    <table className="txn-table">
-                      <tbody>
-                        {txnRows.map(({ entry, line }) => (
-                          <tr
-                            key={entry.id}
-                            className={`txn-row ${entry.type === 'INCOME' ? 'income' : ''}`}
-                            onClick={() => openEditModal(entry)}
-                          >
-                            <td className="txn-date">{formatDate(entry.entryDate)}</td>
-                            <td className="txn-body">
-                              {line}
-                              {entry.memo && <span className="txn-memo"> {entry.memo}</span>}
-                            </td>
-                            <td className={`txn-amount ${entry.type === 'INCOME' ? 'income' : ''}`}>
-                              {formatSigned(entry.type, entry.amount)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  {hasMoreRecent && (
-                    <button className="load-more-btn" onClick={showMoreRecent}>もっと見る</button>
-                  )}
-                </>
+                <div className="card flush">
+                  <table className="txn-table">
+                    <tbody>
+                      {txnRows.map(({ entry, line }) => (
+                        <tr
+                          key={entry.id}
+                          className={`txn-row ${entry.type === 'INCOME' ? 'income' : ''}`}
+                          onClick={() => openEditModal(entry)}
+                        >
+                          <td className="txn-date">{formatDate(entry.entryDate)}</td>
+                          <td className="txn-body">
+                            {line}
+                            {entry.memo && <span className="txn-memo"> {entry.memo}</span>}
+                          </td>
+                          <td className={`txn-amount ${entry.type === 'INCOME' ? 'income' : ''}`}>
+                            {formatSigned(entry.type, entry.amount)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ) : (
                 <div className="card">
                   <div className="empty-state">
@@ -886,7 +857,6 @@ export default function DashboardPage() {
 
             <div className="section-label stack-label">取引履歴（{recentLabel}）</div>
             {sortedEntries.length > 0 ? (
-              <>
                 <div className="card flush">
                   {txnRows.map(({ entry, line }) => (
                     <div
@@ -908,11 +878,7 @@ export default function DashboardPage() {
                     </div>
                   ))}
                 </div>
-                {hasMoreRecent && (
-                  <button className="load-more-btn" onClick={showMoreRecent}>もっと見る</button>
-                )}
-              </>
-            ) : (
+              ) : (
               <div className="card">
                 <div className="empty-state">
                   <div className="empty-state-icon">
