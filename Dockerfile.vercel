@@ -1,0 +1,138 @@
+# syntax=docker/dockerfile:1
+
+# =============================================================================
+# Vercel Container Deploy 用 Dockerfile
+#
+# Vercel の Dockerfile.vercel 機能でデプロイするための設定。
+# ルートの Dockerfile と同じマルチステージ構成（Next.js + Spring Boot + Tesseract）を
+# Vercel ランタイム用に調整:
+#   - フロントは $PORT (Vercel が注入、デフォルト 80) でリッスン
+#   - DB は外部マネージド MySQL (DATABASE_URL / SPRING_DATASOURCE_URL で指定)
+#   - supervisor で frontend(Next.js) + backend(Spring Boot) を 1 コンテナで同時起動
+# ビルドコンテキスト = リポジトリルート
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Stage 1: フロントエンド（Next.js）を standalone でビルド
+# -----------------------------------------------------------------------------
+FROM node:22-bookworm-slim AS frontend-build
+WORKDIR /app
+
+# 依存だけ先に入れてレイヤキャッシュを効かせる
+COPY frontend/package.json frontend/package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci
+
+COPY frontend/ ./
+
+# rewrites() の /api → バックエンド先を「同一コンテナ内の :8080」に固定
+ENV BACKEND_URL=http://127.0.0.1:8080
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm run build
+
+# -----------------------------------------------------------------------------
+# Stage 2: バックエンド（Spring Boot）を fat jar にビルド
+# -----------------------------------------------------------------------------
+FROM maven:3.9-eclipse-temurin-21 AS backend-build
+WORKDIR /src
+
+# pom を先に入れて依存を取得（キャッシュ層）
+COPY backend/pom.xml ./
+RUN --mount=type=cache,target=/root/.m2 mvn -B -q dependency:go-offline
+
+COPY backend/ ./
+RUN --mount=type=cache,target=/root/.m2 mvn -B -q -DskipTests clean package \
+ && cp target/kakeibo-*.jar /app.jar
+
+# -----------------------------------------------------------------------------
+# Stage 3: ランタイム（JRE + Node + Tesseract を 1 つに）
+# Vercel 向けの調整:
+#   - フロントは $PORT (デフォルト 80) でリッスン
+#   - root 実行（$PORT バインド用）
+# -----------------------------------------------------------------------------
+FROM eclipse-temurin:21-jre-jammy AS runtime
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Tesseract(日/英) + supervisor + Node.js 22 を導入
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      ca-certificates curl gnupg supervisor \
+      tesseract-ocr tesseract-ocr-jpn tesseract-ocr-eng \
+ && mkdir -p /etc/apt/keyrings \
+ && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
+      | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+ && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" \
+      > /etc/apt/sources.list.d/nodesource.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends nodejs \
+ && apt-get purge -y gnupg \
+ && apt-get autoremove -y \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# --- バックエンド（fat jar） ---
+COPY --from=backend-build /app.jar /app/backend/app.jar
+
+# --- フロントエンド（standalone） ---
+# server.js + 最小 node_modules（standalone には static / public が含まれないため別途コピー）
+COPY --from=frontend-build /app/.next/standalone/ /app/frontend/
+COPY --from=frontend-build /app/.next/static/ /app/frontend/.next/static/
+COPY --from=frontend-build /app/public/ /app/frontend/public/
+
+# --- プロセス管理（supervisor 設定をインラインで生成） ---
+# Vercel は $PORT をコンテナに注入するので、フロントはその値をリッスンする。
+# バックエンドは内部 :8080 固定。
+RUN cat > /etc/supervisor/supervisord.conf <<'CONF'
+; Vercel container deploy: supervisor が frontend + backend を管理。
+[supervisord]
+nodaemon=true
+user=root
+loglevel=info
+logfile=/dev/null
+logfile_maxbytes=0
+pidfile=/tmp/supervisord.pid
+
+[program:backend]
+command=/bin/sh -c "exec java %(ENV_JAVA_OPTS)s -jar /app/backend/app.jar"
+directory=/app/backend
+autostart=true
+autorestart=true
+startretries=20
+startsecs=10
+stopwaitsecs=30
+priority=10
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+
+[program:frontend]
+command=/bin/sh -c "exec node /app/frontend/server.js"
+directory=/app/frontend
+autostart=true
+autorestart=true
+startretries=20
+startsecs=5
+stopwaitsecs=15
+priority=20
+environment=PORT="%(ENV_PORT)s",HOSTNAME="0.0.0.0"
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+CONF
+
+# --- 実行時の既定値 ---
+# Vercel が $PORT を注入。未設定時は 80。
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=80 \
+    HOSTNAME=0.0.0.0 \
+    BACKEND_URL=http://127.0.0.1:8080 \
+    JAVA_OPTS="-Xmx512m -Xms256m"
+
+# Vercel コンテナは $PORT のみ公開（デフォルト 80）
+EXPOSE 80
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
