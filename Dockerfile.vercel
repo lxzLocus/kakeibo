@@ -74,6 +74,18 @@ WORKDIR /app
 # --- バックエンド（fat jar） ---
 COPY --from=backend-build /app.jar /app/backend/app.jar
 
+RUN cat > /app/backend/start.sh <<'EOF'
+#!/bin/sh
+# Vercel Storage (Neon) の環境変数が存在する場合は、Spring JDBC 用に変換
+if [ -n "$POSTGRES_HOST" ]; then
+  export SPRING_DATASOURCE_URL="jdbc:postgresql://${POSTGRES_HOST}/${POSTGRES_DATABASE}?sslmode=require"
+  export SPRING_DATASOURCE_USERNAME="${POSTGRES_USER}"
+  export SPRING_DATASOURCE_PASSWORD="${POSTGRES_PASSWORD}"
+fi
+exec java $JAVA_OPTS -jar /app/backend/app.jar
+EOF
+RUN chmod +x /app/backend/start.sh
+
 # --- フロントエンド（standalone） ---
 # server.js + 最小 node_modules（standalone には static / public が含まれないため別途コピー）
 COPY --from=frontend-build /app/.next/standalone/ /app/frontend/
@@ -94,7 +106,7 @@ logfile_maxbytes=0
 pidfile=/tmp/supervisord.pid
 
 [program:backend]
-command=/bin/sh -c "exec java %(ENV_JAVA_OPTS)s -jar /app/backend/app.jar"
+command=/app/backend/start.sh
 directory=/app/backend
 autostart=true
 autorestart=true
