@@ -2,7 +2,7 @@
 
 フロントエンド(Next.js)とバックエンド(Spring Boot)を **1 つのイメージ** にまとめた
 マルチステージビルドと、GitHub Actions による GHCR への push を用意しています。
-DB(MySQL) はデータ永続化のため別コンテナです。
+DB(PostgreSQL) はデータ永続化のため別コンテナです。
 
 ## 構成
 
@@ -15,7 +15,7 @@ DB(MySQL) はデータ永続化のため別コンテナです。
 └──────────────────────────────────────────────────────────────────────┘
         │ /api/* を rewrites で 127.0.0.1:8080 へ
         ▼
-   MySQL 8.4 (別コンテナ・ボリューム永続化)
+   PostgreSQL 16 (別コンテナ・ボリューム永続化)
 ```
 
 - フロントの `next.config.ts` は `/api/:path*` を `BACKEND_URL` へ rewrite。combined image では
@@ -54,20 +54,56 @@ IMAGE=ghcr.io/lxzlocus/kakeibo:latest docker compose -f docker-compose.prod.yml 
 GHCR に push するには追加設定不要（`GITHUB_TOKEN` を使用）。private リポジトリのイメージを
 pull する側では `docker login ghcr.io` が必要です。
 
+## Vercel デプロイ（コンテナ）
+
+`Dockerfile.vercel` を使って Vercel のコンテナデプロイが可能です。
+DB は外部マネージド PostgreSQL（Neon 等）を使用してください。
+
+Vercel ダッシュボードで以下の環境変数を設定:
+
+| 変数 | 値の例 |
+|------|--------|
+| `SPRING_DATASOURCE_URL` | `jdbc:postgresql://ep-xxx.us-east-2.aws.neon.tech/kakeibo?sslmode=require` |
+| `SPRING_DATASOURCE_USERNAME` | Neon のユーザー名 |
+| `SPRING_DATASOURCE_PASSWORD` | Neon のパスワード |
+| `APP_ENCRYPTION_PASSWORD` | 暗号化パスワード |
+| `APP_ENCRYPTION_SALT` | 暗号化ソルト |
+| `APP_CORS_ALLOWED_ORIGIN_PATTERNS` | `https://your-app.vercel.app` |
+
 ## 主な環境変数
 
 | 変数 | 既定 | 説明 |
 |------|------|------|
 | `BACKEND_URL` | `http://127.0.0.1:8080` | フロント→バックエンドのプロキシ先（combined では固定） |
-| `SPRING_DATASOURCE_URL` | `jdbc:mysql://kakeibo-database:3306/kakeibo?...` | DB 接続先 |
-| `SPRING_DATASOURCE_USERNAME` / `PASSWORD` | `root` / `password` | DB 認証 |
+| `SPRING_DATASOURCE_URL` | `jdbc:postgresql://kakeibo-database:5432/kakeibo` | DB 接続先 |
+| `SPRING_DATASOURCE_USERNAME` / `PASSWORD` | `postgres` / `password` | DB 認証 |
 | `APP_ENCRYPTION_PASSWORD` / `APP_ENCRYPTION_SALT` | （必須） | 保存済み LLM API キーの暗号鍵。**変更すると復号不能**なので固定 |
 | `JAVA_OPTS` | `-Xmx512m -Xms256m` | JVM オプション |
 
+## MySQL からの移行
+
+`scripts/migrate-mysql-to-postgres.sh` で既存 MySQL データを PostgreSQL に移行できます。
+
+```bash
+# オンプレ環境 (/opt/docker/kakeibo/) で実行
+cd /opt/docker/kakeibo
+
+# 1. アプリを停止
+docker compose -f docker-compose.prod.yml stop kakeibo-app
+
+# 2. 新しい docker-compose.prod.yml と scripts/ をデプロイ先に配置
+
+# 3. 移行スクリプト実行
+bash scripts/migrate-mysql-to-postgres.sh
+
+# 4. アプリを起動
+docker compose -f docker-compose.prod.yml up -d
+```
+
 ## 開発環境（従来どおり）
 
-`docker-compose.yml`（bind mount + VS Code の Java デバッグ）はそのまま。本番用は
-`docker-compose.prod.yml` / ルート `Dockerfile` を使います。
+`docker-compose.yml`（bind mount + VS Code の Java デバッグ）はそのまま。
+開発環境も PostgreSQL を使用します。本番用は `docker-compose.prod.yml` / ルート `Dockerfile` を使います。
 
 ## 補足
 

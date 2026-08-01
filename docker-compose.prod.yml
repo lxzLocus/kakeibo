@@ -1,4 +1,4 @@
-# 本番/検証用: combined image（フロント+バック 1 つ）+ MySQL。
+# 本番/検証用: combined image（フロント+バック 1 つ）+ PostgreSQL。
 #   ローカルでビルドして起動:   docker compose -f docker-compose.prod.yml up --build
 #   CI 済みイメージを使う場合 :   IMAGE=ghcr.io/lxzlocus/kakeibo:latest docker compose -f docker-compose.prod.yml up -d
 # 事前に .env（.env.example を参照）で APP_ENCRYPTION_* を設定しておくこと。
@@ -13,14 +13,14 @@ services:
     container_name: kakeibo-app
     restart: unless-stopped
     ports:
-      - "3000:3000"        # フロント（アプリ本体）
+      - "${KAKEIBO_PORT:-3000}:3000"        # フロント（アプリ本体）
       # - "8081:8080"      # バックエンドを直接叩きたい場合のみ公開
     environment:
       # フロント → 同一コンテナ内のバックエンド
       BACKEND_URL: http://127.0.0.1:8080
       # バックエンド → DB（サービス名で解決）
-      SPRING_DATASOURCE_URL: "jdbc:mysql://kakeibo-database:3306/kakeibo?serverTimezone=Asia/Tokyo"
-      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://kakeibo-database:5432/kakeibo"
+      SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-password}
       # CORS 許可オリジン。独自ホスト名で公開するなら .env で必ず設定する
       # （未設定だとローカル/LAN内のみ許可で、ホスト名アクセスが 403 Invalid CORS request になる）。
@@ -38,22 +38,19 @@ services:
         condition: service_healthy
 
   kakeibo-database:
-    image: mysql:8.4
+    image: postgres:16-alpine
     container_name: kakeibo-database
     restart: unless-stopped
-    command:
-      - --innodb-flush-log-at-trx-commit=2
-      - --sync-binlog=0
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
-      MYSQL_DATABASE: kakeibo
-    # スキーマは Spring Boot 起動時に Flyway が作成する（init.sql は廃止）。
-    # DBデータは compose と同じ場所の ./data/mysql に永続化（LXC運用に整合。
-    # バックアップは ./data を tar で固めるだけ。停止中の物理コピー推奨）。
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: kakeibo
+    # スキーマは Spring Boot 起動時に Flyway が作成する。
+    # DBデータは compose と同じ場所の ./data/postgres に永続化。
     volumes:
-      - ./data/mysql:/var/lib/mysql
+      - ./data/postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${DB_PASSWORD:-password}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d kakeibo"]
       interval: 10s
       timeout: 5s
       retries: 12

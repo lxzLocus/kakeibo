@@ -1,3 +1,2 @@
--- カテゴリのグループ（プライマリカテゴリ）。NULL は「未分類」。
--- グループ自体はエンティティを持たず、この文字列でセレクターの optgroup を作る。
-ALTER TABLE category ADD COLUMN group_name VARCHAR(255) NULL;
+-- V5: カテゴリのグループ
+-- PostgreSQL 移行にあたり V1 に統合済み。このファイルは Flyway 履歴互換のため残す。

@@ -130,7 +130,10 @@ ENV NODE_ENV=production \
     PORT=80 \
     HOSTNAME=0.0.0.0 \
     BACKEND_URL=http://127.0.0.1:8080 \
-    JAVA_OPTS="-Xmx512m -Xms256m"
+    JAVA_OPTS="-Xmx512m -Xms256m" \
+    SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:5432/kakeibo" \
+    SPRING_DATASOURCE_USERNAME=postgres \
+    SPRING_DATASOURCE_PASSWORD=password
 
 # Vercel コンテナは $PORT のみ公開（デフォルト 80）
 EXPOSE 80

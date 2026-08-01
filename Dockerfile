@@ -82,8 +82,8 @@ ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0 \
     BACKEND_URL=http://127.0.0.1:8080 \
     JAVA_OPTS="-Xmx512m -Xms256m" \
-    SPRING_DATASOURCE_URL="jdbc:mysql://kakeibo-database:3306/kakeibo?serverTimezone=Asia/Tokyo" \
-    SPRING_DATASOURCE_USERNAME=root \
+    SPRING_DATASOURCE_URL="jdbc:postgresql://kakeibo-database:5432/kakeibo" \
+    SPRING_DATASOURCE_USERNAME=postgres \
     SPRING_DATASOURCE_PASSWORD=password
 
 # 3000 = フロント(公開) / 8080 = バックエンド(内部・必要なら公開)

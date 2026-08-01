@@ -1,203 +1,216 @@
 -- Flyway baseline (V1): 家計簿アプリの全スキーマ。
--- JPA エンティティから Hibernate が生成した DDL をそのまま採用しているため、
+-- JPA エンティティから Hibernate が生成した DDL を PostgreSQL 向けに変換。
 -- spring.jpa.hibernate.ddl-auto=validate と 1:1 で一致する。
 -- 以降のスキーマ変更は V2__*.sql 以降を追加すること（この V1 は編集しない）。
-SET FOREIGN_KEY_CHECKS = 0;
 
-CREATE TABLE `category` (
-  `sort_order` int NOT NULL,
-  `created_at` datetime(6) NOT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `user_id` bigint NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `type` enum('EXPENSE','INCOME') NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `UKl31kxlkolvrrxa9c5xabw0hp5` (`user_id`,`name`,`type`),
-  CONSTRAINT `FKpfk8djhv5natgshmxiav6xkpu` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-CREATE TABLE `chat_message` (
-  `created_at` datetime(6) NOT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `session_id` bigint NOT NULL,
-  `role` varchar(16) NOT NULL,
-  `content` text NOT NULL,
-  `content_type` varchar(255) DEFAULT NULL,
-  `image_path` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-CREATE TABLE `chat_session` (
-  `created_at` datetime(6) NOT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `summarized_until_message_id` bigint DEFAULT NULL,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `user_id` bigint NOT NULL,
-  `summary` text,
-  `title` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-CREATE TABLE `entry` (
-  `amount` decimal(38,2) NOT NULL,
-  `entry_date` date NOT NULL,
-  `exclude_from_simulation` bit(1) NOT NULL,
-  `category_id` bigint NOT NULL,
-  `created_at` datetime(6) NOT NULL,
-  `fund_pool_id` bigint DEFAULT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `store_id` bigint DEFAULT NULL,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `user_id` bigint NOT NULL,
-  `memo` varchar(255) DEFAULT NULL,
-  `note` varchar(255) DEFAULT NULL,
-  `type` enum('EXPENSE','INCOME') NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FKf7mt5po7olj7eiwqlt6t3qc7j` (`category_id`),
-  KEY `FK2b22ttoixy0iny85m063fhfw` (`store_id`),
-  KEY `FKb8w0fw4ccf95p9ct3y2gn4nbq` (`user_id`),
-  CONSTRAINT `FK2b22ttoixy0iny85m063fhfw` FOREIGN KEY (`store_id`) REFERENCES `store` (`id`),
-  CONSTRAINT `FKb8w0fw4ccf95p9ct3y2gn4nbq` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
-  CONSTRAINT `FKf7mt5po7olj7eiwqlt6t3qc7j` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-CREATE TABLE `fixed_cost` (
-  `amount` decimal(38,2) NOT NULL,
-  `payment_day` int DEFAULT NULL,
-  `created_at` datetime(6) NOT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `user_id` bigint NOT NULL,
-  `name` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-CREATE TABLE `fund_pool` (
-  `initial_balance` decimal(15,2) NOT NULL,
-  `is_primary` bit(1) NOT NULL,
-  `sort_order` int NOT NULL,
-  `created_at` datetime(6) NOT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `user_id` bigint NOT NULL,
-  `name` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-CREATE TABLE `fund_transfer` (
-  `amount` decimal(15,2) NOT NULL,
-  `transfer_date` date NOT NULL,
-  `created_at` datetime(6) NOT NULL,
-  `from_pool_id` bigint NOT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `to_pool_id` bigint NOT NULL,
-  `user_id` bigint NOT NULL,
-  `memo` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-CREATE TABLE `goal` (
-  `current_savings` decimal(38,2) NOT NULL,
-  `target_amount` decimal(38,2) NOT NULL,
-  `target_date` date NOT NULL,
-  `created_at` datetime(6) NOT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `user_id` bigint NOT NULL,
-  `target_name` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `UK7b7j83l6dquot72lsg25y8323` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-CREATE TABLE `inventory` (
-  `expiry_date` date DEFAULT NULL,
-  `is_consumed` bit(1) NOT NULL,
-  `purchase_date` date DEFAULT NULL,
-  `purchase_price` decimal(38,2) DEFAULT NULL,
-  `quantity` decimal(38,2) NOT NULL,
-  `created_at` datetime(6) NOT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `user_id` bigint NOT NULL,
-  `item_name` varchar(255) NOT NULL,
-  `unit` varchar(255) DEFAULT NULL,
-  `storage` enum('FROZEN','REFRIGERATED','ROOM_TEMP') DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FK86u2qtuaxn5uph2u9olsxk2ic` (`user_id`),
-  CONSTRAINT `FK86u2qtuaxn5uph2u9olsxk2ic` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-CREATE TABLE `meal` (
-  `servings` int NOT NULL,
-  `created_at` datetime(6) NOT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `meal_datetime` datetime(6) NOT NULL,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `user_id` bigint NOT NULL,
-  `note` varchar(255) DEFAULT NULL,
-  `title` varchar(255) NOT NULL,
-  `meal_type` enum('BREAKFAST','DINNER','LUNCH','SNACK') NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FKckykxviti3jwd6vkcs55btrxa` (`user_id`),
-  CONSTRAINT `FKckykxviti3jwd6vkcs55btrxa` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-CREATE TABLE `meal_item` (
-  `estimated_cost` decimal(38,2) DEFAULT NULL,
-  `quantity_used` decimal(38,2) NOT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `inventory_id` bigint NOT NULL,
-  `meal_id` bigint NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `FKqbhvoiv9cxs463ft217fny2n0` (`inventory_id`),
-  KEY `FKln67hf32oowp5ji5ee9mepp7q` (`meal_id`),
-  CONSTRAINT `FKln67hf32oowp5ji5ee9mepp7q` FOREIGN KEY (`meal_id`) REFERENCES `meal` (`id`),
-  CONSTRAINT `FKqbhvoiv9cxs463ft217fny2n0` FOREIGN KEY (`inventory_id`) REFERENCES `inventory` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-CREATE TABLE `shopping_item` (
-  `checked` bit(1) NOT NULL,
-  `estimated_price` int DEFAULT NULL,
-  `created_at` datetime(6) NOT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `user_id` bigint NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `quantity` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-CREATE TABLE `store` (
-  `created_at` datetime(6) NOT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `user_id` bigint NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `type` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `UKnj4bk0h8lc4veb9it0i6k655p` (`user_id`,`name`),
-  CONSTRAINT `FKn82wpcqrb21yddap4s3ttwnxj` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-CREATE TABLE `user` (
-  `created_at` datetime(6) NOT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `email` varchar(255) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `username` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `UKob8kqyqqgmefl0aco34akdtpe` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-CREATE TABLE `user_evaluation` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `last_run_at` datetime(6) DEFAULT NULL,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `user_id` bigint NOT NULL,
-  `frequency` varchar(16) NOT NULL,
-  `result_json` text,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `UK1h8ubg6r8xx2r0j3hbpxhky7c` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-CREATE TABLE `user_llm_config` (
-  `direct_ocr` bit(1) NOT NULL,
-  `supports_vision` bit(1) NOT NULL,
-  `created_at` datetime(6) NOT NULL,
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `updated_at` datetime(6) DEFAULT NULL,
-  `user_id` bigint NOT NULL,
-  `api_key_enc` text NOT NULL,
-  `base_url` varchar(255) NOT NULL,
-  `model` varchar(255) NOT NULL,
-  `purpose` enum('CHAT','VISION') NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_user_purpose` (`user_id`,`purpose`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-SET FOREIGN_KEY_CHECKS = 1;
+-- テーブル作成順序は外部キー依存順（参照先を先に作成）。
+
+CREATE TABLE "user" (
+  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  username varchar(255) NOT NULL,
+  email varchar(255) NOT NULL UNIQUE,
+  password varchar(255) NOT NULL,
+  created_at timestamp(6) NOT NULL
+);
+
+CREATE TABLE category (
+  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  user_id bigint NOT NULL,
+  name varchar(255) NOT NULL,
+  type varchar(16) NOT NULL CHECK (type IN ('EXPENSE','INCOME')),
+  sort_order int NOT NULL,
+  group_name varchar(255),
+  created_at timestamp(6) NOT NULL,
+  updated_at timestamp(6),
+  UNIQUE (user_id, name, type),
+  CONSTRAINT fk_category_user FOREIGN KEY (user_id) REFERENCES "user" (id)
+);
+
+CREATE TABLE store (
+  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  user_id bigint NOT NULL,
+  name varchar(255) NOT NULL,
+  type varchar(255),
+  created_at timestamp(6) NOT NULL,
+  updated_at timestamp(6),
+  UNIQUE (user_id, name),
+  CONSTRAINT fk_store_user FOREIGN KEY (user_id) REFERENCES "user" (id)
+);
+
+CREATE TABLE fund_pool (
+  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  user_id bigint NOT NULL,
+  name varchar(255) NOT NULL,
+  initial_balance numeric(15,2) NOT NULL,
+  is_primary boolean NOT NULL,
+  sort_order int NOT NULL,
+  kind varchar(16) NOT NULL DEFAULT 'BANK',
+  color varchar(16),
+  closing_day int,
+  payment_day int,
+  settlement_pool_id bigint,
+  auto_settle boolean NOT NULL DEFAULT false,
+  created_at timestamp(6) NOT NULL,
+  updated_at timestamp(6)
+);
+
+CREATE TABLE entry (
+  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  user_id bigint NOT NULL,
+  category_id bigint NOT NULL,
+  store_id bigint,
+  fund_pool_id bigint,
+  fixed_cost_id bigint,
+  type varchar(16) NOT NULL CHECK (type IN ('EXPENSE','INCOME')),
+  amount numeric(38,2) NOT NULL,
+  entry_date date NOT NULL,
+  exclude_from_simulation boolean NOT NULL,
+  memo varchar(255),
+  note varchar(255),
+  created_at timestamp(6) NOT NULL,
+  updated_at timestamp(6),
+  CONSTRAINT fk_entry_user FOREIGN KEY (user_id) REFERENCES "user" (id),
+  CONSTRAINT fk_entry_category FOREIGN KEY (category_id) REFERENCES category (id),
+  CONSTRAINT fk_entry_store FOREIGN KEY (store_id) REFERENCES store (id)
+);
+
+CREATE INDEX idx_entry_fixed_cost ON entry (fixed_cost_id, entry_date);
+
+CREATE TABLE fixed_cost (
+  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  user_id bigint NOT NULL,
+  name varchar(255) NOT NULL,
+  amount numeric(38,2) NOT NULL,
+  payment_day int,
+  auto_post boolean NOT NULL DEFAULT false,
+  category_id bigint,
+  payment_pool_id bigint,
+  created_at timestamp(6) NOT NULL,
+  updated_at timestamp(6)
+);
+
+CREATE TABLE fund_transfer (
+  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  user_id bigint NOT NULL,
+  from_pool_id bigint NOT NULL,
+  to_pool_id bigint NOT NULL,
+  amount numeric(15,2) NOT NULL,
+  transfer_date date NOT NULL,
+  memo varchar(255),
+  auto_card_id bigint,
+  created_at timestamp(6) NOT NULL
+);
+
+CREATE INDEX idx_transfer_auto_card ON fund_transfer (auto_card_id, transfer_date);
+
+CREATE TABLE goal (
+  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  user_id bigint NOT NULL UNIQUE,
+  target_name varchar(255) NOT NULL,
+  target_amount numeric(38,2) NOT NULL,
+  current_savings numeric(38,2) NOT NULL,
+  target_date date NOT NULL,
+  created_at timestamp(6) NOT NULL,
+  updated_at timestamp(6)
+);
+
+CREATE TABLE inventory (
+  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  user_id bigint NOT NULL,
+  item_name varchar(255) NOT NULL,
+  quantity numeric(38,2) NOT NULL,
+  unit varchar(255),
+  purchase_price numeric(38,2),
+  purchase_date date,
+  expiry_date date,
+  is_consumed boolean NOT NULL,
+  storage varchar(16) CHECK (storage IN ('FROZEN','REFRIGERATED','ROOM_TEMP')),
+  created_at timestamp(6) NOT NULL,
+  updated_at timestamp(6),
+  CONSTRAINT fk_inventory_user FOREIGN KEY (user_id) REFERENCES "user" (id)
+);
+
+CREATE TABLE meal (
+  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  user_id bigint NOT NULL,
+  title varchar(255) NOT NULL,
+  meal_type varchar(16) NOT NULL CHECK (meal_type IN ('BREAKFAST','DINNER','LUNCH','SNACK')),
+  meal_datetime timestamp(6) NOT NULL,
+  servings int NOT NULL,
+  note varchar(255),
+  created_at timestamp(6) NOT NULL,
+  updated_at timestamp(6),
+  CONSTRAINT fk_meal_user FOREIGN KEY (user_id) REFERENCES "user" (id)
+);
+
+CREATE TABLE meal_item (
+  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  meal_id bigint NOT NULL,
+  inventory_id bigint NOT NULL,
+  quantity_used numeric(38,2) NOT NULL,
+  estimated_cost numeric(38,2),
+  CONSTRAINT fk_meal_item_meal FOREIGN KEY (meal_id) REFERENCES meal (id),
+  CONSTRAINT fk_meal_item_inventory FOREIGN KEY (inventory_id) REFERENCES inventory (id)
+);
+
+CREATE TABLE shopping_item (
+  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  user_id bigint NOT NULL,
+  name varchar(255) NOT NULL,
+  quantity varchar(255),
+  estimated_price int,
+  checked boolean NOT NULL,
+  created_at timestamp(6) NOT NULL,
+  updated_at timestamp(6)
+);
+
+CREATE TABLE chat_session (
+  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  user_id bigint NOT NULL,
+  title varchar(255) NOT NULL,
+  summary text,
+  summarized_until_message_id bigint,
+  created_at timestamp(6) NOT NULL,
+  updated_at timestamp(6)
+);
+
+CREATE TABLE chat_message (
+  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  session_id bigint NOT NULL,
+  role varchar(16) NOT NULL,
+  content text NOT NULL,
+  content_type varchar(255),
+  image_path varchar(255),
+  created_at timestamp(6) NOT NULL
+);
+
+CREATE TABLE user_evaluation (
+  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  user_id bigint NOT NULL UNIQUE,
+  frequency varchar(16) NOT NULL,
+  last_run_at timestamp(6),
+  result_json text,
+  updated_at timestamp(6)
+);
+
+CREATE TABLE user_llm_config (
+  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  user_id bigint NOT NULL,
+  purpose varchar(16) NOT NULL CHECK (purpose IN ('CHAT','VISION')),
+  base_url varchar(255) NOT NULL,
+  model varchar(255) NOT NULL,
+  api_key_enc text NOT NULL,
+  supports_vision boolean NOT NULL,
+  direct_ocr boolean NOT NULL,
+  supports_tools boolean,
+  created_at timestamp(6) NOT NULL,
+  updated_at timestamp(6),
+  UNIQUE (user_id, purpose)
+);
+
+CREATE TABLE user_memory (
+  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  user_id bigint NOT NULL UNIQUE,
+  content text,
+  updated_at timestamp(6)
+);

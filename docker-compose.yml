@@ -30,29 +30,27 @@ services:
     environment:
       - JAVA_OPTS=-Xmx512m -Xms256m
       # DBパスワードは DB サービスと同期（.env の DB_PASSWORD があれば使用、無ければ password）
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://kakeibo-database:5432/kakeibo
+      - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-password}
 
 
   kakeibo-database:
-    image: mysql:8.4
+    image: postgres:16-alpine
     container_name: kakeibo-database
     restart: unless-stopped
     tty: true
-    # 開発用のMySQLチューニング: コミット毎のfsyncをやめて書き込みを高速化
-    # （Docker Desktop/Windowsのディスクfsyncが遅く、INSERTが数秒かかるため）
-    command:
-      - --innodb-flush-log-at-trx-commit=2
-      - --sync-binlog=0
     ports:
-      # ホスト側3306が別サービスで使用中のため3307に変更（コンテナ間通信はkakeibo-database:3306のまま）
-      - "3307:3306"
+      # ホスト側5432が別サービスで使用中のため5433に変更（コンテナ間通信はkakeibo-database:5432のまま）
+      - "5433:5432"
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
-      MYSQL_DATABASE: kakeibo
-    # スキーマは Spring Boot 起動時に Flyway が作成する（init.sql は廃止）。
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: kakeibo
+    # スキーマは Spring Boot 起動時に Flyway が作成する。
     # 開発は Windows/Docker Desktop のバインドマウントが遅いため named volume を使う。
     volumes:
-      - kakeibo-db-data:/var/lib/mysql
+      - kakeibo-db-data:/var/lib/postgresql/data
 
 volumes:
   kakeibo-db-data:
