@@ -1,5 +1,5 @@
 import {
-  ErrorResponse, UserResponse, MonthlySummary, TrendSummary, AnalysisResult, BenchmarkResult, AdminOverview, EvaluationResponse, ImportResult, ImportPreview, InventoryResponse, InventoryRequest,
+  ErrorResponse, UserResponse, MonthlySummary, TrendSummary, AnalysisResult, BenchmarkResult, AdminOverview, EvaluationResponse, ImportResult, ImportPreview, InventoryResponse, InventoryRequest, EntryResponse,
   MealResponse, MealRequest, LlmConfigResponse, LlmConfigRequest, LlmConfigsResponse, LlmPurpose, ChatSessionResponse,
   ChatMessageResponse, SendMessageResponse, GoalResponse, GoalRequest, FixedCostResponse,
   FixedCostRequest, SimulationResult, ReceiptDraft, ShoppingItemResponse,
@@ -545,6 +545,8 @@ export const poolApi = {
   delete: (id: number) => fetchApi<void>(`/pools/${id}`, { method: 'DELETE' }),
   /** 月次の自動処理（固定費の記帳＋カードの引き落とし）をまとめて実行（冪等） */
   settle: () => fetchApi<{ postedFixedCosts: number; cardSettlements: number }>('/pools/settle', { method: 'POST' }),
+  /** カード（プール）の取引/明細一覧 */
+  entries: (poolId: number) => fetchApi<EntryResponse[]>(`/pools/${poolId}/entries`),
 };
 
 type PoolPayload = {

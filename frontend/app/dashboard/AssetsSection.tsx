@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { poolApi, transferApi, ApiError } from '@/lib/api';
-import { FundPoolResponse, FundPoolKind, TransferResponse } from '@/types';
+import { poolApi, transferApi, entryApi, ApiError } from '@/lib/api';
+import { FundPoolResponse, FundPoolKind, TransferResponse, EntryResponse } from '@/types';
 import { Icon } from '@/app/_components/Icon';
 import { withCommas, toNumber } from '@/lib/format';
 import { useToast, useConfirm } from '@/app/_components/ui';
@@ -96,6 +96,16 @@ export function AssetsSection({
   const [poolSettlePoolId, setPoolSettlePoolId] = useState('');
   const [poolAutoSettle, setPoolAutoSettle] = useState(false);
   const [poolOffsetMonths, setPoolOffsetMonths] = useState(0); // 0=翌月 1=翌々月
+  // カード明細（未払い一覧）モーダル
+  const [stmtCard, setStmtCard] = useState<FundPoolResponse | null>(null);
+  const [stmtEntries, setStmtEntries] = useState<EntryResponse[]>([]);
+  const [stmtLoading, setStmtLoading] = useState(false);
+  const [stmtEditId, setStmtEditId] = useState<number | null>(null);
+  const [stmtEditAmount, setStmtEditAmount] = useState('');
+  const [stmtEditMemo, setStmtEditMemo] = useState('');
+  const [stmtSaving, setStmtSaving] = useState(false);
+  const [stmtError, setStmtError] = useState('');
+  const [stmtMsg, setStmtMsg] = useState('');
   const [poolSaving, setPoolSaving] = useState(false);
 
   // 振替モーダル
@@ -197,6 +207,70 @@ export function AssetsSection({
     }
   }
 
+  // --- カード明細（未払い一覧） ---
+  async function openCardStatement(c: FundPoolResponse) {
+    setStmtCard(c);
+    setStmtEntries([]);
+    setStmtEditId(null);
+    setStmtError('');
+    setStmtMsg('');
+    setStmtLoading(true);
+    try {
+      setStmtEntries(await poolApi.entries(c.id));
+    } catch (err) {
+      setStmtError(err instanceof ApiError ? err.message : '明細の取得に失敗しました');
+    } finally {
+      setStmtLoading(false);
+    }
+  }
+
+  function startStmtEdit(e: EntryResponse) {
+    setStmtEditId(e.id);
+    setStmtEditAmount(String(e.amount));
+    setStmtEditMemo(e.memo ?? '');
+    setStmtError('');
+  }
+
+  async function saveStmtEdit(entry: EntryResponse) {
+    const amount = toNumber(stmtEditAmount);
+    setStmtSaving(true);
+    setStmtError('');
+    try {
+      await entryApi.update(entry.id, {
+        entryDate: entry.entryDate,
+        amount,
+        categoryId: entry.categoryId, // 変更しない（既存のIDを維持）
+        type: entry.type,
+        memo: stmtEditMemo.trim() || null,
+        note: entry.note,
+        fundPoolId: entry.fundPoolId,
+        excludeFromSimulation: entry.excludeFromSimulation,
+      });
+      await onReloadPools();
+      const updated = await poolApi.entries(stmtCard!.id);
+      setStmtEntries(updated);
+      setStmtEditId(null);
+      setStmtMsg('更新しました');
+    } catch (err) {
+      setStmtError(err instanceof ApiError ? err.message : '更新に失敗しました');
+    } finally {
+      setStmtSaving(false);
+    }
+  }
+
+  async function deleteStmtEntry(entry: EntryResponse) {
+    if (!(await confirm({ title: '取引を削除', message: `この取引（${entry.memo ?? '明細'}）を削除しますか？`, confirmText: '削除する', danger: true }))) return;
+    try {
+      await entryApi.delete(entry.id);
+      await onReloadPools();
+      const updated = await poolApi.entries(stmtCard!.id);
+      setStmtEntries(updated);
+      setStmtMsg('削除しました');
+    } catch (err) {
+      setStmtError(err instanceof ApiError ? err.message : '削除に失敗しました');
+    }
+  }
+
   // --- 振替 ---
   function openTransfer() {
     setError('');
@@ -287,16 +361,16 @@ export function AssetsSection({
       <div className="assets-subhead">カード</div>
       <div className="pool-grid">
         {pools.filter((p) => p.kind === 'CARD').map((c) => (
-          <div key={c.id} className="card-tile" style={cardVar(c.color)}>
+          <div key={c.id} className="card-tile" style={cardVar(c.color)} onClick={() => openCardStatement(c)} title="明細を見る">
             <div className="card-tile__top">
               <Icon className="card-tile__brand" name="credit_card" size={18} />
               <span className="card-tile__name">{c.name}</span>
               {c.primary && <span className="card-tile__badge">既定</span>}
               <div className="card-tile__actions">
-                <button className="shop-icon-btn" onClick={() => openEditPool(c)} aria-label="編集">
+                <button className="shop-icon-btn" onClick={(e) => { e.stopPropagation(); openEditPool(c); }} aria-label="編集">
                   <Icon name="edit" size={15} />
                 </button>
-                <button className="shop-icon-btn danger" onClick={() => handleDeletePool(c)} aria-label="削除">
+                <button className="shop-icon-btn danger" onClick={(e) => { e.stopPropagation(); handleDeletePool(c); }} aria-label="削除">
                   <Icon name="delete" size={15} />
                 </button>
               </div>
@@ -504,6 +578,81 @@ export function AssetsSection({
                 </div>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body,
+      )}
+
+      {/* カード明細（未払い一覧）モーダル */}
+      {stmtCard && createPortal(
+        <div className="modal-overlay" onClick={() => stmtCard && setStmtCard(null)}>
+          <div className="modal modal--stmt" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">{stmtCard.name} の明細</h3>
+              <button className="modal-close-btn" onClick={() => setStmtCard(null)} aria-label="閉じる"><Icon name="close" /></button>
+            </div>
+            <div className="modal-body">
+              {stmtError && <div className="error-banner" style={{ marginBottom: 10 }}><Icon name="error" /> {stmtError}</div>}
+              {stmtMsg && <div className="success-banner" style={{ marginBottom: 10 }}><Icon name="check_circle" /> {stmtMsg}</div>}
+              <div className="stmt-sum">
+                残高（未払い） <span className="tnum">{stmtCard.balance < 0 ? formatCurrency(-stmtCard.balance) : formatCurrency(stmtCard.balance)}</span>
+              </div>
+              {stmtLoading ? (
+                <div className="loading-state"><span className="loading-spinner" />読み込み中...</div>
+              ) : stmtEntries.length === 0 ? (
+                <p className="goal-summary__note">このカードの取引はありません。</p>
+              ) : (
+                <div className="stmt-list">
+                  {stmtEntries.map((e) => (
+                    <div key={e.id} className="stmt-row">
+                      {stmtEditId === e.id ? (
+                        <div className="stmt-edit">
+                          <div className="stmt-edit__memo">
+                            <input
+                              className="input"
+                              value={stmtEditMemo}
+                              placeholder="品名"
+                              onChange={(x) => setStmtEditMemo(x.target.value)}
+                            />
+                          </div>
+                          <div className="stmt-edit__amt">
+                            <input
+                              className="input"
+                              inputMode="numeric"
+                              value={stmtEditAmount}
+                              onChange={(x) => setStmtEditAmount(x.target.value)}
+                            />
+                          </div>
+                          <div className="stmt-edit__acts">
+                            <button className="btn btn--primary btn--sm" onClick={() => saveStmtEdit(e)} disabled={stmtSaving}>
+                              {stmtSaving ? '保存中' : '保存'}
+                            </button>
+                            <button className="btn btn--outline btn--sm" onClick={() => setStmtEditId(null)}>キャンセル</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="stmt-row__main">
+                            <div className="stmt-row__memo">{e.memo || e.categoryName || '明細'}</div>
+                            <div className="stmt-row__sub">{e.entryDate.slice(5).replace('-', '/')} {e.categoryName}</div>
+                          </div>
+                          <div className="stmt-row__amt tnum">{formatCurrency(e.amount)}</div>
+                          <button className="shop-icon-btn" onClick={() => startStmtEdit(e)} aria-label="編集" title="編集">
+                            <Icon name="edit" size={15} />
+                          </button>
+                          <button className="shop-icon-btn danger" onClick={() => deleteStmtEntry(e)} aria-label="削除" title="削除">
+                            <Icon name="delete" size={15} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn--outline btn--block" onClick={() => stmtCard && setStmtCard(null)}>閉じる</button>
+            </div>
           </div>
         </div>,
         document.body,
