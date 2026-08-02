@@ -102,7 +102,8 @@ public class AdminService {
                 .map(pp -> PoolInfo.builder()
                         .id(pp.getId()).name(pp.getName()).kind(pp.getKind()).primary(pp.isPrimary())
                         .closingDay(pp.getClosingDay()).paymentDay(pp.getPaymentDay())
-                        .settlementPoolId(pp.getSettlementPoolId()).autoSettle(pp.isAutoSettle()).build())
+                        .settlementPoolId(pp.getSettlementPoolId()).autoSettle(pp.isAutoSettle())
+                        .settlementOffsetMonths(pp.getSettlementOffsetMonths()).build())
                 .toList();
 
         return AdminOverviewDto.builder()

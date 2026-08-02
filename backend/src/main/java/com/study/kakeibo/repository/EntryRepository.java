@@ -40,6 +40,9 @@ public interface EntryRepository extends JpaRepository<Entry, Long> {
     /** 固定費から自動記帳された取引の件数（fixed_cost_id が付いているもの）。 */
     long countByUserAndFixedCostIdIsNotNull(User user);
 
+    /** 指定プール（カード）の取引を日付の新しい順に取得。 */
+    List<Entry> findByUserAndFundPoolIdOrderByEntryDateDescIdDesc(User user, Long fundPoolId);
+
     /** 指定の固定費が、その月に既に自動記帳されているか（二重記帳の防止）。 */
     boolean existsByFixedCostIdAndEntryDateBetween(Long fixedCostId, LocalDate from, LocalDate to);
 

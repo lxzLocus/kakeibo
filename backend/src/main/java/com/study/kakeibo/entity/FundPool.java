@@ -55,6 +55,10 @@ public class FundPool {
     @Column(name = "auto_settle", nullable = false)
     private boolean autoSettle = false;
 
+    /** 引き落としの遅延月数。0=デフォルト（翌月）、1=翌々月。 */
+    @Column(name = "settlement_offset_months", nullable = false)
+    private int settlementOffsetMonths = 0;
+
     /** 開始残高（この口座の起点となる手動入力の金額）。 */
     @Column(name = "initial_balance", nullable = false, precision = 15, scale = 2)
     private BigDecimal initialBalance = BigDecimal.ZERO;

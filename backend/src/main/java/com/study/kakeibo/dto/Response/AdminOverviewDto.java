@@ -77,5 +77,6 @@ public class AdminOverviewDto {
         private Integer paymentDay;     // カードの引き落とし日
         private Long settlementPoolId;  // 引き落とし元プール
         private boolean autoSettle;     // 自動引き落としON
+        private int settlementOffsetMonths; // 0=翌月 1=翌々月
     }
 }

@@ -95,6 +95,7 @@ export function AssetsSection({
   const [poolPaymentDay, setPoolPaymentDay] = useState('');
   const [poolSettlePoolId, setPoolSettlePoolId] = useState('');
   const [poolAutoSettle, setPoolAutoSettle] = useState(false);
+  const [poolOffsetMonths, setPoolOffsetMonths] = useState(0); // 0=翌月 1=翌々月
   const [poolSaving, setPoolSaving] = useState(false);
 
   // 振替モーダル
@@ -147,6 +148,7 @@ export function AssetsSection({
     setPoolPaymentDay(p.paymentDay != null ? String(p.paymentDay) : '');
     setPoolSettlePoolId(p.settlementPoolId != null ? String(p.settlementPoolId) : '');
     setPoolAutoSettle(p.autoSettle);
+    setPoolOffsetMonths(p.settlementOffsetMonths ?? 0);
     setError('');
     setPoolModalOpen(true);
   }
@@ -168,6 +170,7 @@ export function AssetsSection({
         paymentDay: isCard && poolPaymentDay ? Number(poolPaymentDay) : null,
         settlementPoolId: isCard && poolSettlePoolId ? Number(poolSettlePoolId) : null,
         autoSettle: isCard ? poolAutoSettle : false,
+        settlementOffsetMonths: isCard ? poolOffsetMonths : 0,
       };
       if (editingPool) {
         await poolApi.update(editingPool.id, { ...payload, primary: poolPrimary || undefined });
@@ -456,6 +459,13 @@ export function AssetsSection({
                           ))}
                         </select>
                       </div>
+                    </div>
+                    <div className="modal-field">
+                      <label>引き落としのタイミング</label>
+                      <select value={poolOffsetMonths} onChange={(e) => setPoolOffsetMonths(Number(e.target.value))}>
+                        <option value={0}>翌月に引き落とす</option>
+                        <option value={1}>翌々月に引き落とす</option>
+                      </select>
                     </div>
                     <div className="modal-field">
                       <label>引き落とし元の口座</label>

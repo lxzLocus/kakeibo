@@ -97,6 +97,7 @@ export interface FundPoolResponse {
   paymentDay: number | null;      // 引き落とし日
   settlementPoolId: number | null; // 引き落とし元口座
   autoSettle: boolean;             // 自動引き落とし
+  settlementOffsetMonths: number;  // 0=翌月 1=翌々月
 }
 
 export interface TransferResponse {

@@ -2,6 +2,7 @@ package com.study.kakeibo.controller;
 
 import com.study.kakeibo.dto.Request.FundPoolRequestDto;
 import com.study.kakeibo.dto.Request.TransferRequestDto;
+import com.study.kakeibo.dto.Response.EntryResponseDto;
 import com.study.kakeibo.dto.Response.FundPoolResponseDto;
 import com.study.kakeibo.dto.Response.TransferResponseDto;
 import com.study.kakeibo.entity.FundTransfer;
@@ -40,7 +41,8 @@ public class FundPoolController {
                 pb.balance(), pb.pool().isPrimary(), pb.pool().getSortOrder(),
                 pb.pool().getKind(), pb.pool().getColor(),
                 pb.pool().getClosingDay(), pb.pool().getPaymentDay(),
-                pb.pool().getSettlementPoolId(), pb.pool().isAutoSettle());
+                pb.pool().getSettlementPoolId(), pb.pool().isAutoSettle(),
+                pb.pool().getSettlementOffsetMonths());
     }
 
     private FundPoolResponseDto findDto(Long userId, Long id) {
@@ -89,6 +91,17 @@ public class FundPoolController {
         int posted = postingService.apply(userId);
         int settled = settlementService.apply(userId);
         return ResponseEntity.ok(Map.of("postedFixedCosts", posted, "cardSettlements", settled));
+    }
+
+    /**
+     * カード（プール）の未引き落としの取引一覧を取得する。
+     * 直近の未決済振替より後の取引＝現在の「未払い」ぶん。
+     */
+    @GetMapping("/{id}/entries")
+    public ResponseEntity<List<EntryResponseDto>> entries(
+            @RequestHeader("X-User-Id") Long userId,
+            @PathVariable Long id) {
+        return ResponseEntity.ok(service.getPoolEntries(userId, id));
     }
 
     @DeleteMapping("/{id}")

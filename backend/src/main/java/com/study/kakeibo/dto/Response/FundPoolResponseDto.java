@@ -25,4 +25,5 @@ public class FundPoolResponseDto {
     private Integer paymentDay;
     private Long settlementPoolId;
     private boolean autoSettle;
+    private int settlementOffsetMonths;
 }

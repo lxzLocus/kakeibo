@@ -24,4 +24,7 @@ public class FundPoolRequestDto {
     private Long settlementPoolId;
     /** 自動引き落としを有効にするか。 */
     private Boolean autoSettle;
+
+    /** 引き落としの遅延月数。0=翌月、1=翌々月。 */
+    private Integer settlementOffsetMonths;
 }

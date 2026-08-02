@@ -557,6 +557,7 @@ type PoolPayload = {
   paymentDay?: number | null;
   settlementPoolId?: number | null;
   autoSettle?: boolean;
+  settlementOffsetMonths?: number;
 };
 
 export const transferApi = {

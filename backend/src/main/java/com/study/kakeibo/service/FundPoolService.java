@@ -231,16 +231,50 @@ public class FundPoolService {
             p.setPaymentDay(null);
             p.setSettlementPoolId(null);
             p.setAutoSettle(false);
+            p.setSettlementOffsetMonths(0);
             return;
         }
         if (req.getClosingDay() != null) p.setClosingDay(clampDay(req.getClosingDay()));
         if (req.getPaymentDay() != null) p.setPaymentDay(clampDay(req.getPaymentDay()));
         if (req.getSettlementPoolId() != null) p.setSettlementPoolId(req.getSettlementPoolId());
+        if (req.getSettlementOffsetMonths() != null) p.setSettlementOffsetMonths(Math.max(0, req.getSettlementOffsetMonths()));
         // 自動引き落としは、引き落とし日と引き落とし元が揃っているときだけ有効化できる
         if (req.getAutoSettle() != null) {
             boolean canAuto = p.getPaymentDay() != null && p.getSettlementPoolId() != null;
             p.setAutoSettle(Boolean.TRUE.equals(req.getAutoSettle()) && canAuto);
         }
+    }
+
+    /** カード（プール）の未決済取引を日付の降順で返す。 */
+    @Transactional(readOnly = true)
+    public List<com.study.kakeibo.dto.Response.EntryResponseDto> getPoolEntries(Long userId, Long poolId) {
+        getOwnedPool(userId, poolId); // 所有確認
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("ユーザーが見つかりません: " + userId));
+        return entryRepository.findByUserAndFundPoolIdOrderByEntryDateDescIdDesc(user, poolId)
+                .stream()
+                .map(e -> {
+                    var dto = new com.study.kakeibo.dto.Response.EntryResponseDto();
+                    dto.setId(e.getId());
+                    dto.setUserId(e.getUser().getId());
+                    dto.setUsername(e.getUser().getUsername());
+                    dto.setEntryDate(e.getEntryDate());
+                    dto.setAmount(e.getAmount());
+                    dto.setType(e.getType());
+                    dto.setMemo(e.getMemo());
+                    dto.setNote(e.getNote());
+                    dto.setFundPoolId(e.getFundPoolId());
+                    dto.setExcludeFromSimulation(e.isExcludeFromSimulation());
+                    if (e.getCategory() != null) {
+                        dto.setCategoryId(e.getCategory().getId());
+                        dto.setCategoryName(e.getCategory().getName());
+                    }
+                    if (e.getStore() != null) {
+                        dto.setStoreId(e.getStore().getId());
+                        dto.setStoreName(e.getStore().getName());
+                    }
+                    return dto;
+                }).toList();
     }
 
     @Transactional

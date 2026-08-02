@@ -69,7 +69,7 @@ public class CardSettlementService {
             for (YearMonth m = start; !m.isAfter(end); m = m.plusMonths(1)) {
                 LocalDate close = closingDateOf(m, card.getClosingDay());
                 LocalDate prevClose = closingDateOf(m.minusMonths(1), card.getClosingDay());
-                LocalDate settleDate = settlementDateFor(close, card.getPaymentDay());
+                LocalDate settleDate = settlementDateFor(close, card.getPaymentDay(), card.getSettlementOffsetMonths());
 
                 if (settleDate.isAfter(today)) continue; // 引き落とし日がまだ来ていない
                 if (transferRepository.existsByAutoCardIdAndTransferDate(card.getId(), settleDate)) continue;
@@ -99,9 +99,10 @@ public class CardSettlementService {
         return m.atDay(day);
     }
 
-    /** 締め日 close に対する引き落とし日。close の“翌”最初の paymentDay（同月に無ければ翌月）。 */
-    private LocalDate settlementDateFor(LocalDate close, int paymentDay) {
-        YearMonth cm = YearMonth.from(close);
+    /** 締め日 close に対する引き落とし日。close の”翌”最初の paymentDay（同月に無ければ翌月）。
+     * settlementOffsetMonths が 1 ならさらに1ヶ月後にずらす（翌々月パターン）。 */
+    private LocalDate settlementDateFor(LocalDate close, int paymentDay, int offsetMonths) {
+        YearMonth cm = YearMonth.from(close).plusMonths(offsetMonths);
         LocalDate cand = cm.atDay(Math.min(Math.max(paymentDay, 1), cm.lengthOfMonth()));
         if (!cand.isAfter(close)) {
             YearMonth nm = cm.plusMonths(1);
