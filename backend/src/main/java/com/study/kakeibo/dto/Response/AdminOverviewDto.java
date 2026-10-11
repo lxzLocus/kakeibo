@@ -18,6 +18,7 @@ import java.util.List;
 @Builder
 public class AdminOverviewDto {
 
+    private String version;
     private Counts counts;
     private List<LlmInfo> llm;
     private MemoryInfo memory;

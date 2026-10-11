@@ -106,8 +106,14 @@ public class AdminService {
                         .settlementOffsetMonths(pp.getSettlementOffsetMonths()).build())
                 .toList();
 
+        String version = "0.1.0"; // フォールバック（IDE/exec 実行時はマニフェスト無し）
+        Package pkg = AdminService.class.getPackage();
+        if (pkg != null && pkg.getImplementationVersion() != null) {
+            version = pkg.getImplementationVersion(); // jar 実行時は pom の version が入る
+        }
+
         return AdminOverviewDto.builder()
-                .counts(counts).llm(llm).memory(memory).evaluation(evaluation)
+                .version(version).counts(counts).llm(llm).memory(memory).evaluation(evaluation)
                 .automation(automation).pools(pools).build();
     }
 }
