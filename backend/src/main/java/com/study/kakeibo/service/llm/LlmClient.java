@@ -3,6 +3,7 @@ package com.study.kakeibo.service.llm;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.study.kakeibo.exception.LlmException;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
@@ -30,14 +31,20 @@ import java.util.stream.Stream;
 @Component
 public class LlmClient {
 
-    private final RestClient restClient = RestClient.create();
-    private final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(15))
-            .build();
+    private final RestClient restClient;
+    private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
     public LlmClient(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(15))
+                .build();
+        // 非ストリーミング呼び出しは read timeout 未設定だと無制限に待ち続ける。
+        // チャットのSSEタイムアウト(180秒)を超えて切断されるのを防ぐため120秒に制限する。
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(Duration.ofSeconds(120));
+        this.restClient = RestClient.builder().requestFactory(requestFactory).build();
     }
 
     // --- メッセージ構造（OpenAI互換） ---

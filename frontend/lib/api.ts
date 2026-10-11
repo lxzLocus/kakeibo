@@ -418,6 +418,8 @@ export async function sendMessageStream(
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
+  let receivedDone = false;
+  let receivedError = false;
 
   const handleFrame = (frame: string) => {
     let event = 'message';
@@ -432,10 +434,10 @@ export async function sendMessageStream(
       if (event === 'user') handlers.onUser?.(parsed);
       else if (event === 'chunk') handlers.onChunk?.(parsed.text ?? '');
       else if (event === 'reasoning') handlers.onReasoning?.(parsed.text ?? '');
-      else if (event === 'done') handlers.onDone?.(parsed);
+      else if (event === 'done') { receivedDone = true; handlers.onDone?.(parsed); }
       else if (event === 'title') handlers.onTitle?.(parsed.title ?? '');
       else if (event === 'related') handlers.onRelated?.(parsed.questions ?? []);
-      else if (event === 'error') handlers.onError?.(parsed.message ?? 'エラーが発生しました');
+      else if (event === 'error') { receivedError = true; handlers.onError?.(parsed.message ?? 'エラーが発生しました'); }
     } catch {
       /* 壊れたフレームはスキップ */
     }
@@ -452,6 +454,12 @@ export async function sendMessageStream(
       buffer = buffer.slice(idx + 2);
       if (frame.trim()) handleFrame(frame);
     }
+  }
+
+  // done も error も受信せずにストリームが終了＝通信途切れ。
+  // 黙って無反応になるのを防ぐため、ユーザーに通知する。
+  if (!receivedDone && !receivedError) {
+    handlers.onError?.('通信が途切れたため、AIの応答を取得できませんでした。もう一度お試しください。');
   }
 }
 
