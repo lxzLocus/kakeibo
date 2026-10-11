@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { EntryResponse } from '@/types';
 import { Icon } from '@/app/_components/Icon';
 import { categoryColor } from '@/lib/colors';
+import { maskDigits } from '@/lib/format';
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
 
@@ -57,6 +58,7 @@ export function CalendarModal({
   month,
   entries,
   loading = false,
+  masked = false,
   onPrevMonth,
   onNextMonth,
   onCurrentMonth,
@@ -68,6 +70,8 @@ export function CalendarModal({
   month: number;
   entries: EntryResponse[];
   loading?: boolean;
+  /** 金額をマスク表示する（数字を ● で隠す）。ホームのマスク切替と連動 */
+  masked?: boolean;
   onPrevMonth: () => void;
   onNextMonth: () => void;
   onCurrentMonth: () => void;
@@ -78,6 +82,12 @@ export function CalendarModal({
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [metric, setMetric] = useState<Metric>('amount');
   const ym = ymOf(year, month);
+
+  // マスク対応の金額表示（探索・ヒントにも反映）
+  const yenM = (n: number) => (masked ? maskDigits(yen(n)) : yen(n));
+  const compactM = (n: number) => (masked ? maskDigits(compact(n)) : compact(n));
+  const signedM = (type: 'INCOME' | 'EXPENSE', amount: number) =>
+    masked ? maskDigits(signed(type, amount)) : signed(type, amount);
 
   // 月が変わったら日の選択を解除してカレンダーに戻す（描画中に調整するReact推奨パターン）。
   const [prevYm, setPrevYm] = useState(ym);
@@ -155,7 +165,7 @@ export function CalendarModal({
       if (sum.exp <= 0) return { label: sum.inc > 0 ? '収入' : undefined };
       // 家賃や大物購入などの外れ値に潰されないよう sqrt で圧縮
       const { background, dark } = accentBg(maxExp ? Math.sqrt(sum.exp / maxExp) : 0);
-      return { bg: background, dark, label: compact(sum.exp) };
+      return { bg: background, dark, label: compactM(sum.exp) };
     }
     // category
     const dom = dominantCat(sum);
@@ -188,11 +198,11 @@ export function CalendarModal({
   function tip(d: number, sum: DaySummary | undefined): string {
     if (!sum || sum.count === 0) return `${month}月${d}日`;
     const parts = [`${month}月${d}日`, `${sum.count}件`];
-    if (sum.exp > 0) parts.push(`支出 ${yen(sum.exp)}`);
-    if (sum.inc > 0) parts.push(`収入 ${yen(sum.inc)}`);
+    if (sum.exp > 0) parts.push(`支出 ${yenM(sum.exp)}`);
+    if (sum.inc > 0) parts.push(`収入 ${yenM(sum.inc)}`);
     if (metric === 'category') {
       const dom = dominantCat(sum);
-      if (dom) parts.push(`最多: ${dom.name} ${yen(dom.amount)}`);
+      if (dom) parts.push(`最多: ${dom.name} ${yenM(dom.amount)}`);
     }
     return parts.join(' ・ ');
   }
@@ -321,7 +331,7 @@ export function CalendarModal({
                 </button>
                 <span className="cal-nav__label">
                   {daySum
-                    ? `${daySum.count}件 ・ ${daySum.exp > 0 ? `支出 ${yen(daySum.exp)}` : ''}${daySum.exp > 0 && daySum.inc > 0 ? ' / ' : ''}${daySum.inc > 0 ? `収入 ${yen(daySum.inc)}` : ''}`
+                    ? `${daySum.count}件 ・ ${daySum.exp > 0 ? `支出 ${yenM(daySum.exp)}` : ''}${daySum.exp > 0 && daySum.inc > 0 ? ' / ' : ''}${daySum.inc > 0 ? `収入 ${yenM(daySum.inc)}` : ''}`
                     : '記録なし'}
                 </span>
                 <button className="month-pill-btn" onClick={goNextDay} disabled={selectedDay >= daysInMonth} aria-label="翌日">
@@ -341,7 +351,7 @@ export function CalendarModal({
                         {e.memo && <span className="cal-day-row__memo">{e.memo}</span>}
                       </span>
                       <span className={`cal-day-row__amount ${e.type === 'INCOME' ? 'inc' : 'exp'}`}>
-                        {signed(e.type, e.amount)}
+                        {signedM(e.type, e.amount)}
                       </span>
                     </button>
                   ))}

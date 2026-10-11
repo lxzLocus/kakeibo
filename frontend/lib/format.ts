@@ -10,3 +10,15 @@ export function toNumber(s: string): number {
   const n = parseFloat(String(s).replace(/,/g, ''));
   return Number.isFinite(n) ? n : 0;
 }
+
+/** 金額マスク表示用の文字。 */
+export const MASK_CHAR = '●';
+
+/**
+ * 桁区切り・通貨記号・符号を残したまま、数字だけをマスク文字へ置き換える。
+ * 例: "¥1,234,567" → "¥●,●●●,●●●" / "-12,345" → "-●●,●●●"
+ * マスク時も桁の長さが見た目上ほぼ保たれるため、レイアウトが崩れにくい。
+ */
+export function maskDigits(s: string): string {
+  return s.replace(/[0-9]/g, MASK_CHAR);
+}

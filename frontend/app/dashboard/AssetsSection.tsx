@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { poolApi, transferApi, entryApi, ApiError } from '@/lib/api';
 import { FundPoolResponse, FundPoolKind, TransferResponse, EntryResponse } from '@/types';
 import { Icon } from '@/app/_components/Icon';
-import { withCommas, toNumber } from '@/lib/format';
+import { withCommas, toNumber, maskDigits } from '@/lib/format';
 import { useToast, useConfirm } from '@/app/_components/ui';
 
 function formatCurrency(amount: number): string {
@@ -72,9 +72,12 @@ function cardVar(color: string | null | undefined): React.CSSProperties {
 export function AssetsSection({
   pools,
   onReloadPools,
+  masked = false,
 }: {
   pools: FundPoolResponse[];
   onReloadPools: () => void | Promise<void>;
+  /** 金額をマスク表示する（数字を ● で隠す）。ホームのマスク切替と連動 */
+  masked?: boolean;
 }) {
   const toast = useToast();
   const confirm = useConfirm();
@@ -130,6 +133,9 @@ export function AssetsSection({
   }, []);
 
   const total = pools.reduce((sum, p) => sum + p.balance, 0);
+
+  // 金額表示（マスク時は数字を ● で隠す）
+  const fmt = (n: number) => (masked ? maskDigits(formatCurrency(n)) : formatCurrency(n));
 
   // --- 口座 ---
   function openAddPool(kind: FundPoolKind = 'BANK') {
@@ -325,7 +331,7 @@ export function AssetsSection({
           振替
         </button>
       </div>
-      <div className="assets-total tnum">{formatCurrency(total)}</div>
+      <div className="assets-total tnum">{fmt(total)}</div>
 
       <div className="assets-body">
       {/* 口座（銀行・現金） */}
@@ -348,7 +354,7 @@ export function AssetsSection({
                 </button>
               </div>
             </div>
-            <div className="pool-balance tnum">{formatCurrency(p.balance)}</div>
+            <div className="pool-balance tnum">{fmt(p.balance)}</div>
           </div>
         ))}
         <button className="pool-add" onClick={() => openAddPool('BANK')}>
@@ -378,9 +384,9 @@ export function AssetsSection({
             <div className="card-tile__bottom">
               <div className="card-tile__bal">
                 {c.balance < 0 ? (
-                  <><span className="card-tile__unpaid">未払</span> <span className="tnum">{formatCurrency(-c.balance)}</span></>
+                  <><span className="card-tile__unpaid">未払</span> <span className="tnum">{fmt(-c.balance)}</span></>
                 ) : (
-                  <span className="tnum">{formatCurrency(c.balance)}</span>
+                  <span className="tnum">{fmt(c.balance)}</span>
                 )}
               </div>
               {c.autoSettle && c.paymentDay != null && (
@@ -410,7 +416,7 @@ export function AssetsSection({
                     {t.memo ? ` · ${t.memo}` : ''}
                   </div>
                 </div>
-                <span className="transfer-amount tnum">{formatCurrency(t.amount)}</span>
+                <span className="transfer-amount tnum">{fmt(t.amount)}</span>
                 <button className="shop-icon-btn danger" onClick={() => handleDeleteTransfer(t)} aria-label="取り消し">
                   <Icon name="delete" size={16} />
                 </button>
@@ -595,7 +601,7 @@ export function AssetsSection({
               {stmtError && <div className="error-banner" style={{ marginBottom: 10 }}><Icon name="error" /> {stmtError}</div>}
               {stmtMsg && <div className="success-banner" style={{ marginBottom: 10 }}><Icon name="check_circle" /> {stmtMsg}</div>}
               <div className="stmt-sum">
-                残高（未払い） <span className="tnum">{stmtCard.balance < 0 ? formatCurrency(-stmtCard.balance) : formatCurrency(stmtCard.balance)}</span>
+                残高（未払い） <span className="tnum">{stmtCard.balance < 0 ? fmt(-stmtCard.balance) : fmt(stmtCard.balance)}</span>
               </div>
               {stmtLoading ? (
                 <div className="loading-state"><span className="loading-spinner" />読み込み中...</div>
@@ -636,7 +642,7 @@ export function AssetsSection({
                             <div className="stmt-row__memo">{e.memo || e.categoryName || '明細'}</div>
                             <div className="stmt-row__sub">{e.entryDate.slice(5).replace('-', '/')} {e.categoryName}</div>
                           </div>
-                          <div className="stmt-row__amt tnum">{formatCurrency(e.amount)}</div>
+                          <div className="stmt-row__amt tnum">{fmt(e.amount)}</div>
                           <button className="shop-icon-btn" onClick={() => startStmtEdit(e)} aria-label="編集" title="編集">
                             <Icon name="edit" size={15} />
                           </button>

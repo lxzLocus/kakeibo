@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { entryApi, categoryApi, storeApi, receiptApi, poolApi, ApiError } from '@/lib/api';
 import { CalendarModal } from './CalendarModal';
 import { EntryResponse, CategoryResponse, StoreResponse, ReceiptDraft, FundPoolResponse } from '@/types';
 import { Icon } from '@/app/_components/Icon';
-import { withCommas, toNumber } from '@/lib/format';
+import { withCommas, toNumber, maskDigits } from '@/lib/format';
 import { AssetsSection } from './AssetsSection';
 import { useToast, useConfirm } from '@/app/_components/ui';
 import { readMonthYear, writeMonthYear } from '@/lib/monthStore';
+import { readMasked, writeMasked, readViewMode, writeViewMode, readCardPoolId, writeCardPoolId, HomeViewMode } from '@/lib/prefs';
 
 /**
  * カテゴリ選択の <option> を、グループ（プライマリ）ごとに <optgroup> でまとめて返す。
@@ -118,6 +119,109 @@ function getMonthRange(year: number, month: number) {
   return { since, until };
 }
 
+// --- 期間（月 / カード締め日）ユーティリティ ---
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+function dateStrOf(d: Date): string {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+function addDaysStr(dateStr: string, days: number): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  return dateStrOf(d);
+}
+
+/** since（含む）から dateStr までの日数（0始まり。同一日=0）。 */
+function daysFromSince(since: string, dateStr: string): number {
+  const s = new Date(since + 'T00:00:00').getTime();
+  const d = new Date(dateStr + 'T00:00:00').getTime();
+  return Math.round((d - s) / 86400000);
+}
+
+/** "yyyy-MM-dd" → "m/d" */
+function md(dateStr: string): string {
+  return `${Number(dateStr.slice(5, 7))}/${Number(dateStr.slice(8, 10))}`;
+}
+
+/**
+ * ホーム画面の表示期間を計算する。
+ * - 月ベース: 表示中の暦月（これまでの挙動）
+ * - カード締め日ベース: 基準カードの締め日で区切った期間
+ *   （例: 締め日25日 → 前月26日〜当月25日。月末締め=null は暦月と同じ）
+ */
+type DisplayRange = {
+  since: string;
+  until: string;
+  periodDays: number;
+  heroLabel: string;      // 残高ヒーローの見出し
+  pillLabel: string;      // 月ピルの中央ラベル
+  recentLabel: string;    // 取引履歴の見出し
+  paceLabel: string;      // ペースカードの見出し
+  chartStart: string;     // モバイルミニグラフの目盛り (m/d)
+  chartMid: string;
+  chartEnd: string;
+  isCard: boolean;
+};
+
+function buildRange(
+  viewMode: HomeViewMode,
+  year: number,
+  month: number,
+  card: FundPoolResponse | null
+): DisplayRange {
+  const monthRange = getMonthRange(year, month);
+  const daysInMonth = new Date(year, month, 0).getDate();
+
+  // 月ベース / 締め日未設定（月末締め）は暦月と同じ
+  if (viewMode !== 'card' || !card || card.closingDay == null) {
+    const mid = addDaysStr(monthRange.since, Math.floor(daysInMonth / 2));
+    return {
+      since: monthRange.since,
+      until: monthRange.until,
+      periodDays: daysInMonth,
+      heroLabel: '今月の残高',
+      pillLabel: `${year}年 ${month}月`,
+      recentLabel: `${year}年${month}月`,
+      paceLabel: '今月のペース',
+      chartStart: `${month}/1`,
+      chartMid: md(mid),
+      chartEnd: `${month}/${daysInMonth}`,
+      isCard: false,
+    };
+  }
+
+  // カード締め日ベース: 前回締め日の翌日〜今回締め日
+  const D = card.closingDay;
+  const daysInPrev = new Date(year, month - 1, 0).getDate();
+  const untilDay = Math.min(D, daysInMonth);
+  const prevClosing = Math.min(D, daysInPrev);
+  const since =
+    prevClosing < daysInPrev
+      ? dateStrOf(new Date(year, month - 2, prevClosing + 1)) // 前月の締め日の翌日
+      : `${year}-${pad2(month)}-01`; // 前月の締め日が前月末（実質月末締め）→ 1日から
+  const until = `${year}-${pad2(month)}-${pad2(untilDay)}`;
+  const periodDays = daysFromSince(since, until) + 1;
+  const mid = addDaysStr(since, Math.floor(periodDays / 2));
+
+  return {
+    since,
+    until,
+    periodDays,
+    heroLabel: '今期の残高',
+    pillLabel: `${md(since)}〜${md(until)}`,
+    recentLabel: `${md(since)}〜${md(until)}`,
+    paceLabel: '期間のペース',
+    chartStart: md(since),
+    chartMid: md(mid),
+    chartEnd: md(until),
+    isCard: true,
+  };
+}
+
 function aggregateByCategory(entries: EntryResponse[]) {
   const map = new Map<string, number>();
   entries
@@ -154,6 +258,11 @@ export default function DashboardPage() {
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [stores, setStores] = useState<StoreResponse[]>([]);
   const [pools, setPools] = useState<FundPoolResponse[]>([]);
+
+  // 表示設定
+  const [masked, setMasked] = useState<boolean>(() => readMasked());       // 金額マスク
+  const [viewMode, setViewMode] = useState<HomeViewMode>(() => readViewMode()); // 月 / カード締め日
+  const [cardPoolId, setCardPoolId] = useState<string>(() => readCardPoolId()); // 締め日の基準カード
 
   // カレンダー（月ラベルのタップで開く。1日ごとのビューもこの中）
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -197,19 +306,33 @@ export default function DashboardPage() {
   const [quickMemo, setQuickMemo] = useState('');
   const [quickLoading, setQuickLoading] = useState(false);
 
+  // --- 期間表示の導出（月ベース / カード締め日ベース） ---
+  const cards = pools.filter((p) => p.kind === 'CARD');
+  // 保存済みのカードIDが無効なら（削除済みなど）、既定カード／先頭カードへ自動フォールバック
+  const effectiveCardId = (() => {
+    if (cardPoolId && cards.some((c) => c.id === Number(cardPoolId))) return cardPoolId;
+    const primary = cards.find((c) => c.primary);
+    return String(primary?.id ?? cards[0]?.id ?? '');
+  })();
+  const selectedCard = cards.find((c) => c.id === Number(effectiveCardId)) ?? null;
+  const isCardMode = viewMode === 'card' && selectedCard != null;
+  const range: DisplayRange = useMemo(
+    () => buildRange(viewMode, year, month, selectedCard),
+    [viewMode, year, month, selectedCard]
+  );
+
   const fetchEntries = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const { since, until } = getMonthRange(year, month);
-      const data = (await entryApi.getAll(since, until)) as EntryResponse[];
+      const data = (await entryApi.getAll(range.since, range.until)) as EntryResponse[];
       setEntries(data);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'データの取得に失敗しました');
     } finally {
       setLoading(false);
     }
-  }, [year, month]);
+  }, [range.since, range.until]);
 
   const fetchCategoriesAndStores = useCallback(async () => {
     try {
@@ -486,7 +609,7 @@ export default function DashboardPage() {
   const totalExpense = entries.filter((e) => e.type === 'EXPENSE').reduce((s, e) => s + e.amount, 0);
   const balance = totalIncome - totalExpense;
   const categoryData = aggregateByCategory(entries).slice(0, 6);
-  // 取引履歴: 選択月の取引を並べ替えて表示
+  // 取引履歴: 表示期間の取引を並べ替えて表示
   const sortedEntries = [...entries]
     .sort((a, b) => {
       let cmp: number;
@@ -499,8 +622,7 @@ export default function DashboardPage() {
       if (cmp === 0) cmp = a.id - b.id;
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  const hasMoreRecent = false; // 月絞り時は「もっと見る」不要
-  const recentLabel = `${year}年${month}月`;
+  const recentLabel = range.recentLabel;
   // 同じキーをタップで昇順/降順を反転。別キーは既定の向き（日付・金額=降順、名称=昇順）
   function changeSort(key: 'date' | 'amount' | 'name') {
     if (key === sortKey) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -530,21 +652,32 @@ export default function DashboardPage() {
     </div>
   );
 
-  // 今月のペース
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
-  const daysElapsed = isCurrentMonth ? now.getDate() : daysInMonth;
-  const dailyAvg = daysElapsed > 0 ? Math.round(totalExpense / daysElapsed) : 0;
-  const projected = Math.round(dailyAvg * daysInMonth);
+  // 金額表示（マスク時は数字を ● で隠す）
+  const fmt = (n: number) => (masked ? maskDigits(formatCurrency(n)) : formatCurrency(n));
+  const fmtSigned = (type: 'INCOME' | 'EXPENSE', amount: number) =>
+    masked ? maskDigits(formatSigned(type, amount)) : formatSigned(type, amount);
 
-  // 日別推移（モバイル ミニグラフ用）
-  const dailyInc = new Array(daysInMonth).fill(0);
-  const dailyExp = new Array(daysInMonth).fill(0);
+  // 期間のペース
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
+  const todayStrVal = todayStr();
+  const isCurrentPeriod = todayStrVal >= range.since && todayStrVal <= range.until;
+  const elapsedDays =
+    isCurrentPeriod && !isCardMode
+      ? now.getDate()
+      : isCurrentPeriod
+        ? Math.min(range.periodDays, Math.max(1, daysFromSince(range.since, todayStrVal) + 1))
+        : range.periodDays;
+  const dailyAvg = elapsedDays > 0 ? Math.round(totalExpense / elapsedDays) : 0;
+  const projected = Math.round(dailyAvg * range.periodDays);
+
+  // 日別推移（モバイル ミニグラフ用）: 期間の初日を0番目として日数を揃える
+  const dailyInc = new Array(range.periodDays).fill(0);
+  const dailyExp = new Array(range.periodDays).fill(0);
   entries.forEach((e) => {
-    const d = parseInt(e.entryDate.slice(8, 10), 10);
-    if (d >= 1 && d <= daysInMonth) {
-      if (e.type === 'INCOME') dailyInc[d - 1] += e.amount;
-      else dailyExp[d - 1] += e.amount;
+    const idx = daysFromSince(range.since, e.entryDate);
+    if (idx >= 0 && idx < range.periodDays) {
+      if (e.type === 'INCOME') dailyInc[idx] += e.amount;
+      else dailyExp[idx] += e.amount;
     }
   });
   const maxDaily = Math.max(1, ...dailyInc, ...dailyExp);
@@ -570,6 +703,24 @@ export default function DashboardPage() {
     writeMonthYear(d.getFullYear(), d.getMonth() + 1);
   }
 
+  function toggleMask() {
+    setMasked((prev) => {
+      const next = !prev;
+      writeMasked(next);
+      return next;
+    });
+  }
+
+  function changeViewMode(mode: HomeViewMode) {
+    setViewMode(mode);
+    writeViewMode(mode);
+    // カード締め日モードへ切り替えたら、基準カードも自動選択（未保存の場合）
+    if (mode === 'card' && effectiveCardId) {
+      setCardPoolId(effectiveCardId);
+      writeCardPoolId(effectiveCardId);
+    }
+  }
+
   // 別の月を見ているときだけ「今月」へ戻るボタンを出す（month-pill の右横に配置）。
   // isCurrentMonth は「今月のペース」ブロックで既に算出済みのものを使う。
   const todayBtn = isCurrentMonth ? null : (
@@ -590,7 +741,7 @@ export default function DashboardPage() {
         aria-label="カレンダーを開く"
         title="カレンダーを開く"
       >
-        {year}年 {month}月
+        {range.pillLabel}
         <Icon name="calendar_month" size={16} />
       </button>
       <button className="month-pill-btn" onClick={nextMonth} aria-label="翌月" id="next-month-btn">
@@ -598,6 +749,63 @@ export default function DashboardPage() {
       </button>
     </div>
   );
+
+  // 金額マスク（表示/非表示）切替
+  const maskBtn = (
+    <button
+      type="button"
+      className="mask-btn"
+      onClick={toggleMask}
+      title={masked ? '金額を表示する' : '金額を隠す'}
+      aria-label={masked ? '金額を表示する' : '金額を隠す'}
+      aria-pressed={masked}
+    >
+      <Icon name={masked ? 'visibility_off' : 'visibility'} size={18} />
+    </button>
+  );
+
+  // 表示期間の切替（月ベース / カード締め日ベース）
+  const viewSeg = (
+    <div className="view-seg" role="group" aria-label="表示期間">
+      <button
+        type="button"
+        className={`view-seg-btn${viewMode === 'month' ? ' active' : ''}`}
+        onClick={() => changeViewMode('month')}
+      >
+        月
+      </button>
+      <button
+        type="button"
+        className={`view-seg-btn${viewMode === 'card' ? ' active' : ''}`}
+        onClick={() => changeViewMode('card')}
+        disabled={cards.length === 0}
+        title={cards.length === 0 ? 'カードが未登録です' : undefined}
+      >
+        カード締め日
+      </button>
+    </div>
+  );
+
+  // 締め日の基準カード選択（カード締め日モードのみ）
+  const cardSelect = isCardMode ? (
+    <select
+      className="card-period-select"
+      value={String(effectiveCardId)}
+      onChange={(e) => {
+        const v = e.target.value;
+        setCardPoolId(v);
+        writeCardPoolId(v);
+      }}
+      aria-label="締め日の基準カード"
+    >
+      {cards.map((c) => (
+        <option key={c.id} value={c.id}>
+          {c.name}
+          {c.closingDay != null ? `（締め${c.closingDay}日）` : '（月末締め）'}
+        </option>
+      ))}
+    </select>
+  ) : null;
 
   const txnRows = sortedEntries.map((entry) => {
     const line = entry.storeName ? `${entry.categoryName} · ${entry.storeName}` : entry.categoryName;
@@ -610,8 +818,10 @@ export default function DashboardPage() {
       <div className="desktop-only screen">
         <div className="page-head">
           <div className="month-nav">
+            {viewSeg}
             {monthPill}
             {todayBtn}
+            {cardSelect}
           </div>
           <button className="btn-primary" onClick={() => openAddModal()}>
             <Icon name="add" />
@@ -627,16 +837,19 @@ export default function DashboardPage() {
         )}
 
         <div className="hero">
-          <div className="section-label">今月の残高</div>
-          <div className="hero-value">{loading ? '—' : formatCurrency(balance)}</div>
+          <div className="hero-label-row">
+            <div className="section-label">{range.heroLabel}</div>
+            {maskBtn}
+          </div>
+          <div className="hero-value">{loading ? '—' : fmt(balance)}</div>
           <div className="hero-stats">
             <div className="hero-stat">
               <span className="hero-stat-label">収入</span>
-              <span className="hero-stat-value accent">{loading ? '—' : formatCurrency(totalIncome)}</span>
+              <span className="hero-stat-value accent">{loading ? '—' : fmt(totalIncome)}</span>
             </div>
             <div className="hero-stat">
               <span className="hero-stat-label">支出</span>
-              <span className="hero-stat-value">{loading ? '—' : formatCurrency(totalExpense)}</span>
+              <span className="hero-stat-value">{loading ? '—' : fmt(totalExpense)}</span>
             </div>
             <div className="hero-stat">
               <span className="hero-stat-label">取引</span>
@@ -647,7 +860,7 @@ export default function DashboardPage() {
 
         {/* 総資産・口座 */}
         <div style={{ marginBottom: 28 }}>
-          <AssetsSection pools={pools} onReloadPools={fetchPools} />
+          <AssetsSection pools={pools} onReloadPools={fetchPools} masked={masked} />
         </div>
 
         {loading ? (
@@ -679,7 +892,7 @@ export default function DashboardPage() {
                             {entry.memo && <span className="txn-memo"> {entry.memo}</span>}
                           </td>
                           <td className={`txn-amount ${entry.type === 'INCOME' ? 'income' : ''}`}>
-                            {formatSigned(entry.type, entry.amount)}
+                            {fmtSigned(entry.type, entry.amount)}
                           </td>
                         </tr>
                       ))}
@@ -709,7 +922,7 @@ export default function DashboardPage() {
                       <div key={cat.name}>
                         <div className="bar-head">
                           <span className="bar-name">{cat.name}</span>
-                          <span className="bar-amount">{formatCurrency(cat.amount)}</span>
+                          <span className="bar-amount">{fmt(cat.amount)}</span>
                         </div>
                         <div className="bar-track">
                           <div className="bar-fill" style={{ width: `${cat.percentage}%` }} />
@@ -722,14 +935,14 @@ export default function DashboardPage() {
                 )}
               </div>
 
-              <div className="section-label">今月のペース</div>
+              <div className="section-label">{range.paceLabel}</div>
               <div className="card">
                 <div className="kv-row">
                   <span className="kv-key">1日あたり平均支出</span>
-                  <span className="kv-val">{formatCurrency(dailyAvg)}</span>
+                  <span className="kv-val">{fmt(dailyAvg)}</span>
                 </div>
                 <div className="kv-note">
-                  このペースだと月末支出は約 {formatCurrency(projected)} の見込み
+                  このペースだと期間末の支出は約 {fmt(projected)} の見込み
                 </div>
               </div>
 
@@ -782,7 +995,7 @@ export default function DashboardPage() {
 
       {/* ============ モバイル レイアウト ============ */}
       <div className="mobile-only screen">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <button className="month-pill-btn" onClick={prevMonth} aria-label="前月">
             <Icon name="chevron_left" />
           </button>
@@ -792,13 +1005,18 @@ export default function DashboardPage() {
             onClick={() => setCalendarOpen(true)}
             aria-label="カレンダーを開く"
           >
-            {year}年 {month}月
+            {range.pillLabel}
             <Icon name="calendar_month" size={16} />
           </button>
           <button className="month-pill-btn" onClick={nextMonth} aria-label="翌月">
             <Icon name="chevron_right" />
           </button>
           {todayBtn}
+        </div>
+        {/* 表示期間の切替（月 / カード締め日） */}
+        <div className="mob-view-bar">
+          {viewSeg}
+          {cardSelect}
         </div>
 
         {error && (
@@ -817,18 +1035,21 @@ export default function DashboardPage() {
           <>
             {/* 残高カード */}
             <div className="card" style={{ borderRadius: 16, padding: '20px 18px 16px', marginBottom: 20 }}>
-              <div className="section-label">今月の残高</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                <div className="section-label">{range.heroLabel}</div>
+                {maskBtn}
+              </div>
               <div className="hero-value" style={{ fontSize: 38, marginTop: 8 }}>
-                {formatCurrency(balance)}
+                {fmt(balance)}
               </div>
               <div style={{ display: 'flex', gap: 20, marginTop: 14, marginBottom: 18 }}>
                 <div className="hero-stat">
                   <span className="hero-stat-label" style={{ fontSize: '11.5px' }}>収入</span>
-                  <span className="hero-stat-value accent" style={{ fontSize: '14.5px' }}>{formatCurrency(totalIncome)}</span>
+                  <span className="hero-stat-value accent" style={{ fontSize: '14.5px' }}>{fmt(totalIncome)}</span>
                 </div>
                 <div className="hero-stat">
                   <span className="hero-stat-label" style={{ fontSize: '11.5px' }}>支出</span>
-                  <span className="hero-stat-value" style={{ fontSize: '14.5px' }}>{formatCurrency(totalExpense)}</span>
+                  <span className="hero-stat-value" style={{ fontSize: '14.5px' }}>{fmt(totalExpense)}</span>
                 </div>
               </div>
               {/* ミニ日別推移 */}
@@ -844,15 +1065,15 @@ export default function DashboardPage() {
                 ))}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: '9.5px', color: 'var(--text-faint)' }}>
-                <span>{month}/1</span>
-                <span>{month}/{Math.round(daysInMonth / 2)}</span>
-                <span>{month}/{daysInMonth}</span>
+                <span>{range.chartStart}</span>
+                <span>{range.chartMid}</span>
+                <span>{range.chartEnd}</span>
               </div>
             </div>
 
             {/* 総資産・口座 */}
             <div style={{ marginBottom: 20 }}>
-              <AssetsSection pools={pools} onReloadPools={fetchPools} />
+              <AssetsSection pools={pools} onReloadPools={fetchPools} masked={masked} />
             </div>
 
             <div className="section-label stack-label">取引履歴（{recentLabel}）</div>
@@ -873,7 +1094,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <span className={`txn-amount ${entry.type === 'INCOME' ? 'income' : ''}`} style={{ marginLeft: 12 }}>
-                        {formatSigned(entry.type, entry.amount)}
+                        {fmtSigned(entry.type, entry.amount)}
                       </span>
                     </div>
                   ))}
@@ -905,6 +1126,7 @@ export default function DashboardPage() {
           month={month}
           entries={entries}
           loading={loading}
+          masked={masked}
           onPrevMonth={prevMonth}
           onNextMonth={nextMonth}
           onCurrentMonth={goCurrentMonth}
