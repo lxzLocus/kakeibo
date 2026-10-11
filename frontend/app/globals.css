@@ -4908,14 +4908,19 @@ button.month-pill-label:hover {
    ============================================================ */
 
 .chat-screen__header {
-  margin-bottom: 20px;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-shrink: 0;
+  padding: 18px 28px 12px;
+  margin: 0;
 }
 
 .chat-screen__title {
   font-size: 20px;
   font-weight: 700;
   color: var(--text);
-  margin: 0 0 3px;
+  margin: 0;
 }
 
 .chat-screen__subtitle {
@@ -4925,26 +4930,47 @@ button.month-pill-label:hover {
 }
 
 /* PC / モバイルの表示切替（display:block を強制しないラッパ） */
-.chat-desktop { display: block; }
 .chat-mobile { display: none; }
 
 /* --- PC 2カラム --- */
+.chat-desktop {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* PC のチャットはサイドバー右の領域全体を画面いっぱいに使う（モバイルには影響させない） */
+@media (min-width: 769px) {
+  .app-main--chat {
+    padding: 0;
+    max-width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+}
+
 .chat-layout {
   display: grid;
   grid-template-columns: 248px 1fr;
   gap: 16px;
-  height: calc(100vh - 190px);
-  min-height: 540px;
+  flex: 1;
+  min-height: 0;
+  padding: 0 28px 24px;
 }
 
 /* 履歴パネル */
 .chat-history {
-  border: 1px solid var(--hairline);
-  border-radius: 14px;
+  border: none;
+  border-radius: 0;
   background: var(--surface);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-width: 0;
 }
 
 .chat-history__new-wrap {
@@ -5063,8 +5089,8 @@ button.month-pill-label:hover {
 
 /* 会話パネル */
 .chat-convo {
-  border: 1px solid var(--hairline);
-  border-radius: 14px;
+  border: none;
+  border-radius: 0;
   background: var(--bg);
   display: flex;
   flex-direction: column;
@@ -5073,8 +5099,8 @@ button.month-pill-label:hover {
 }
 
 .chat-convo__header {
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--hairline-row);
+  padding: 10px 20px 6px;
+  border-bottom: none;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -5120,8 +5146,9 @@ button.month-pill-label:hover {
 
 .chat-convo__messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 22px 20px;
+  padding: 12px 20px 22px;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -5476,6 +5503,7 @@ button.month-pill-label:hover {
 /* 入力バー */
 .chat-input {
   padding: 14px 16px;
+  flex-shrink: 0;
 }
 
 .chat-input__field {
