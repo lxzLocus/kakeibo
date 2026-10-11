@@ -371,6 +371,7 @@ export interface SendMessageResponse {
 
 // --- 管理ビュー（裏で自動管理しているデータの参照） ---
 export interface AdminOverview {
+  version: string;
   counts: {
     entries: number; categories: number; stores: number; pools: number;
     transfers: number; fixedCosts: number; chatSessions: number;

@@ -54,6 +54,24 @@ IMAGE=ghcr.io/lxzlocus/kakeibo:latest docker compose -f docker-compose.prod.yml 
 GHCR に push するには追加設定不要（`GITHUB_TOKEN` を使用）。private リポジトリのイメージを
 pull する側では `docker login ghcr.io` が必要です。
 
+## リリース手順（バージョン表記）
+
+アプリ内の管理画面に表示されるバージョンは、実行中 jar のマニフェスト `Implementation-Version`
+から取得します。これは Spring Boot が `backend/pom.xml` の `<version>` をビルド時に自動で
+埋め込むため、バージョンを上げるだけでアプリ内の表示が更新されます。
+
+1. `backend/pom.xml` の `<version>` を上げる（例: `0.1.0` → `0.2.0`）
+2. master へ merge 後、`v*` タグを切って push:
+   ```bash
+   git tag v0.1.0
+   git push origin v0.1.0
+   ```
+3. CI（`.github/workflows/docker-image.yml`）が `v*` タグ push を検知し、Docker イメージに
+   `0.1.0`（`X.Y.Z`）と `0.1`（`X.Y`）のタグを付けて `ghcr.io/<owner>/kakeibo` に push します。
+
+開発時（IDE / `./mvnw spring-boot:run` 実行）は jar マニフェストが無いため、アプリは
+フォールバック値（`0.1.0`）を返します。配布イメージでは pom の version がそのまま表示されます。
+
 ## Vercel デプロイ（コンテナ）
 
 `Dockerfile.vercel` を使って Vercel のコンテナデプロイが可能です。

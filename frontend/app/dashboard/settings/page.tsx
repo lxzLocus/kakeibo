@@ -1134,6 +1134,15 @@ function AdminSettings() {
       <button className="btn btn--outline" onClick={load} style={{ marginTop: 14 }}>
         <Icon name="refresh" size={16} /> 再読み込み
       </button>
+
+      <div className="card pad-lg" style={{ marginTop: 14 }}>
+        <div className="info-row info-row--last">
+          <span className="info-row__label">バージョン</span>
+          <span className="info-row__value">
+            <Icon name="sell" size={15} style={{ verticalAlign: '-2px' }} /> {data.version}
+          </span>
+        </div>
+      </div>
     </>
   );
 }
