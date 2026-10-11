@@ -15,7 +15,7 @@ FROM node:22-bookworm-slim AS frontend-build
 WORKDIR /app
 
 # 依存だけ先に入れてレイヤキャッシュを効かせる
-COPY frontend/package.json frontend/package-lock.json ./
+COPY frontend/package.json frontend/package-lock.json frontend/.npmrc ./
 RUN --mount=type=cache,target=/root/.npm npm ci
 
 COPY frontend/ ./
