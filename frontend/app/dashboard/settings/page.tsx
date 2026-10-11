@@ -1139,7 +1139,7 @@ function AdminSettings() {
         <div className="info-row info-row--last">
           <span className="info-row__label">バージョン</span>
           <span className="info-row__value">
-            <Icon name="tag" size={15} style={{ verticalAlign: '-2px' }} /> {data.version}
+            <Icon name="sell" size={15} style={{ verticalAlign: '-2px' }} /> {data.version}
           </span>
         </div>
       </div>
