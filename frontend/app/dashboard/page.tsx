@@ -267,6 +267,9 @@ export default function DashboardPage() {
   // カレンダー（月ラベルのタップで開く。1日ごとのビューもこの中）
   const [calendarOpen, setCalendarOpen] = useState(false);
 
+  // モバイル ミニ棒グラフでタップした日（0始まり。null は未選択）
+  const [tapDayIdx, setTapDayIdx] = useState<number | null>(null);
+
   // モーダル
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<EntryResponse | null>(null);
@@ -358,6 +361,11 @@ export default function DashboardPage() {
     fetchCategoriesAndStores();
     fetchPools();
   }, [fetchEntries, fetchCategoriesAndStores, fetchPools]);
+
+  // 期間が変わったらタップ選択を解除
+  useEffect(() => {
+    setTapDayIdx(null);
+  }, [range.since]);
 
   // 月次の自動処理（固定費の記帳＋カードの引き落とし）を、アプリを開いたときに追いつかせる（冪等）。
   // 常駐ジョブに頼らない方式。初回マウント時のみ実行。
@@ -681,6 +689,15 @@ export default function DashboardPage() {
     }
   });
   const maxDaily = Math.max(1, ...dailyInc, ...dailyExp);
+
+  // タップした日の支出内訳（モバイル ミニグラフ用）
+  const tapDateStr = tapDayIdx != null ? addDaysStr(range.since, tapDayIdx) : '';
+  const tapExpenses =
+    tapDayIdx != null
+      ? entries
+          .filter((e) => e.type === 'EXPENSE' && e.entryDate === tapDateStr)
+          .sort((a, b) => b.amount - a.amount)
+      : [];
 
   function prevMonth() {
     let ny = year, nm = month;
@@ -1052,15 +1069,71 @@ export default function DashboardPage() {
                   <span className="hero-stat-value" style={{ fontSize: '14.5px' }}>{fmt(totalExpense)}</span>
                 </div>
               </div>
-              {/* ミニ日別推移 */}
+              {/* タップした日の支出内訳 */}
+              {tapDayIdx != null && (
+                <div style={{ borderTop: '1px solid var(--hairline-row)', padding: '12px 0 14px', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                      {formatDate(tapDateStr)} の支出
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setTapDayIdx(null)}
+                      aria-label="閉じる"
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 26, height: 26, borderRadius: '50%', border: 'none', background: 'transparent', color: 'var(--text-faint)', cursor: 'pointer' }}
+                    >
+                      <Icon name="close" size={16} />
+                    </button>
+                  </div>
+                  <div style={{ fontSize: 26, fontWeight: 700, lineHeight: 1.2 }}>
+                    {fmt(dailyExp[tapDayIdx] ?? 0)}
+                  </div>
+                  {tapExpenses.length > 0 ? (
+                    <div style={{ marginTop: 10 }}>
+                      {tapExpenses.slice(0, 5).map((e) => (
+                        <div
+                          key={e.id}
+                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '6px 0', borderBottom: '1px solid var(--hairline-row)' }}
+                        >
+                          <div style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                            {e.categoryName}
+                            {(e.storeName || e.memo) && (
+                              <span style={{ color: 'var(--text-faint)' }}> / {e.storeName || e.memo}</span>
+                            )}
+                          </div>
+                          <span style={{ fontSize: '12px', whiteSpace: 'nowrap' }}>{fmt(e.amount)}</span>
+                        </div>
+                      ))}
+                      {tapExpenses.length > 5 && (
+                        <div style={{ paddingTop: 6, fontSize: '11px', color: 'var(--text-faint)' }}>
+                          ほか {tapExpenses.length - 5} 件
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ marginTop: 8, fontSize: '12px', color: 'var(--text-faint)' }}>支出はありません</div>
+                  )}
+                </div>
+              )}
+              {/* ミニ日別推移（タップでその日の支出内訳） */}
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 52, borderTop: '1px solid var(--hairline-row)', paddingTop: 12 }}>
                 {dailyInc.map((inc, i) => (
                   <div
                     key={i}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, flex: 1, minWidth: 4, height: '100%', justifyContent: 'flex-end' }}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setTapDayIdx((cur) => (cur === i ? null : i))}
+                    onKeyDown={(ev) => {
+                      if (ev.key === 'Enter' || ev.key === ' ') {
+                        ev.preventDefault();
+                        setTapDayIdx((cur) => (cur === i ? null : i));
+                      }
+                    }}
+                    aria-label={tapDayIdx === i ? `閉じる ${formatDate(tapDateStr)}` : formatDate(addDaysStr(range.since, i))}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, flex: 1, minWidth: 4, height: '100%', justifyContent: 'flex-end', cursor: 'pointer', borderRadius: 2, background: tapDayIdx === i ? 'var(--income-tint)' : 'transparent' }}
                   >
                     <div style={{ width: '100%', borderRadius: 1, background: 'var(--accent)', height: (inc / maxDaily) * 40 }} />
-                    <div style={{ width: '100%', borderRadius: 1, background: 'var(--text-faint)', height: (dailyExp[i] / maxDaily) * 40 }} />
+                    <div style={{ width: '100%', borderRadius: 1, background: tapDayIdx === i ? 'var(--accent)' : 'var(--text-faint)', height: (dailyExp[i] / maxDaily) * 40 }} />
                   </div>
                 ))}
               </div>
