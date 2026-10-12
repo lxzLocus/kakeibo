@@ -134,8 +134,10 @@ export function AssetsSection({
 
   const total = pools.reduce((sum, p) => sum + p.balance, 0);
 
-  // 金額表示（マスク時は数字を ● で隠す）
+  // 金額表示: マスクは「大きい文字」（総資産・カード残高タイル）のみに適用する。
+  // 口座残高・振替履歴・カード明細の各行はマスク対象外（常に実金額）。
   const fmt = (n: number) => (masked ? maskDigits(formatCurrency(n)) : formatCurrency(n));
+  const fmtPlain = (n: number) => formatCurrency(n);
 
   // --- 口座 ---
   function openAddPool(kind: FundPoolKind = 'BANK') {
@@ -354,7 +356,7 @@ export function AssetsSection({
                 </button>
               </div>
             </div>
-            <div className="pool-balance tnum">{fmt(p.balance)}</div>
+            <div className="pool-balance tnum">{fmtPlain(p.balance)}</div>
           </div>
         ))}
         <button className="pool-add" onClick={() => openAddPool('BANK')}>
@@ -416,7 +418,7 @@ export function AssetsSection({
                     {t.memo ? ` · ${t.memo}` : ''}
                   </div>
                 </div>
-                <span className="transfer-amount tnum">{fmt(t.amount)}</span>
+                <span className="transfer-amount tnum">{fmtPlain(t.amount)}</span>
                 <button className="shop-icon-btn danger" onClick={() => handleDeleteTransfer(t)} aria-label="取り消し">
                   <Icon name="delete" size={16} />
                 </button>
@@ -615,7 +617,7 @@ export function AssetsSection({
               {stmtError && <div className="error-banner" style={{ marginBottom: 10 }}><Icon name="error" /> {stmtError}</div>}
               {stmtMsg && <div className="success-banner" style={{ marginBottom: 10 }}><Icon name="check_circle" /> {stmtMsg}</div>}
               <div className="stmt-sum">
-                残高（未払い） <span className="tnum">{stmtCard.balance < 0 ? fmt(-stmtCard.balance) : fmt(stmtCard.balance)}</span>
+                残高（未払い） <span className="tnum">{stmtCard.balance < 0 ? fmtPlain(-stmtCard.balance) : fmtPlain(stmtCard.balance)}</span>
               </div>
               {stmtLoading ? (
                 <div className="loading-state"><span className="loading-spinner" />読み込み中...</div>
@@ -656,7 +658,7 @@ export function AssetsSection({
                             <div className="stmt-row__memo">{e.memo || e.categoryName || '明細'}</div>
                             <div className="stmt-row__sub">{e.entryDate.slice(5).replace('-', '/')} {e.categoryName}</div>
                           </div>
-                          <div className="stmt-row__amt tnum">{fmt(e.amount)}</div>
+                          <div className="stmt-row__amt tnum">{fmtPlain(e.amount)}</div>
                           <button className="shop-icon-btn" onClick={() => startStmtEdit(e)} aria-label="編集" title="編集">
                             <Icon name="edit" size={15} />
                           </button>

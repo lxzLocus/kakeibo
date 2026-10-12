@@ -613,10 +613,15 @@ export default function DashboardPage() {
     </div>
   );
 
-  // 金額表示（マスク時は数字を ● で隠す）
+  // 金額表示: マスクは「大きい文字」（ヒーローの残高・収入・支出）のみに適用する。
+  // 取引履歴・カテゴリ別・ペースなどの詳細表はマスク対象外。
   const fmt = (n: number) => (masked ? maskDigits(formatCurrency(n)) : formatCurrency(n));
   const fmtSigned = (type: 'INCOME' | 'EXPENSE', amount: number) =>
     masked ? maskDigits(formatSigned(type, amount)) : formatSigned(type, amount);
+  // 詳細表・リスト用の非マスク表示（常に実金額）
+  const fmtPlain = (n: number) => formatCurrency(n);
+  const fmtSignedPlain = (type: 'INCOME' | 'EXPENSE', amount: number) =>
+    formatSigned(type, amount);
 
   // 期間のペース
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
@@ -802,7 +807,7 @@ export default function DashboardPage() {
                             {entry.memo && <span className="txn-memo"> {entry.memo}</span>}
                           </td>
                           <td className={`txn-amount ${entry.type === 'INCOME' ? 'income' : ''}`}>
-                            {fmtSigned(entry.type, entry.amount)}
+                            {fmtSignedPlain(entry.type, entry.amount)}
                           </td>
                         </tr>
                       ))}
@@ -832,7 +837,7 @@ export default function DashboardPage() {
                       <div key={cat.name}>
                         <div className="bar-head">
                           <span className="bar-name">{cat.name}</span>
-                          <span className="bar-amount">{fmt(cat.amount)}</span>
+                          <span className="bar-amount">{fmtPlain(cat.amount)}</span>
                         </div>
                         <div className="bar-track">
                           <div className="bar-fill" style={{ width: `${cat.percentage}%` }} />
@@ -849,10 +854,10 @@ export default function DashboardPage() {
               <div className="card">
                 <div className="kv-row">
                   <span className="kv-key">1日あたり平均支出</span>
-                  <span className="kv-val">{fmt(dailyAvg)}</span>
+                  <span className="kv-val">{fmtPlain(dailyAvg)}</span>
                 </div>
                 <div className="kv-note">
-                  このペースだと期間末の支出は約 {fmt(projected)} の見込み
+                  このペースだと期間末の支出は約 {fmtPlain(projected)} の見込み
                 </div>
               </div>
 
@@ -975,8 +980,7 @@ export default function DashboardPage() {
                   </div>
                   <div style={{ fontSize: 26, fontWeight: 700, lineHeight: 1.2 }}>
                     {fmt(dailyExp[tapDayIdx] ?? 0)}
-                  </div>
-                  {tapExpenses.length > 0 ? (
+                  </div>                  {tapExpenses.length > 0 ? (
                     <div style={{ marginTop: 10 }}>
                       {tapExpenses.slice(0, 5).map((e) => (
                         <div
@@ -989,7 +993,7 @@ export default function DashboardPage() {
                               <span style={{ color: 'var(--text-faint)' }}> / {e.storeName || e.memo}</span>
                             )}
                           </div>
-                          <span style={{ fontSize: '12px', whiteSpace: 'nowrap' }}>{fmt(e.amount)}</span>
+                          <span style={{ fontSize: '12px', whiteSpace: 'nowrap' }}>{fmtPlain(e.amount)}</span>
                         </div>
                       ))}
                       {tapExpenses.length > 5 && (
@@ -1055,7 +1059,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <span className={`txn-amount ${entry.type === 'INCOME' ? 'income' : ''}`} style={{ marginLeft: 12 }}>
-                        {fmtSigned(entry.type, entry.amount)}
+                        {fmtSignedPlain(entry.type, entry.amount)}
                       </span>
                     </div>
                   ))}
@@ -1087,7 +1091,6 @@ export default function DashboardPage() {
           month={month}
           entries={entries}
           loading={loading}
-          masked={masked}
           onPrevMonth={prevMonth}
           onNextMonth={nextMonth}
           onCurrentMonth={goCurrentMonth}
