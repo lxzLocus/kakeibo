@@ -194,30 +194,23 @@ function buildRange(
     };
   }
 
-  // カード締め日ベース: 前回締め日の翌日〜今回締め日
-  const D = card.closingDay;
-  const daysInPrev = new Date(year, month - 1, 0).getDate();
-  const untilDay = Math.min(D, daysInMonth);
-  const prevClosing = Math.min(D, daysInPrev);
-  const since =
-    prevClosing < daysInPrev
-      ? dateStrOf(new Date(year, month - 2, prevClosing + 1)) // 前月の締め日の翌日
-      : `${year}-${pad2(month)}-01`; // 前月の締め日が前月末（実質月末締め）→ 1日から
-  const until = `${year}-${pad2(month)}-${pad2(untilDay)}`;
-  const periodDays = daysFromSince(since, until) + 1;
-  const mid = addDaysStr(since, Math.floor(periodDays / 2));
+  // カード締め日モード: 期間は選択中の暦月（当月）に固定。
+  // （従来は前回締め日の翌日〜今回締め日で前月分も含んでいたが、
+  //   ホームでは「選択月のデータのみ」を見たいという要望のため暦月表示に変更）
+  const mid = addDaysStr(monthRange.since, Math.floor(daysInMonth / 2));
+  const closingLabel = card.closingDay != null ? `（締め${card.closingDay}日）` : '（月末締め）';
 
   return {
-    since,
-    until,
-    periodDays,
-    heroLabel: '今期の残高',
-    pillLabel: `${md(since)}〜${md(until)}`,
-    recentLabel: `${md(since)}〜${md(until)}`,
-    paceLabel: '期間のペース',
-    chartStart: md(since),
+    since: monthRange.since,
+    until: monthRange.until,
+    periodDays: daysInMonth,
+    heroLabel: `${card.name}${closingLabel}`,
+    pillLabel: `${year}年 ${month}月`,
+    recentLabel: `${year}年${month}月`,
+    paceLabel: '今月のペース',
+    chartStart: `${month}/1`,
     chartMid: md(mid),
-    chartEnd: md(until),
+    chartEnd: `${month}/${daysInMonth}`,
     isCard: true,
   };
 }
