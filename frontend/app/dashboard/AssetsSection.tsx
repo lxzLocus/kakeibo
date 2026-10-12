@@ -541,11 +541,25 @@ export function AssetsSection({
                       </div>
                     </div>
                     <div className="modal-field">
-                      <label>引き落としのタイミング</label>
+                      <label>引き落としのタイミング（締め日から何ヶ月後か）</label>
                       <select value={poolOffsetMonths} onChange={(e) => setPoolOffsetMonths(Number(e.target.value))}>
                         <option value={0}>翌月に引き落とす</option>
                         <option value={1}>翌々月に引き落とす</option>
                       </select>
+                      {/* 具体的なスケジュールを日本語で案内する */}
+                      {poolClosingDay === '' || poolPaymentDay === '' ? (
+                        <p className="goal-summary__note" style={{ margin: '4px 0 0' }}>
+                          締め日と引き落とし日を両方設定すると、請求期間と引き落としスケジュールを表示します。
+                        </p>
+                      ) : poolOffsetMonths === 0 ? (
+                        <p className="goal-summary__note" style={{ margin: '4px 0 0' }}>
+                          例: 5月締め分（{poolClosingDay}日締め）は <strong>翌月 {poolPaymentDay}日</strong> に引き落とします。
+                        </p>
+                      ) : (
+                        <p className="goal-summary__note" style={{ margin: '4px 0 0' }}>
+                          例: 5月締め分（{poolClosingDay}日締め）は <strong>翌々月 {poolPaymentDay}日</strong> に引き落とします（クレジットカードのいわゆる「翌々月払い」）。
+                        </p>
+                      )}
                     </div>
                     <div className="modal-field">
                       <label>引き落とし元の口座</label>
