@@ -9,7 +9,7 @@ import { withCommas, toNumber, maskDigits } from '@/lib/format';
 import { AssetsSection } from './AssetsSection';
 import { useToast, useConfirm } from '@/app/_components/ui';
 import { readMonthYear, writeMonthYear } from '@/lib/monthStore';
-import { readMasked, writeMasked, readViewMode, writeViewMode, readCardPoolId, writeCardPoolId, HomeViewMode } from '@/lib/prefs';
+import { readMasked, writeMasked } from '@/lib/prefs';
 
 /**
  * カテゴリ選択の <option> を、グループ（プライマリ）ごとに <optgroup> でまとめて返す。
@@ -149,9 +149,7 @@ function md(dateStr: string): string {
 
 /**
  * ホーム画面の表示期間を計算する。
- * - 月ベース: 表示中の暦月（これまでの挙動）
- * - カード締め日ベース: 基準カードの締め日で区切った期間
- *   （例: 締め日25日 → 前月26日〜当月25日。月末締め=null は暦月と同じ）
+ * ホームは常に表示中の暦月（これまでの挙動）。カード明細はカードタイルクリックで見る。
  */
 type DisplayRange = {
   since: string;
@@ -164,54 +162,27 @@ type DisplayRange = {
   chartStart: string;     // モバイルミニグラフの目盛り (m/d)
   chartMid: string;
   chartEnd: string;
-  isCard: boolean;
 };
 
 function buildRange(
-  viewMode: HomeViewMode,
   year: number,
-  month: number,
-  card: FundPoolResponse | null
+  month: number
 ): DisplayRange {
   const monthRange = getMonthRange(year, month);
   const daysInMonth = new Date(year, month, 0).getDate();
-
-  // 月ベース / 締め日未設定（月末締め）は暦月と同じ
-  if (viewMode !== 'card' || !card || card.closingDay == null) {
-    const mid = addDaysStr(monthRange.since, Math.floor(daysInMonth / 2));
-    return {
-      since: monthRange.since,
-      until: monthRange.until,
-      periodDays: daysInMonth,
-      heroLabel: '今月の残高',
-      pillLabel: `${year}年 ${month}月`,
-      recentLabel: `${year}年${month}月`,
-      paceLabel: '今月のペース',
-      chartStart: `${month}/1`,
-      chartMid: md(mid),
-      chartEnd: `${month}/${daysInMonth}`,
-      isCard: false,
-    };
-  }
-
-  // カード締め日モード: 期間は選択中の暦月（当月）に固定。
-  // （従来は前回締め日の翌日〜今回締め日で前月分も含んでいたが、
-  //   ホームでは「選択月のデータのみ」を見たいという要望のため暦月表示に変更）
   const mid = addDaysStr(monthRange.since, Math.floor(daysInMonth / 2));
-  const closingLabel = card.closingDay != null ? `（締め${card.closingDay}日）` : '（月末締め）';
 
   return {
     since: monthRange.since,
     until: monthRange.until,
     periodDays: daysInMonth,
-    heroLabel: `${card.name}${closingLabel}`,
+    heroLabel: '今月の残高',
     pillLabel: `${year}年 ${month}月`,
     recentLabel: `${year}年${month}月`,
     paceLabel: '今月のペース',
     chartStart: `${month}/1`,
     chartMid: md(mid),
     chartEnd: `${month}/${daysInMonth}`,
-    isCard: true,
   };
 }
 
@@ -254,8 +225,6 @@ export default function DashboardPage() {
 
   // 表示設定
   const [masked, setMasked] = useState<boolean>(() => readMasked());       // 金額マスク
-  const [viewMode, setViewMode] = useState<HomeViewMode>(() => readViewMode()); // 月 / カード締め日
-  const [cardPoolId, setCardPoolId] = useState<string>(() => readCardPoolId()); // 締め日の基準カード
 
   // カレンダー（月ラベルのタップで開く。1日ごとのビューもこの中）
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -302,19 +271,10 @@ export default function DashboardPage() {
   const [quickMemo, setQuickMemo] = useState('');
   const [quickLoading, setQuickLoading] = useState(false);
 
-  // --- 期間表示の導出（月ベース / カード締め日ベース） ---
-  const cards = pools.filter((p) => p.kind === 'CARD');
-  // 保存済みのカードIDが無効なら（削除済みなど）、既定カード／先頭カードへ自動フォールバック
-  const effectiveCardId = (() => {
-    if (cardPoolId && cards.some((c) => c.id === Number(cardPoolId))) return cardPoolId;
-    const primary = cards.find((c) => c.primary);
-    return String(primary?.id ?? cards[0]?.id ?? '');
-  })();
-  const selectedCard = cards.find((c) => c.id === Number(effectiveCardId)) ?? null;
-  const isCardMode = viewMode === 'card' && selectedCard != null;
+  // --- 期間表示の導出（ホームは常に暦月。カード明細はカードタイルクリックで見る） ---
   const range: DisplayRange = useMemo(
-    () => buildRange(viewMode, year, month, selectedCard),
-    [viewMode, year, month, selectedCard]
+    () => buildRange(year, month),
+    [year, month]
   );
 
   const fetchEntries = useCallback(async () => {
@@ -662,12 +622,7 @@ export default function DashboardPage() {
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
   const todayStrVal = todayStr();
   const isCurrentPeriod = todayStrVal >= range.since && todayStrVal <= range.until;
-  const elapsedDays =
-    isCurrentPeriod && !isCardMode
-      ? now.getDate()
-      : isCurrentPeriod
-        ? Math.min(range.periodDays, Math.max(1, daysFromSince(range.since, todayStrVal) + 1))
-        : range.periodDays;
+  const elapsedDays = isCurrentPeriod ? now.getDate() : range.periodDays;
   const dailyAvg = elapsedDays > 0 ? Math.round(totalExpense / elapsedDays) : 0;
   const projected = Math.round(dailyAvg * range.periodDays);
 
@@ -721,16 +676,6 @@ export default function DashboardPage() {
     });
   }
 
-  function changeViewMode(mode: HomeViewMode) {
-    setViewMode(mode);
-    writeViewMode(mode);
-    // カード締め日モードへ切り替えたら、基準カードも自動選択（未保存の場合）
-    if (mode === 'card' && effectiveCardId) {
-      setCardPoolId(effectiveCardId);
-      writeCardPoolId(effectiveCardId);
-    }
-  }
-
   // 別の月を見ているときだけ「今月」へ戻るボタンを出す（month-pill の右横に配置）。
   // isCurrentMonth は「今月のペース」ブロックで既に算出済みのものを使う。
   const todayBtn = isCurrentMonth ? null : (
@@ -774,49 +719,6 @@ export default function DashboardPage() {
     </button>
   );
 
-  // 表示期間の切替（月ベース / カード締め日ベース）
-  const viewSeg = (
-    <div className="view-seg" role="group" aria-label="表示期間">
-      <button
-        type="button"
-        className={`view-seg-btn${viewMode === 'month' ? ' active' : ''}`}
-        onClick={() => changeViewMode('month')}
-      >
-        月
-      </button>
-      <button
-        type="button"
-        className={`view-seg-btn${viewMode === 'card' ? ' active' : ''}`}
-        onClick={() => changeViewMode('card')}
-        disabled={cards.length === 0}
-        title={cards.length === 0 ? 'カードが未登録です' : undefined}
-      >
-        カード締め日
-      </button>
-    </div>
-  );
-
-  // 締め日の基準カード選択（カード締め日モードのみ）
-  const cardSelect = isCardMode ? (
-    <select
-      className="card-period-select"
-      value={String(effectiveCardId)}
-      onChange={(e) => {
-        const v = e.target.value;
-        setCardPoolId(v);
-        writeCardPoolId(v);
-      }}
-      aria-label="締め日の基準カード"
-    >
-      {cards.map((c) => (
-        <option key={c.id} value={c.id}>
-          {c.name}
-          {c.closingDay != null ? `（締め${c.closingDay}日）` : '（月末締め）'}
-        </option>
-      ))}
-    </select>
-  ) : null;
-
   const txnRows = sortedEntries.map((entry) => {
     const line = entry.storeName ? `${entry.categoryName} · ${entry.storeName}` : entry.categoryName;
     return { entry, line };
@@ -828,10 +730,8 @@ export default function DashboardPage() {
       <div className="desktop-only screen">
         <div className="page-head">
           <div className="month-nav">
-            {viewSeg}
             {monthPill}
             {todayBtn}
-            {cardSelect}
           </div>
           <button className="btn-primary" onClick={() => openAddModal()}>
             <Icon name="add" />
@@ -1022,11 +922,6 @@ export default function DashboardPage() {
             <Icon name="chevron_right" />
           </button>
           {todayBtn}
-        </div>
-        {/* 表示期間の切替（月 / カード締め日） */}
-        <div className="mob-view-bar">
-          {viewSeg}
-          {cardSelect}
         </div>
 
         {error && (
