@@ -1,5 +1,6 @@
 package com.study.kakeibo.service;
 
+import com.study.kakeibo.entity.Entry;
 import com.study.kakeibo.entity.EntryType;
 import com.study.kakeibo.entity.FundPool;
 import com.study.kakeibo.entity.FundTransfer;
@@ -245,13 +246,17 @@ public class FundPoolService {
         }
     }
 
-    /** カード（プール）の未決済取引を日付の降順で返す。 */
+    /** カード（プール）の未払い（未引落）の取引を日付の降順で返す。 */
     @Transactional(readOnly = true)
     public List<com.study.kakeibo.dto.Response.EntryResponseDto> getPoolEntries(Long userId, Long poolId) {
-        getOwnedPool(userId, poolId); // 所有確認
+        FundPool pool = getOwnedPool(userId, poolId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("ユーザーが見つかりません: " + userId));
-        return entryRepository.findByUserAndFundPoolIdOrderByEntryDateDescIdDesc(user, poolId)
+
+        LocalDate today = LocalDate.now();
+        LocalDate since = unpaidSince(today, pool.getClosingDay());
+        return entryRepository
+                .findByUserAndFundPoolIdAndEntryDateBetweenOrderByEntryDateDescIdDesc(user, poolId, since, today)
                 .stream()
                 .map(e -> {
                     var dto = new com.study.kakeibo.dto.Response.EntryResponseDto();
@@ -275,6 +280,34 @@ public class FundPoolService {
                     }
                     return dto;
                 }).toList();
+    }
+
+    /**
+     * 未払い期間の開始日を返す。
+     * - 締め日設定あり: 直近の締め日の翌日（今日が締め日前なら前月の締め日、締め日以降なら当月の締め日を起点）
+     * - 締め日未設定（月末）: 当月1日
+     */
+    static LocalDate unpaidSince(LocalDate today, Integer closingDay) {
+        if (closingDay == null) {
+            return today.withDayOfMonth(1); // 月末締め＝暦月。当月1日〜今日
+        }
+        LocalDate closingThisMonth = safeWithDay(today, closingDay);
+        LocalDate base;
+        if (today.isBefore(closingThisMonth)) {
+            // 今日が締め日前（＝まだ今月分の締め日が来ていない）→ 前月の締め日を起点にする
+            LocalDate prevMonth = today.minusMonths(1);
+            base = safeWithDay(prevMonth, closingDay);
+        } else {
+            // 今日が締め日以降（締め日当日は「今月分は締められた」とみなす）→ 今月の締め日を起点にする
+            base = closingThisMonth;
+        }
+        return base.plusDays(1); // 締め日の翌日からが未払い分
+    }
+
+    /** 月の日にちを安全に設定（31日など無い月は月末に丸める）。 */
+    static LocalDate safeWithDay(LocalDate month, int day) {
+        int last = month.lengthOfMonth();
+        return month.withDayOfMonth(Math.min(day, last));
     }
 
     @Transactional
