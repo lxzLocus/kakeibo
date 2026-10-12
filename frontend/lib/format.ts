@@ -11,14 +11,14 @@ export function toNumber(s: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-/** 金額マスク表示用の文字（桁はわかるが数字は伏せる）。 */
-export const MASK_CHAR = '*';
+/** マスク適用時に常に返す固定4桁表示。桁数も金額も判別できないようにする。 */
+export const MASKED_FIXED_STRING = '¥*,***';
 
 /**
- * 桁区切り・通貨記号・符号を残したまま、数字の桁を全てマスク文字へ置き換える。
- * 例: "¥1,234,567" → "¥*,***,***" / "-12,345" → "-**,***" / 小数 "-1,234.5" → "-*,***.*"
- * カンマ区切りにより桁数はそのまま読み取れるが、数字そのものはわからない。
+ * 金額を全桁隠して固定表示「¥*,***」にする。
+ * 引数（元の金額文字列）は桁数すら推測させないため参照せず、常に固定文字列を返す。
+ * 例: "¥1,234,567" → "¥*,***" / "-12,345" → "¥*,***" / "1.5万" → "¥*,***"
  */
-export function maskDigits(s: string): string {
-  return s.replace(/[0-9]/g, MASK_CHAR);
+export function maskDigits(_s: string): string {
+  return MASKED_FIXED_STRING;
 }
