@@ -246,68 +246,47 @@ public class FundPoolService {
         }
     }
 
-    /** カード（プール）の未払い（未引落）の取引を日付の降順で返す。 */
+    /** カード（プール）の未払い残高を構成する取引を日付の降順で返す。
+     *  最新の自動引き落とし日（autoCardId 付き振替）より後の取引 = まだ支払われていない内訳。
+     *  自動引き落としが未設定・未実行のカードは全取引を返す（残高全体が未払い）。 */
     @Transactional(readOnly = true)
     public List<com.study.kakeibo.dto.Response.EntryResponseDto> getPoolEntries(Long userId, Long poolId) {
         FundPool pool = getOwnedPool(userId, poolId);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("ユーザーが見つかりません: " + userId));
 
-        LocalDate today = LocalDate.now();
-        LocalDate since = unpaidSince(today, pool.getClosingDay());
-        return entryRepository
-                .findByUserAndFundPoolIdAndEntryDateBetweenOrderByEntryDateDescIdDesc(user, poolId, since, today)
-                .stream()
-                .map(e -> {
-                    var dto = new com.study.kakeibo.dto.Response.EntryResponseDto();
-                    dto.setId(e.getId());
-                    dto.setUserId(e.getUser().getId());
-                    dto.setUsername(e.getUser().getUsername());
-                    dto.setEntryDate(e.getEntryDate());
-                    dto.setAmount(e.getAmount());
-                    dto.setType(e.getType());
-                    dto.setMemo(e.getMemo());
-                    dto.setNote(e.getNote());
-                    dto.setFundPoolId(e.getFundPoolId());
-                    dto.setExcludeFromSimulation(e.isExcludeFromSimulation());
-                    if (e.getCategory() != null) {
-                        dto.setCategoryId(e.getCategory().getId());
-                        dto.setCategoryName(e.getCategory().getName());
-                    }
-                    if (e.getStore() != null) {
-                        dto.setStoreId(e.getStore().getId());
-                        dto.setStoreName(e.getStore().getName());
-                    }
-                    return dto;
-                }).toList();
-    }
-
-    /**
-     * 未払い期間の開始日を返す。
-     * - 締め日設定あり: 直近の締め日の翌日（今日が締め日前なら前月の締め日、締め日以降なら当月の締め日を起点）
-     * - 締め日未設定（月末）: 当月1日
-     */
-    static LocalDate unpaidSince(LocalDate today, Integer closingDay) {
-        if (closingDay == null) {
-            return today.withDayOfMonth(1); // 月末締め＝暦月。当月1日〜今日
-        }
-        LocalDate closingThisMonth = safeWithDay(today, closingDay);
-        LocalDate base;
-        if (today.isBefore(closingThisMonth)) {
-            // 今日が締め日前（＝まだ今月分の締め日が来ていない）→ 前月の締め日を起点にする
-            LocalDate prevMonth = today.minusMonths(1);
-            base = safeWithDay(prevMonth, closingDay);
+        LocalDate lastSettle = transferRepository.maxAutoSettleDate(pool.getId());
+        List<Entry> entries;
+        if (lastSettle == null) {
+            // 引き落としが一度も無い → カードに紐づく全取引が未払い残高の内訳
+            entries = entryRepository.findByUserAndFundPoolIdOrderByEntryDateDescIdDesc(user, poolId);
         } else {
-            // 今日が締め日以降（締め日当日は「今月分は締められた」とみなす）→ 今月の締め日を起点にする
-            base = closingThisMonth;
+            // 最新の引き落とし日（支払い済み）より後の取引のみ
+            entries = entryRepository
+                    .findByUserAndFundPoolIdAndEntryDateAfterOrderByEntryDateDescIdDesc(user, poolId, lastSettle);
         }
-        return base.plusDays(1); // 締め日の翌日からが未払い分
-    }
-
-    /** 月の日にちを安全に設定（31日など無い月は月末に丸める）。 */
-    static LocalDate safeWithDay(LocalDate month, int day) {
-        int last = month.lengthOfMonth();
-        return month.withDayOfMonth(Math.min(day, last));
+        return entries.stream().map(e -> {
+            var dto = new com.study.kakeibo.dto.Response.EntryResponseDto();
+            dto.setId(e.getId());
+            dto.setUserId(e.getUser().getId());
+            dto.setUsername(e.getUser().getUsername());
+            dto.setEntryDate(e.getEntryDate());
+            dto.setAmount(e.getAmount());
+            dto.setType(e.getType());
+            dto.setMemo(e.getMemo());
+            dto.setNote(e.getNote());
+            dto.setFundPoolId(e.getFundPoolId());
+            dto.setExcludeFromSimulation(e.isExcludeFromSimulation());
+            if (e.getCategory() != null) {
+                dto.setCategoryId(e.getCategory().getId());
+                dto.setCategoryName(e.getCategory().getName());
+            }
+            if (e.getStore() != null) {
+                dto.setStoreId(e.getStore().getId());
+                dto.setStoreName(e.getStore().getName());
+            }
+            return dto;
+        }).toList();
     }
 
     @Transactional

@@ -47,6 +47,10 @@ public interface EntryRepository extends JpaRepository<Entry, Long> {
     List<Entry> findByUserAndFundPoolIdAndEntryDateBetweenOrderByEntryDateDescIdDesc(
             User user, Long fundPoolId, LocalDate startDate, LocalDate endDate);
 
+    /** 指定プール（カード）の、指定日より後の取引を日付の新しい順に取得（未払い残高の内訳用）。 */
+    List<Entry> findByUserAndFundPoolIdAndEntryDateAfterOrderByEntryDateDescIdDesc(
+            User user, Long fundPoolId, LocalDate entryDate);
+
     /** 指定の固定費が、その月に既に自動記帳されているか（二重記帳の防止）。 */
     boolean existsByFixedCostIdAndEntryDateBetween(Long fixedCostId, LocalDate from, LocalDate to);
 

@@ -1,62 +1,110 @@
 package com.study.kakeibo.service;
 
+import com.study.kakeibo.dto.Response.EntryResponseDto;
+import com.study.kakeibo.entity.Entry;
+import com.study.kakeibo.entity.EntryType;
+import com.study.kakeibo.entity.FundPool;
+import com.study.kakeibo.entity.User;
+import com.study.kakeibo.repository.EntryRepository;
+import com.study.kakeibo.repository.FundPoolRepository;
+import com.study.kakeibo.repository.FundTransferRepository;
+import com.study.kakeibo.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-/** FundPoolService の未払い期間計算（unpaidSince）の単体テスト。 */
+/** FundPoolService.getPoolEntries（カードの未払い残高の内訳取得）の単体テスト。 */
+@ExtendWith(MockitoExtension.class)
 class FundPoolServiceTest {
 
-    @Test
-    @DisplayName("締め日25日・今日12日 → 前月26日から（今月の締め日が未到来）")
-    void unpaidSince_beforeClosingDay() {
-        LocalDate today = LocalDate.of(2026, 10, 12);
-        LocalDate since = FundPoolService.unpaidSince(today, 25);
-        assertThat(since).isEqualTo(LocalDate.of(2026, 9, 26));
+    @Mock private FundPoolRepository poolRepository;
+    @Mock private FundTransferRepository transferRepository;
+    @Mock private EntryRepository entryRepository;
+    @Mock private UserRepository userRepository;
+    @Mock private com.study.kakeibo.repository.FixedCostRepository fixedCostRepository;
+
+    @InjectMocks private FundPoolService service;
+
+    private User user;
+    private FundPool card;
+
+    @BeforeEach
+    void setUp() {
+        user = new User();
+        user.setId(1L);
+        card = new FundPool();
+        card.setId(10L);
+        card.setKind("CARD");
+        card.setName("テストカード");
     }
 
     @Test
-    @DisplayName("締め日25日・今日30日 → 当月26日から（今月の締め日は済み）")
-    void unpaidSince_afterClosingDay() {
-        LocalDate today = LocalDate.of(2026, 10, 30);
-        LocalDate since = FundPoolService.unpaidSince(today, 25);
-        assertThat(since).isEqualTo(LocalDate.of(2026, 10, 26));
+    @DisplayName("引き落としが一度も無いカード → カードに紐づく全取引を返す")
+    void getPoolEntries_noSettlement() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(poolRepository.findByIdAndUserId(10L, 1L)).thenReturn(Optional.of(card));
+        when(transferRepository.maxAutoSettleDate(10L)).thenReturn(null);
+
+        Entry e1 = entry(1L, LocalDate.of(2026, 10, 1), 1000L);
+        Entry e2 = entry(2L, LocalDate.of(2026, 9, 15), 2000L);
+        when(entryRepository.findByUserAndFundPoolIdOrderByEntryDateDescIdDesc(user, 10L))
+                .thenReturn(List.of(e1, e2));
+
+        List<EntryResponseDto> result = service.getPoolEntries(1L, 10L);
+
+        assertThat(result).hasSize(2);
+        verify(entryRepository).findByUserAndFundPoolIdOrderByEntryDateDescIdDesc(user, 10L);
     }
 
     @Test
-    @DisplayName("締め日25日・今日がちょうど締め日 → 締め日翌日（当月26日）から（当月分は締め日まで）")
-    void unpaidSince_onClosingDay() {
-        LocalDate today = LocalDate.of(2026, 10, 25);
-        LocalDate since = FundPoolService.unpaidSince(today, 25);
-        assertThat(since).isEqualTo(LocalDate.of(2026, 10, 26));
+    @DisplayName("引き落とし済み（最新 settle 日あり）→ 最新 settle 日より後の取引のみ返す")
+    void getPoolEntries_withSettlement() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(poolRepository.findByIdAndUserId(10L, 1L)).thenReturn(Optional.of(card));
+        LocalDate lastSettle = LocalDate.of(2026, 9, 25);
+        when(transferRepository.maxAutoSettleDate(10L)).thenReturn(lastSettle);
+
+        Entry after = entry(3L, LocalDate.of(2026, 10, 2), 3000L);
+        when(entryRepository.findByUserAndFundPoolIdAndEntryDateAfterOrderByEntryDateDescIdDesc(
+                user, 10L, lastSettle)).thenReturn(List.of(after));
+
+        List<EntryResponseDto> result = service.getPoolEntries(1L, 10L);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(3L);
+        verify(entryRepository).findByUserAndFundPoolIdAndEntryDateAfterOrderByEntryDateDescIdDesc(
+                eq(user), eq(10L), eq(lastSettle));
     }
 
     @Test
-    @DisplayName("締め日未設定（月末）→ 当月1日から")
-    void unpaidSince_noClosingDay() {
-        LocalDate today = LocalDate.of(2026, 10, 12);
-        LocalDate since = FundPoolService.unpaidSince(today, null);
-        assertThat(since).isEqualTo(LocalDate.of(2026, 10, 1));
+    @DisplayName("カードが無い（他ユーザー等）→ 例外")
+    void getPoolEntries_notOwned() {
+        when(poolRepository.findByIdAndUserId(10L, 999L)).thenReturn(Optional.empty());
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> service.getPoolEntries(999L, 10L));
     }
 
-    @Test
-    @DisplayName("31日締め・短い月（2月）は月末に丸め、前月の締め日を起点にする")
-    void unpaidSince_closingDay31_inShortMonth() {
-        LocalDate today = LocalDate.of(2026, 2, 20);
-        LocalDate since = FundPoolService.unpaidSince(today, 31);
-        // 2月の31日は存在しない → 2月末(28日) を今月の締め日とみなし、前月1月31日が起点
-        assertThat(since).isEqualTo(LocalDate.of(2026, 2, 1));
-    }
-
-    @Test
-    @DisplayName("31日締め・12月31日はちょうど基準日")
-    void unpaidSince_yearEnd() {
-        // 12/31 は締め日当日 → 翌年1/1 からが未払い
-        LocalDate today = LocalDate.of(2026, 12, 31);
-        LocalDate since = FundPoolService.unpaidSince(today, 31);
-        assertThat(since).isEqualTo(LocalDate.of(2027, 1, 1));
+    private Entry entry(Long id, LocalDate date, long amount) {
+        Entry e = new Entry();
+        e.setId(id);
+        e.setUser(user);
+        e.setEntryDate(date);
+        e.setAmount(new java.math.BigDecimal(amount));
+        e.setType(EntryType.EXPENSE);
+        return e;
     }
 }

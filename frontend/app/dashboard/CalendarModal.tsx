@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import { EntryResponse } from '@/types';
 import { Icon } from '@/app/_components/Icon';
 import { categoryColor } from '@/lib/colors';
-import { maskDigits } from '@/lib/format';
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
 
@@ -58,7 +57,6 @@ export function CalendarModal({
   month,
   entries,
   loading = false,
-  masked = false,
   onPrevMonth,
   onNextMonth,
   onCurrentMonth,
@@ -70,8 +68,6 @@ export function CalendarModal({
   month: number;
   entries: EntryResponse[];
   loading?: boolean;
-  /** 金額をマスク表示する（数字を ● で隠す）。ホームのマスク切替と連動 */
-  masked?: boolean;
   onPrevMonth: () => void;
   onNextMonth: () => void;
   onCurrentMonth: () => void;
@@ -83,11 +79,11 @@ export function CalendarModal({
   const [metric, setMetric] = useState<Metric>('amount');
   const ym = ymOf(year, month);
 
-  // マスク対応の金額表示（探索・ヒントにも反映）
-  const yenM = (n: number) => (masked ? maskDigits(yen(n)) : yen(n));
-  const compactM = (n: number) => (masked ? maskDigits(compact(n)) : compact(n));
+  // カレンダーは日別の明細表示のため、マスク（大きい文字のみ）の対象外。常に実金額を返す。
+  const yenM = (n: number) => yen(n);
+  const compactM = (n: number) => compact(n);
   const signedM = (type: 'INCOME' | 'EXPENSE', amount: number) =>
-    masked ? maskDigits(signed(type, amount)) : signed(type, amount);
+    signed(type, amount);
 
   // 月が変わったら日の選択を解除してカレンダーに戻す（描画中に調整するReact推奨パターン）。
   const [prevYm, setPrevYm] = useState(ym);
