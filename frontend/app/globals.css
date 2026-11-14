@@ -1449,6 +1449,9 @@ a {
 }
 
 .txn-sort .type-segment-btn {
+  /* 狭い列でも「日付↓」が縦に折り返さないよう、伸縮させず1行に保つ */
+  flex: none;
+  white-space: nowrap;
   padding: 6px 11px;
   font-size: 12px;
   font-weight: 500;
@@ -1593,6 +1596,94 @@ a {
   font-size: 12px;
   color: var(--text-secondary);
   line-height: 1.6;
+}
+
+/* 今期のペース: 過去期間の同時点比較 */
+.pace-diff {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  padding: 8px 10px;
+  border-radius: 10px;
+  margin: 4px 0 12px;
+}
+.pace-diff .material-symbols-outlined {
+  flex: none;
+  margin-top: 1px;
+}
+.pace-diff.good {
+  background: var(--accent-container);
+  color: var(--on-accent-container);
+}
+.pace-diff.bad {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.pace-diff strong {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.pace-pct {
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+.pace-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 10px;
+}
+.pace-bar-row {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.pace-bar-label {
+  white-space: nowrap;
+}
+.pace-bar-track {
+  height: 6px;
+  border-radius: 99px;
+  background: var(--hairline);
+  overflow: hidden;
+}
+.pace-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--text-faint);
+}
+.pace-bar-amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: right;
+  min-width: 64px;
+}
+.pace-bar-row.current {
+  color: var(--text);
+  font-weight: 600;
+}
+.pace-bar-row.current .pace-bar-fill {
+  background: var(--accent);
+}
+.pace-foot {
+  border-top: 1px solid var(--hairline-row);
+  padding-top: 8px;
+}
+
+/* モバイル: ペースカードの余白 */
+.mob-pace {
+  margin-bottom: 20px;
+}
+.mob-pace .section-label {
+  display: block;
+  margin-bottom: 10px;
 }
 
 /* クイック入力 */

@@ -7,6 +7,7 @@ import { EntryResponse, CategoryResponse, StoreResponse, ReceiptDraft, FundPoolR
 import { Icon } from '@/app/_components/Icon';
 import { withCommas, toNumber, maskDigits } from '@/lib/format';
 import { AssetsSection } from './AssetsSection';
+import { PaceCard, PacePastStat } from './PaceCard';
 import { useToast, useConfirm } from '@/app/_components/ui';
 import { readMonthYear, writeMonthYear } from '@/lib/monthStore';
 import { readMasked, writeMasked, readViewMode, writeViewMode, readCardPoolId, writeCardPoolId, HomeViewMode } from '@/lib/prefs';
@@ -321,6 +322,24 @@ export default function DashboardPage() {
     [viewMode, year, month, selectedCard]
   );
 
+  // 今日を含む期間を表示しているか（ペース比較は今期のみ）
+  const todayStrVal = dateStrOf(new Date());
+  const isCurrentPeriod = todayStrVal >= range.since && todayStrVal <= range.until;
+
+  // 比較用: 直近3期間（同じ表示モード・同じ基準カードで区切る）
+  const pastRanges = useMemo(
+    () =>
+      [1, 2, 3].map((k) => {
+        let y = year;
+        let m = month - k;
+        while (m < 1) { m += 12; y -= 1; }
+        return { ...buildRange(viewMode, y, m, selectedCard), label: `${m}月` };
+      }),
+    [viewMode, year, month, selectedCard]
+  );
+  const [pastEntries, setPastEntries] = useState<EntryResponse[] | null>(null);
+  const [pastLoading, setPastLoading] = useState(false);
+
   const fetchEntries = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -358,6 +377,24 @@ export default function DashboardPage() {
     fetchCategoriesAndStores();
     fetchPools();
   }, [fetchEntries, fetchCategoriesAndStores, fetchPools]);
+
+  // 過去3期間の取引（今期表示中のみ）。entries が更新されたら（登録・編集後）取り直す。
+  const pastSince = pastRanges[pastRanges.length - 1].since;
+  const pastUntil = addDaysStr(range.since, -1);
+  useEffect(() => {
+    if (!isCurrentPeriod) {
+      setPastEntries(null);
+      return;
+    }
+    let cancelled = false;
+    setPastLoading(true);
+    entryApi
+      .getAll(pastSince, pastUntil)
+      .then((data) => { if (!cancelled) setPastEntries(data as EntryResponse[]); })
+      .catch(() => { if (!cancelled) setPastEntries(null); })
+      .finally(() => { if (!cancelled) setPastLoading(false); });
+    return () => { cancelled = true; };
+  }, [isCurrentPeriod, pastSince, pastUntil, entries]);
 
   // 月次の自動処理（固定費の記帳＋カードの引き落とし）を、アプリを開いたときに追いつかせる（冪等）。
   // 常駐ジョブに頼らない方式。初回マウント時のみ実行。
@@ -657,18 +694,37 @@ export default function DashboardPage() {
   const fmtSigned = (type: 'INCOME' | 'EXPENSE', amount: number) =>
     masked ? maskDigits(formatSigned(type, amount)) : formatSigned(type, amount);
 
-  // 期間のペース
+  // 期間のペース（今期のみ表示）
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
-  const todayStrVal = todayStr();
-  const isCurrentPeriod = todayStrVal >= range.since && todayStrVal <= range.until;
-  const elapsedDays =
-    isCurrentPeriod && !isCardMode
-      ? now.getDate()
-      : isCurrentPeriod
-        ? Math.min(range.periodDays, Math.max(1, daysFromSince(range.since, todayStrVal) + 1))
-        : range.periodDays;
-  const dailyAvg = elapsedDays > 0 ? Math.round(totalExpense / elapsedDays) : 0;
-  const projected = Math.round(dailyAvg * range.periodDays);
+  // 今日を含めた経過日数（期間初日=1日目）
+  const elapsedDays = Math.min(range.periodDays, Math.max(1, daysFromSince(range.since, todayStrVal) + 1));
+  // 先日付で登録済みの取引（固定費など）は「今日まで」に含めない
+  const spentToDate = entries
+    .filter((e) => e.type === 'EXPENSE' && e.entryDate <= todayStrVal)
+    .reduce((s, e) => s + e.amount, 0);
+  const dailyAvg = Math.round(spentToDate / elapsedDays);
+
+  // 過去3期間の「同じ経過日数まで」の支出。記録が1件もない期間は比較から外す。
+  const pastStats: PacePastStat[] = [];
+  if (pastEntries) {
+    for (const r of pastRanges) {
+      let sameDay = 0, total = 0, count = 0;
+      for (const e of pastEntries) {
+        if (e.entryDate < r.since || e.entryDate > r.until) continue;
+        count++;
+        if (e.type !== 'EXPENSE') continue;
+        total += e.amount;
+        if (daysFromSince(r.since, e.entryDate) < elapsedDays) sameDay += e.amount;
+      }
+      if (count > 0) pastStats.push({ label: r.label, sameDay, total });
+    }
+  }
+  // 期間末の見込み: 過去データがあれば「今日まで + 過去の残り日数ぶんの平均」、無ければ線形外挿
+  const projectedBasis: 'past' | 'linear' = pastStats.length > 0 ? 'past' : 'linear';
+  const projected =
+    projectedBasis === 'past'
+      ? spentToDate + Math.round(pastStats.reduce((s, p) => s + (p.total - p.sameDay), 0) / pastStats.length)
+      : Math.round(dailyAvg * range.periodDays);
 
   // 日別推移（モバイル ミニグラフ用）: 期間の初日を0番目として日数を揃える
   const dailyInc = new Array(range.periodDays).fill(0);
@@ -807,6 +863,20 @@ export default function DashboardPage() {
     </select>
   ) : null;
 
+  const paceCard = isCurrentPeriod ? (
+    <PaceCard
+      title={range.paceLabel}
+      elapsedDays={elapsedDays}
+      spentToDate={spentToDate}
+      dailyAvg={dailyAvg}
+      projected={projected}
+      projectedBasis={projectedBasis}
+      past={pastStats}
+      pastLoading={pastLoading}
+      fmt={fmt}
+    />
+  ) : null;
+
   const txnRows = sortedEntries.map((entry) => {
     const line = entry.storeName ? `${entry.categoryName} · ${entry.storeName}` : entry.categoryName;
     return { entry, line };
@@ -935,16 +1005,7 @@ export default function DashboardPage() {
                 )}
               </div>
 
-              <div className="section-label">{range.paceLabel}</div>
-              <div className="card">
-                <div className="kv-row">
-                  <span className="kv-key">1日あたり平均支出</span>
-                  <span className="kv-val">{fmt(dailyAvg)}</span>
-                </div>
-                <div className="kv-note">
-                  このペースだと期間末の支出は約 {fmt(projected)} の見込み
-                </div>
-              </div>
+              {paceCard}
 
               <div className="section-label">クイック支出登録</div>
               <div className="card">
@@ -1070,6 +1131,9 @@ export default function DashboardPage() {
                 <span>{range.chartEnd}</span>
               </div>
             </div>
+
+            {/* 今期のペース（過去3期間の同時点と比較） */}
+            {paceCard && <div className="mob-pace">{paceCard}</div>}
 
             {/* 総資産・口座 */}
             <div style={{ marginBottom: 20 }}>
